@@ -28,7 +28,9 @@ export const AppProvider = ({ children }) => {
   const [inverters, setInverters] = useState([]);
   const [solarPanels, setSolarPanels] = useState([]);
   
-  // Authentication user session state
+  // Dynamic view mode toggle (B2B SaaS Workspace frontend vs Super User Admin CMS backend)
+  const [viewMode, setViewMode] = useState('workspace'); // 'workspace' or 'admin'
+
   const [user, setUser] = useState({
     name: 'Syed Bilal',
     email: 'bilalfaheem47@gmail.com',
@@ -38,7 +40,7 @@ export const AppProvider = ({ children }) => {
   const [company, setCompany] = useState({
     id: "comp-1",
     name: "Solar Solutions Ltd",
-    plan: "Platinum", // Set to Platinum so active limit gives "Premium Agent" badge!
+    plan: "Platinum", 
     proposals_generated: 28,
     billing_status: "Active",
     receipt_uploaded: null,
@@ -118,7 +120,6 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     loadAllData();
 
-    // Listen to local storage events for multi-tab synchronization fallback
     const handleStorageChange = () => {
       loadAllData();
     };
@@ -141,7 +142,7 @@ export const AppProvider = ({ children }) => {
     }
   }, [theme]);
 
-  // Auth Protection Routing Middleware simulation
+  // Auth Protection Routing Middleware
   useEffect(() => {
     if (!user && pathname !== '/login' && pathname !== '/customer-view') {
       router.push('/login');
@@ -150,22 +151,20 @@ export const AppProvider = ({ children }) => {
 
   // Actions
   const signIn = (email, password) => {
-    // Basic mock authentication login
     setUser({
       name: 'Syed Bilal',
       email: email,
       initials: 'SA'
     });
+    setViewMode('workspace'); // Reset to workspace view on login
     showToast("🔓 Welcome back, Syed Bilal!");
     router.push('/');
   };
 
   const signOut = () => {
-    // 1. Session Termination
     setUser(null);
-    
-    // 2. Cache & State Reset
     setCurrentLead(null);
+    setViewMode('workspace');
     setCalcParams({
       connectionType: 'On-Grid',
       monthlyUnits: 450,
@@ -179,14 +178,10 @@ export const AppProvider = ({ children }) => {
     });
 
     if (typeof window !== 'undefined') {
-      // Clean cached session variables
       localStorage.removeItem('solar_agent_live_presentation');
     }
 
-    // 3. Toast confirmation
     showToast("👋 Checked out securely. See you next time!");
-    
-    // 4. Redirect to login
     router.push('/login');
   };
 
@@ -349,7 +344,9 @@ export const AppProvider = ({ children }) => {
       loadAllData,
       user,
       signIn,
-      signOut
+      signOut,
+      viewMode,
+      setViewMode
     }}>
       {children}
     </AppContext.Provider>

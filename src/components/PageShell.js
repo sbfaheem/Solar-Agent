@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
@@ -8,22 +8,49 @@ import { useApp } from '../context/AppContext';
 export default function PageShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, toggleTheme, lang, toggleLang, toast, company, getActiveLimit, user, signOut } = useApp();
+  const { 
+    theme, 
+    toggleTheme, 
+    lang, 
+    toggleLang, 
+    toast, 
+    company, 
+    getActiveLimit, 
+    user, 
+    signOut, 
+    viewMode, 
+    setViewMode 
+  } = useApp();
 
   // Protected route block render guard
   if (!user && pathname !== '/login' && pathname !== '/customer-view') {
     return null; 
   }
 
-  const menuItems = [
+  // Automatic path-to-view sync
+  useEffect(() => {
+    if (pathname === '/admin-desk') {
+      setViewMode('admin');
+    } else if (pathname !== '/login' && pathname !== '/customer-view') {
+      setViewMode('workspace');
+    }
+  }, [pathname]);
+
+  // Sidebar Menu Configs
+  const workspaceMenuItems = [
     { label: 'Workspace Hub', urLabel: 'مین پینل', path: '/', icon: 'dashboard' },
     { label: 'Project Hub', urLabel: 'پراجیکٹ ہب', path: '/agent-hub', icon: 'leaderboard' },
     { label: 'Specs Matcher', urLabel: 'ہارڈویئر میچر', path: '/configuration', icon: 'solar_power' },
-    { label: 'Clearance CMS', urLabel: 'ایڈمن ڈیسک', path: '/admin-desk', icon: 'gavel' },
     { label: 'Billing Portal', urLabel: 'بلنگ اور ٹیم', path: '/team-settings', icon: 'payments' },
     { label: 'Customer View', urLabel: 'گاہک لائیو ویو', path: '/customer-view', icon: 'co_present' },
   ];
 
+  const adminMenuItems = [
+    { label: 'Clearance Desk', urLabel: 'کلیئرنس ڈیسک', path: '/admin-desk', icon: 'gavel' },
+    { label: 'Workspace Home', urLabel: 'مین ورک اسپیس', path: '/', icon: 'home' }
+  ];
+
+  const activeMenuItems = viewMode === 'admin' ? adminMenuItems : workspaceMenuItems;
   const activeLimit = getActiveLimit();
 
   const getTierBadgeText = () => {
@@ -75,6 +102,37 @@ export default function PageShell({ children }) {
 
           {/* Toolbar utilities */}
           <div className="flex items-center gap-3">
+            
+            {/* View Mode Switching Button */}
+            {user && (
+              <button 
+                onClick={() => {
+                  if (viewMode === 'workspace') {
+                    setViewMode('admin');
+                    router.push('/admin-desk');
+                  } else {
+                    setViewMode('workspace');
+                    router.push('/');
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display cursor-pointer transition-all flex items-center gap-1.5 border ${
+                  viewMode === 'admin'
+                    ? 'bg-emerald-500/10 text-accent-emerald border-emerald-500/20 hover:bg-emerald-500 hover:text-black'
+                    : 'bg-primary/10 text-primary-container border-primary/20 hover:bg-primary hover:text-black'
+                }`}
+                title={viewMode === 'admin' ? "Switch to Workspace Mode" : "Switch to Admin CMS Mode"}
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {viewMode === 'admin' ? 'business' : 'admin_panel_settings'}
+                </span>
+                <span className="hidden sm:inline">
+                  {viewMode === 'admin' 
+                    ? (lang === 'ur' ? 'ورک اسپیس دیکھیں' : 'Company Workspace') 
+                    : (lang === 'ur' ? 'ایڈمن پینل' : 'Admin CMS Mode')}
+                </span>
+              </button>
+            )}
+
             {/* LTR/RTL Language Switch */}
             <button 
               onClick={toggleLang}
@@ -95,17 +153,15 @@ export default function PageShell({ children }) {
               </span>
             </button>
 
-            {/* Global User Profile Identity Card Block (Header Integrated) */}
+            {/* Global User Profile Identity Card Block */}
             {user && (
               <div className={`flex items-center gap-3 p-1.5 rounded-lg bg-white/5 border border-border-base/50 ${
                 lang === 'ur' ? 'flex-row-reverse text-right' : 'text-left'
               }`}>
-                {/* Dynamic Initials Avatar with premium dark gold outline */}
                 <div className="size-8 rounded-full border-2 border-primary-container text-primary-container flex items-center justify-center font-bold text-xs bg-primary-container/10 font-mono shadow-[0_0_10px_rgba(253,184,19,0.15)]">
                   {user.initials || getInitials(user.name)}
                 </div>
                 
-                {/* User Details */}
                 <div className="hidden sm:block">
                   <div className="font-display font-bold text-white text-[11px] leading-none">{user.name}</div>
                   <div className="text-slate-400 text-[9px] leading-none mt-1">{getTierBadgeText()}</div>
@@ -113,7 +169,7 @@ export default function PageShell({ children }) {
               </div>
             )}
 
-            {/* Dedicated Explicit Sign Out Button next to user display */}
+            {/* Dedicated Explicit Sign Out Button */}
             {user && (
               <button 
                 type="button"
@@ -134,12 +190,17 @@ export default function PageShell({ children }) {
           lang === 'ur' ? 'lg:border-l' : 'lg:border-r'
         }`}>
           <div className="space-y-1">
-            {menuItems.map((item) => {
+            {activeMenuItems.map((item) => {
               const active = pathname === item.path;
               return (
                 <Link 
-                  key={item.path} 
+                  key={item.label} 
                   href={item.path}
+                  onClick={() => {
+                    if (item.path === '/') {
+                      setViewMode('workspace');
+                    }
+                  }}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-bold font-display cursor-pointer transition-all ${
                     active 
                       ? 'bg-primary text-black' 
