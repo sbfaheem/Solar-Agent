@@ -425,6 +425,86 @@ export const fetchSolarPanels = async () => {
   }
 };
 
+// --- REAL CMS DATABASE CATALOG CRUD ---
+export const createInverter = async (inverter) => {
+  const newInv = { id: `inv-${Date.now()}`, ...inverter };
+  if (isMockMode()) {
+    const list = getMockData('inverters', seedData.inverters);
+    list.push(newInv);
+    saveMockData('inverters', list);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
+    return newInv;
+  }
+  try {
+    await setDoc(doc(db, 'inverters', newInv.id), newInv);
+    return newInv;
+  } catch (err) {
+    const list = getMockData('inverters', seedData.inverters);
+    list.push(newInv);
+    saveMockData('inverters', list);
+    return newInv;
+  }
+};
+
+export const deleteInverter = async (id) => {
+  if (isMockMode()) {
+    const list = getMockData('inverters', seedData.inverters);
+    const filtered = list.filter(i => i.id !== id);
+    saveMockData('inverters', filtered);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
+    return true;
+  }
+  try {
+    await deleteDoc(doc(db, 'inverters', id));
+    return true;
+  } catch (err) {
+    const list = getMockData('inverters', seedData.inverters);
+    const filtered = list.filter(i => i.id !== id);
+    saveMockData('inverters', filtered);
+    return true;
+  }
+};
+
+export const createSolarPanel = async (panel) => {
+  const newPanel = { id: `panel-${Date.now()}`, ...panel };
+  if (isMockMode()) {
+    const list = getMockData('solar_panels', seedData.solar_panels);
+    list.push(newPanel);
+    saveMockData('solar_panels', list);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
+    return newPanel;
+  }
+  try {
+    await setDoc(doc(db, 'solar_panels', newPanel.id), newPanel);
+    return newPanel;
+  } catch (err) {
+    const list = getMockData('solar_panels', seedData.solar_panels);
+    list.push(newPanel);
+    saveMockData('solar_panels', list);
+    return newPanel;
+  }
+};
+
+export const deleteSolarPanel = async (id) => {
+  if (isMockMode()) {
+    const list = getMockData('solar_panels', seedData.solar_panels);
+    const filtered = list.filter(p => p.id !== id);
+    saveMockData('solar_panels', filtered);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('storage'));
+    return true;
+  }
+  try {
+    await deleteDoc(doc(db, 'solar_panels', id));
+    return true;
+  } catch (err) {
+    const list = getMockData('solar_panels', seedData.solar_panels);
+    const filtered = list.filter(p => p.id !== id);
+    saveMockData('solar_panels', filtered);
+    return true;
+  }
+};
+
+
 // Initialize DB seeding values
 export const seedDatabase = async () => {
   if (isMockMode()) {

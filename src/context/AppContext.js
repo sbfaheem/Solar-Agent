@@ -13,7 +13,11 @@ import {
   updateCompanyState,
   fetchOverrideRequests,
   createOverrideRequest,
-  approveOverrideRequest
+  approveOverrideRequest,
+  createInverter as apiCreateInverter,
+  deleteInverter as apiDeleteInverter,
+  createSolarPanel as apiCreateSolarPanel,
+  deleteSolarPanel as apiDeleteSolarPanel
 } from '../lib/firebaseService';
 
 const AppContext = createContext();
@@ -315,6 +319,54 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const addInverter = async (invData) => {
+    try {
+      const created = await apiCreateInverter(invData);
+      setInverters(prev => [...prev, created]);
+      showToast("💾 Inverter added to catalog!");
+      return created;
+    } catch (err) {
+      showToast("❌ Failed to add inverter", "error");
+      return null;
+    }
+  };
+
+  const removeInverter = async (id) => {
+    try {
+      await apiDeleteInverter(id);
+      setInverters(prev => prev.filter(i => i.id !== id));
+      showToast("🗑️ Inverter removed from catalog!");
+      return true;
+    } catch (err) {
+      showToast("❌ Failed to delete inverter", "error");
+      return false;
+    }
+  };
+
+  const addSolarPanel = async (panelData) => {
+    try {
+      const created = await apiCreateSolarPanel(panelData);
+      setSolarPanels(prev => [...prev, created]);
+      showToast("💾 Solar panel added to catalog!");
+      return created;
+    } catch (err) {
+      showToast("❌ Failed to add solar panel", "error");
+      return null;
+    }
+  };
+
+  const removeSolarPanel = async (id) => {
+    try {
+      await apiDeleteSolarPanel(id);
+      setSolarPanels(prev => prev.filter(p => p.id !== id));
+      showToast("🗑️ Solar panel removed from catalog!");
+      return true;
+    } catch (err) {
+      showToast("❌ Failed to delete solar panel", "error");
+      return false;
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       theme,
@@ -346,7 +398,11 @@ export const AppProvider = ({ children }) => {
       signIn,
       signOut,
       viewMode,
-      setViewMode
+      setViewMode,
+      addInverter,
+      removeInverter,
+      addSolarPanel,
+      removeSolarPanel
     }}>
       {children}
     </AppContext.Provider>

@@ -11,20 +11,41 @@ export default function AdminDesk() {
     approveOverride, 
     clearPendingSubscription, 
     lang,
-    showToast 
+    showToast,
+    inverters,
+    solarPanels,
+    addInverter,
+    removeInverter,
+    addSolarPanel,
+    removeSolarPanel
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('clearance');
   const [modalOpen, setModalOpen] = useState(false);
   const [activeSlip, setActiveSlip] = useState(null);
 
+  // Form states for new Inverter
+  const [invBrand, setInvBrand] = useState('');
+  const [invModel, setInvModel] = useState('');
+  const [invCapacity, setInvCapacity] = useState(10);
+  const [invType, setInvType] = useState('Hybrid');
+  const [invPrice, setInvPrice] = useState(180000);
+
+  // Form states for new Panel
+  const [panelMfg, setPanelMfg] = useState('');
+  const [panelModel, setPanelModel] = useState('');
+  const [panelWattage, setPanelWattage] = useState(550);
+  const [panelPriceWatt, setPanelPriceWatt] = useState(38);
+  const [panelCell, setPanelCell] = useState('Monocrystalline');
+
   // Translations
   const translations = {
     en: {
       title: "Super User Admin Control CMS",
-      subtitle: "Review offline transaction uploads, manage active subscription tiers, and approve quota extension requests.",
+      subtitle: "Review offline transactions, manage quotas, and edit the master hardware database.",
       tabClearance: "Clearance Desk",
       tabOverrides: "Override Requests",
+      tabCatalog: "Hardware CMS Catalog",
       clearanceHeader: "Pending Invoice Receipts Verification",
       noClearance: "No pending payments in verification queue.",
       agentName: "Agent / Company Details",
@@ -42,13 +63,16 @@ export default function AdminDesk() {
       approveOverrideBtn: "Approve Quota +10",
       pkr: "PKR",
       pendingText: "Awaiting Verification",
-      viewSlip: "View Receipt Screenshot"
+      viewSlip: "View Receipt Screenshot",
+      addInvHeader: "Add New Inverter Model",
+      addPanelHeader: "Add New Solar Panel Model"
     },
     ur: {
       title: "سپر ایڈمنسٹریٹر کنٹرول پینل",
-      subtitle: "آف لائن بینک ٹرانسفرز کی تصدیق کریں، سبسکرپشنز کو فعال کریں، اور کوٹہ بڑھانے کی درخواستیں منظور کریں۔",
+      subtitle: "آف لائن بینک ٹرانسفرز کی تصدیق کریں، سبسکرپشنز کو فعال کریں، اور ہارڈویئر کیٹلاگ منظم کریں۔",
       tabClearance: "پیمنٹ کلیئرنس ڈیسک",
       tabOverrides: "اضافی حد کی درخواستیں",
+      tabCatalog: "ہارڈویئر کیٹلاگ CMS",
       clearanceHeader: "آف لائن پیمنٹ رسیدوں کی تصدیق",
       noClearance: "تصدیق کے لیے کوئی رسید پینڈنگ نہیں ہے۔",
       agentName: "کمپنی اور ایجنٹ کی تفصیلات",
@@ -66,7 +90,9 @@ export default function AdminDesk() {
       approveOverrideBtn: "پروپوزل کوٹہ +10 بڑھائیں",
       pkr: "روپے",
       pendingText: "تصدیق کے منتظر",
-      viewSlip: "رسید کا اسکرین شاٹ دیکھیں"
+      viewSlip: "رسید کا اسکرین شاٹ دیکھیں",
+      addInvHeader: "نیا انورٹر ماڈل شامل کریں",
+      addPanelHeader: "نیا سولر پینل ماڈل شامل کریں"
     }
   };
 
@@ -84,6 +110,46 @@ export default function AdminDesk() {
     setModalOpen(true);
   };
 
+  const handleAddInverterSubmit = async (e) => {
+    e.preventDefault();
+    if (!invBrand || !invModel) {
+      showToast("⚠️ Brand and Model fields are required", "error");
+      return;
+    }
+    const inv = {
+      brand: invBrand,
+      model: invModel,
+      capacity_kw: Number(invCapacity),
+      type: invType,
+      cost_pkr: Number(invPrice)
+    };
+    const res = await addInverter(inv);
+    if (res) {
+      setInvBrand('');
+      setInvModel('');
+    }
+  };
+
+  const handleAddPanelSubmit = async (e) => {
+    e.preventDefault();
+    if (!panelMfg || !panelModel) {
+      showToast("⚠️ Manufacturer and Model fields are required", "error");
+      return;
+    }
+    const panel = {
+      mfg: panelMfg,
+      model: panelModel,
+      wattage: Number(panelWattage),
+      cost_per_watt: Number(panelPriceWatt),
+      cell_type: panelCell
+    };
+    const res = await addSolarPanel(panel);
+    if (res) {
+      setPanelMfg('');
+      setPanelModel('');
+    }
+  };
+
   return (
     <PageShell>
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-8" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
@@ -98,7 +164,7 @@ export default function AdminDesk() {
           </div>
           
           {/* Dashboard Section Toggles */}
-          <div className="flex bg-black/20 p-1 rounded-lg border border-border-base">
+          <div className="flex bg-black/20 p-1 rounded-lg border border-border-base flex-wrap gap-1">
             <button 
               onClick={() => setActiveTab('clearance')}
               className={`px-4 py-2 rounded-lg text-xs font-bold font-display cursor-pointer transition-all ${
@@ -115,13 +181,20 @@ export default function AdminDesk() {
             >
               {t.tabOverrides}
             </button>
+            <button 
+              onClick={() => setActiveTab('catalog')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold font-display cursor-pointer transition-all ${
+                activeTab === 'catalog' ? 'bg-primary text-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {t.tabCatalog}
+            </button>
           </div>
         </div>
 
-        {/* CLEARANCE DESK VIEW */}
+        {/* 1. CLEARANCE DESK VIEW */}
         {activeTab === 'clearance' && (
           <div className="space-y-6">
-            
             <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm">
               <div className={`px-6 py-4 bg-black/10 border-b border-border-base flex justify-between items-center ${
                 lang === 'ur' ? 'flex-row-reverse' : ''
@@ -186,10 +259,9 @@ export default function AdminDesk() {
           </div>
         )}
 
-        {/* OVERRIDES REQUEST DESK VIEW */}
+        {/* 2. OVERRIDES REQUEST DESK VIEW */}
         {activeTab === 'override' && (
           <div className="space-y-6">
-            
             <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm">
               <div className={`px-6 py-4 bg-black/10 border-b border-border-base flex justify-between items-center ${
                 lang === 'ur' ? 'flex-row-reverse' : ''
@@ -248,6 +320,238 @@ export default function AdminDesk() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. HARDWARE CATALOG CMS VIEW */}
+        {activeTab === 'catalog' && (
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            
+            {/* INVERTERS SECTION (7 cols) */}
+            <div className="xl:col-span-6 space-y-6">
+              <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm p-5 space-y-6">
+                <div className="border-b border-border-base pb-3">
+                  <h3 className="font-display font-bold text-white text-base">🔌 Inverters Database CMS</h3>
+                </div>
+
+                {/* Listing */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-black/20 border-b border-slate-800 text-slate-400 uppercase font-bold text-[9px] tracking-wider">
+                        <th className="px-3 py-2.5">Model / Brand</th>
+                        <th className="px-3 py-2.5">Spec</th>
+                        <th className="px-3 py-2.5">Price</th>
+                        <th className="px-3 py-2.5 text-right">Delete</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40">
+                      {inverters.map(inv => (
+                        <tr key={inv.id} className="hover:bg-white/5">
+                          <td className="px-3 py-3">
+                            <span className="font-bold text-white">{inv.brand}</span>
+                            <span className="block text-[10px] text-slate-500">{inv.model}</span>
+                          </td>
+                          <td className="px-3 py-3 font-mono text-slate-300">{inv.capacity_kw}kW ({inv.type})</td>
+                          <td className="px-3 py-3 font-mono text-primary-container">{inv.cost_pkr.toLocaleString()} PKR</td>
+                          <td className="px-3 py-3 text-right">
+                            <button 
+                              type="button" 
+                              onClick={() => removeInverter(inv.id)}
+                              className="size-7 rounded bg-red-950/20 hover:bg-red-500 border border-red-500/30 text-red-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                              title="Delete model"
+                            >
+                              <span className="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Add Form */}
+                <form onSubmit={handleAddInverterSubmit} className="bg-black/30 border border-border-base/50 p-4 rounded-xl space-y-4">
+                  <h4 className="font-display font-bold text-white text-xs">{t.addInvHeader}</h4>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Brand Name</label>
+                      <input 
+                        type="text" 
+                        value={invBrand} 
+                        onChange={(e) => setInvBrand(e.target.value)}
+                        placeholder="e.g. Solis" 
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Model Name</label>
+                      <input 
+                        type="text" 
+                        value={invModel} 
+                        onChange={(e) => setInvModel(e.target.value)}
+                        placeholder="e.g. S5-GR3P10K" 
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Capacity (kW)</label>
+                      <input 
+                        type="number" 
+                        value={invCapacity} 
+                        onChange={(e) => setInvCapacity(e.target.value)}
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Type</label>
+                      <select 
+                        value={invType} 
+                        onChange={(e) => setInvType(e.target.value)}
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none cursor-pointer"
+                      >
+                        <option value="On-Grid">On-Grid</option>
+                        <option value="Off-Grid">Off-Grid</option>
+                        <option value="Hybrid">Hybrid</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Base Price (PKR)</label>
+                      <input 
+                        type="number" 
+                        value={invPrice} 
+                        onChange={(e) => setInvPrice(e.target.value)}
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="w-full py-2 rounded-lg bg-primary hover:bg-white text-black font-display font-bold text-xs transition-all cursor-pointer shadow"
+                  >
+                    🚀 Save Inverter to Catalog
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* SOLAR PANELS SECTION (6 cols) */}
+            <div className="xl:col-span-6 space-y-6">
+              <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm p-5 space-y-6">
+                <div className="border-b border-border-base pb-3">
+                  <h3 className="font-display font-bold text-white text-base">☀️ Solar Panels Database CMS</h3>
+                </div>
+
+                {/* Listing */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-black/20 border-b border-slate-800 text-slate-400 uppercase font-bold text-[9px] tracking-wider">
+                        <th className="px-3 py-2.5">Model / Mfg</th>
+                        <th className="px-3 py-2.5">Spec</th>
+                        <th className="px-3 py-2.5">Rate / Watt</th>
+                        <th className="px-3 py-2.5 text-right">Delete</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40">
+                      {solarPanels.map(panel => (
+                        <tr key={panel.id} className="hover:bg-white/5">
+                          <td className="px-3 py-3">
+                            <span className="font-bold text-white">{panel.mfg}</span>
+                            <span className="block text-[10px] text-slate-500">{panel.model}</span>
+                          </td>
+                          <td className="px-3 py-3 font-mono text-slate-300">{panel.wattage}W ({panel.cell_type})</td>
+                          <td className="px-3 py-3 font-mono text-primary-container">{panel.cost_per_watt} PKR/W</td>
+                          <td className="px-3 py-3 text-right">
+                            <button 
+                              type="button" 
+                              onClick={() => removeSolarPanel(panel.id)}
+                              className="size-7 rounded bg-red-950/20 hover:bg-red-500 border border-red-500/30 text-red-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                              title="Delete model"
+                            >
+                              <span className="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Add Form */}
+                <form onSubmit={handleAddPanelSubmit} className="bg-black/30 border border-border-base/50 p-4 rounded-xl space-y-4">
+                  <h4 className="font-display font-bold text-white text-xs">{t.addPanelHeader}</h4>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Manufacturer</label>
+                      <input 
+                        type="text" 
+                        value={panelMfg} 
+                        onChange={(e) => setPanelMfg(e.target.value)}
+                        placeholder="e.g. Jinko Solar" 
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Model Name</label>
+                      <input 
+                        type="text" 
+                        value={panelModel} 
+                        onChange={(e) => setPanelModel(e.target.value)}
+                        placeholder="e.g. Tiger Neo" 
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Wattage (W)</label>
+                      <input 
+                        type="number" 
+                        value={panelWattage} 
+                        onChange={(e) => setPanelWattage(e.target.value)}
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-400">Cell Type</label>
+                      <select 
+                        value={panelCell} 
+                        onChange={(e) => setPanelCell(e.target.value)}
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none cursor-pointer"
+                      >
+                        <option value="Monocrystalline">Monocrystalline</option>
+                        <option value="Polocrystalline">Polocrystalline</option>
+                        <option value="Bifacial">Bifacial</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-slate-400">PKR per Watt</label>
+                      <input 
+                        type="number" 
+                        value={panelPriceWatt} 
+                        onChange={(e) => setPanelPriceWatt(e.target.value)}
+                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="w-full py-2 rounded-lg bg-primary hover:bg-white text-black font-display font-bold text-xs transition-all cursor-pointer shadow"
+                  >
+                    🚀 Save Solar Panel to Catalog
+                  </button>
+                </form>
               </div>
             </div>
 
