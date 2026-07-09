@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
@@ -9,7 +9,6 @@ export default function PageShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme, lang, toggleLang, toast, company, getActiveLimit, user, signOut } = useApp();
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   // Protected route block render guard
   if (!user && pathname !== '/login' && pathname !== '/customer-view') {
@@ -75,7 +74,7 @@ export default function PageShell({ children }) {
           </div>
 
           {/* Toolbar utilities */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* LTR/RTL Language Switch */}
             <button 
               onClick={toggleLang}
@@ -96,61 +95,34 @@ export default function PageShell({ children }) {
               </span>
             </button>
 
-            {/* Global User Profile Identity Card Block (Header Integrated for Instant Access) */}
+            {/* Global User Profile Identity Card Block (Header Integrated) */}
             {user && (
-              <div className="relative">
-                <div 
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className={`flex items-center gap-3 p-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-all ${
-                    lang === 'ur' ? 'flex-row-reverse text-right' : 'text-left'
-                  }`}
-                >
-                  {/* Dynamic Initials Avatar with premium dark gold outline */}
-                  <div className="size-9 rounded-full border-2 border-primary-container text-primary-container flex items-center justify-center font-bold text-xs bg-primary-container/10 font-mono shadow-[0_0_10px_rgba(253,184,19,0.15)]">
-                    {user.initials || getInitials(user.name)}
-                  </div>
-                  
-                  {/* User Details */}
-                  <div className="hidden sm:block">
-                    <div className="font-display font-bold text-white text-xs leading-none">{user.name}</div>
-                    <div className="text-slate-400 text-[10px] leading-none mt-1">{getTierBadgeText()}</div>
-                  </div>
-
-                  <span className="material-symbols-outlined text-slate-500 text-xs">
-                    {profileMenuOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
-                  </span>
+              <div className={`flex items-center gap-3 p-1.5 rounded-lg bg-white/5 border border-border-base/50 ${
+                lang === 'ur' ? 'flex-row-reverse text-right' : 'text-left'
+              }`}>
+                {/* Dynamic Initials Avatar with premium dark gold outline */}
+                <div className="size-8 rounded-full border-2 border-primary-container text-primary-container flex items-center justify-center font-bold text-xs bg-primary-container/10 font-mono shadow-[0_0_10px_rgba(253,184,19,0.15)]">
+                  {user.initials || getInitials(user.name)}
                 </div>
-
-                {/* Floating Dropdown Menu Card (Floats downward from header) */}
-                {profileMenuOpen && (
-                  <div className={`absolute top-12 mt-2 z-50 w-48 bg-surface-container-high border border-border-base rounded-xl shadow-2xl p-2 animate-fadeIn ${
-                    lang === 'ur' ? 'left-0 text-right' : 'right-0 text-left'
-                  }`}>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        router.push('/team-settings');
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white transition-all text-left rtl:text-right cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-sm">settings</span>
-                      <span>Account Settings</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        signOut();
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-all text-left rtl:text-right cursor-pointer border-t border-border-base/30 mt-1"
-                    >
-                      <span className="material-symbols-outlined text-sm text-red-400">logout</span>
-                      <span>Log Out</span>
-                    </button>
-                  </div>
-                )}
+                
+                {/* User Details */}
+                <div className="hidden sm:block">
+                  <div className="font-display font-bold text-white text-[11px] leading-none">{user.name}</div>
+                  <div className="text-slate-400 text-[9px] leading-none mt-1">{getTierBadgeText()}</div>
+                </div>
               </div>
+            )}
+
+            {/* Dedicated Explicit Sign Out Button next to user display */}
+            {user && (
+              <button 
+                type="button"
+                onClick={signOut}
+                className="size-9 rounded-lg bg-red-950/20 hover:bg-red-500 hover:text-white border border-red-500/20 text-red-400 flex items-center justify-center transition-colors cursor-pointer"
+                title={lang === 'ur' ? 'لاگ آؤٹ' : 'Log Out'}
+              >
+                <span className="material-symbols-outlined text-sm">logout</span>
+              </button>
             )}
           </div>
         </div>
