@@ -113,7 +113,7 @@ export default function Home() {
           {/* Banner content grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
             
-            {/* Left Column: Primary Copy (8 cols) */}
+            {/* Left Column: Primary Copy (7 cols) */}
             <div className={`lg:col-span-7 space-y-6 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>
               
               {/* Floating Glowing Badge */}
@@ -160,72 +160,36 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Scene Viewport */}
-              <div className="h-36 w-full flex items-center justify-center relative bg-black/50 border border-slate-800/50 rounded-xl overflow-hidden">
-                <div className={`absolute inset-0 transition-colors duration-700 ${
-                  solarActive ? 'bg-sky-950/20' : 'bg-black/90'
-                }`}></div>
+              {/* Scene Viewport - Photorealistic Cross-fade Images */}
+              <div className="h-44 w-full relative border border-slate-800/50 rounded-xl overflow-hidden shadow-inner">
+                
+                {/* 1. Blackout Dark Image Layer */}
+                <img 
+                  src="/solar_hero_dark.png" 
+                  alt="Blackout state" 
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                    !solarActive ? 'opacity-100' : 'opacity-0'
+                  }`} 
+                />
 
-                {solarActive ? (
-                  <div className="absolute top-3 right-6 size-8 bg-[#fdb813] rounded-full blur-sm animate-pulse shadow-[0_0_15px_#fdb813]"></div>
-                ) : (
-                  <div className="absolute top-3 right-6 size-6 bg-slate-400 rounded-full blur-[1px] shadow-[0_0_8px_#94a3b8] flex items-center justify-center overflow-hidden">
-                    <div className="size-5 bg-black rounded-full absolute -top-1 -left-1"></div>
-                  </div>
-                )}
+                {/* 2. Solar Active Bright Image Layer */}
+                <img 
+                  src="/solar_hero_banner.png" 
+                  alt="Solar Active state" 
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                    solarActive ? 'opacity-100' : 'opacity-0'
+                  }`} 
+                />
 
-                <div className="relative w-40 h-28 scale-85" style={{ perspective: '800px' }}>
-                  <div className="w-full h-full relative transition-transform duration-700" style={{ transformStyle: 'preserve-3d', transform: 'rotateX(60deg) rotateZ(-35deg)' }}>
-                    
-                    <div className="absolute inset-0 bg-slate-800/30 border border-slate-700/40 rounded" style={{ transform: 'translateZ(-10px)' }}></div>
-
-                    {/* House walls */}
-                    <div className={`absolute w-16 h-12 origin-bottom-left transition-colors duration-700 ${
-                      solarActive ? 'bg-slate-700' : 'bg-slate-900'
-                    }`} style={{ transform: 'rotateX(-90deg) translate3d(15px, 0px, 0px)' }}></div>
-
-                    <div className={`absolute w-16 h-12 origin-bottom-left border border-slate-800 transition-colors duration-700 ${
-                      solarActive ? 'bg-slate-600' : 'bg-slate-950'
-                    }`} style={{ transform: 'rotateX(-90deg) translate3d(15px, -15px, 0px)' }}>
-                      <div className={`absolute bottom-0 left-4 w-4 h-7 border border-slate-800 transition-colors duration-700 ${
-                        solarActive ? 'bg-amber-900' : 'bg-black'
-                      }`}></div>
-                      <div className={`absolute top-2 right-2 size-3 border border-slate-800 rounded transition-all duration-700 ${
-                        solarActive ? 'bg-[#ffe16d] shadow-[0_0_6px_#ffe16d]' : 'bg-slate-900'
-                      }`}></div>
-                    </div>
-
-                    <div className={`absolute w-16 h-12 origin-bottom-left border border-slate-800 transition-colors duration-700 ${
-                      solarActive ? 'bg-slate-650' : 'bg-slate-900'
-                    }`} style={{ transform: 'rotateY(90deg) rotateZ(-90deg) translate3d(0px, 0px, 15px)' }}>
-                      <div className={`absolute top-2 left-3 w-4 h-3 border border-slate-800 rounded transition-all duration-700 ${
-                        solarActive ? 'bg-[#ffe16d] shadow-[0_0_6px_#ffe16d]' : 'bg-slate-900'
-                      }`}></div>
-                    </div>
-
-                    {/* Roof */}
-                    <div className={`absolute w-18 h-18 origin-center transition-colors duration-700 ${
-                      solarActive ? 'bg-slate-550' : 'bg-slate-800'
-                    }`} style={{ transform: 'translate3d(14px, -16px, 12px) skewX(5deg)' }}>
-                      <div className={`absolute top-1.5 bottom-1.5 left-1.5 right-10 border rounded grid grid-cols-2 gap-0.5 p-0.5 transition-all duration-700 ${
-                        solarActive ? 'bg-[#0f2d59] border-[#4ea1de]/50 shadow-[0_0_4px_rgba(78,161,222,0.4)]' : 'bg-slate-900'
-                      }`}>
-                        <div className="bg-blue-600/30 border border-blue-400/20 rounded-sm"></div>
-                        <div className="bg-blue-600/30 border border-blue-400/20 rounded-sm"></div>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
+                {/* Badges Overlaid on top of render */}
                 {!solarActive && (
-                  <div className="absolute bottom-2 left-2 right-2 text-center bg-red-950/90 border border-red-500/20 px-2 py-0.5 rounded text-[8px] text-red-200 font-mono animate-pulse">
-                    🚨 Grid Load Shedding Active
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 text-center bg-red-950/90 border border-red-500/30 px-2 py-1 rounded text-[9px] text-red-200 font-mono animate-bounce shadow-md">
+                    🚨 Grid Load Shedding Active in Area
                   </div>
                 )}
                 {solarActive && (
-                  <div className="absolute bottom-2 left-2 right-2 text-center bg-emerald-950/90 border border-emerald-500/20 px-2 py-0.5 rounded text-[8px] text-emerald-200 font-mono">
-                    🔋 24/7 Clean Energy Secured
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 text-center bg-emerald-950/90 border border-emerald-500/30 px-2 py-1 rounded text-[9px] text-emerald-200 font-mono shadow-md">
+                    🔋 24/7 Solar Backup Engaged
                   </div>
                 )}
               </div>
@@ -234,11 +198,11 @@ export default function Home() {
               <button 
                 type="button"
                 onClick={() => setSolarActive(!solarActive)}
-                className={`w-full py-1.5 rounded-lg font-display text-[10px] font-bold transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5 ${
+                className={`w-full py-2.5 rounded-lg font-display text-xs font-bold transition-all cursor-pointer shadow-md flex items-center justify-center gap-2 ${
                   solarActive ? 'bg-red-500 hover:bg-red-400 text-white' : 'bg-primary hover:bg-white text-black'
                 }`}
               >
-                <span className="material-symbols-outlined text-xs">
+                <span className="material-symbols-outlined text-sm">
                   {solarActive ? 'power_off' : 'wb_sunny'}
                 </span>
                 {solarActive ? t.simToggleDark : t.simToggleActive}
@@ -258,7 +222,7 @@ export default function Home() {
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${
               company.billing_status === 'Active' 
                 ? 'bg-emerald-500/10 text-accent-emerald border-emerald-500/20' 
-                : 'bg-amber-500/10 text-accent-amber border-amber-500/20 animate-pulse'
+                : 'bg-amber-500/10 text-accent-amber border-emerald-500/20 animate-pulse'
             }`}>
               {company.billing_status === 'Active' ? t.activeText : t.verifyingText}
             </span>
