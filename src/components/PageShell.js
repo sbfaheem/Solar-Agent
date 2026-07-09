@@ -13,7 +13,7 @@ export default function PageShell({ children }) {
 
   // Protected route block render guard
   if (!user && pathname !== '/login' && pathname !== '/customer-view') {
-    return null; // Let the redirect hook handle it
+    return null; 
   }
 
   const menuItems = [
@@ -27,11 +27,10 @@ export default function PageShell({ children }) {
 
   const activeLimit = getActiveLimit();
 
-  // Tier Badge Resolver
   const getTierBadgeText = () => {
     if (company.plan === 'Silver') return 'Silver Agent';
     if (company.plan === 'Gold') return 'Gold Agent';
-    return 'Premium Agent'; // Platinum plan
+    return 'Premium Agent'; 
   };
 
   const getInitials = (name) => {
@@ -76,7 +75,7 @@ export default function PageShell({ children }) {
           </div>
 
           {/* Toolbar utilities */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {/* LTR/RTL Language Switch */}
             <button 
               onClick={toggleLang}
@@ -96,17 +95,72 @@ export default function PageShell({ children }) {
                 {theme === 'dark' ? 'light_mode' : 'dark_mode'}
               </span>
             </button>
+
+            {/* Global User Profile Identity Card Block (Header Integrated for Instant Access) */}
+            {user && (
+              <div className="relative">
+                <div 
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className={`flex items-center gap-3 p-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-all ${
+                    lang === 'ur' ? 'flex-row-reverse text-right' : 'text-left'
+                  }`}
+                >
+                  {/* Dynamic Initials Avatar with premium dark gold outline */}
+                  <div className="size-9 rounded-full border-2 border-primary-container text-primary-container flex items-center justify-center font-bold text-xs bg-primary-container/10 font-mono shadow-[0_0_10px_rgba(253,184,19,0.15)]">
+                    {user.initials || getInitials(user.name)}
+                  </div>
+                  
+                  {/* User Details */}
+                  <div className="hidden sm:block">
+                    <div className="font-display font-bold text-white text-xs leading-none">{user.name}</div>
+                    <div className="text-slate-400 text-[10px] leading-none mt-1">{getTierBadgeText()}</div>
+                  </div>
+
+                  <span className="material-symbols-outlined text-slate-500 text-xs">
+                    {profileMenuOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
+                  </span>
+                </div>
+
+                {/* Floating Dropdown Menu Card (Floats downward from header) */}
+                {profileMenuOpen && (
+                  <div className={`absolute top-12 mt-2 z-50 w-48 bg-surface-container-high border border-border-base rounded-xl shadow-2xl p-2 animate-fadeIn ${
+                    lang === 'ur' ? 'left-0 text-right' : 'right-0 text-left'
+                  }`}>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        router.push('/team-settings');
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white transition-all text-left rtl:text-right cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">settings</span>
+                      <span>Account Settings</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        signOut();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-all text-left rtl:text-right cursor-pointer border-t border-border-base/30 mt-1"
+                    >
+                      <span className="material-symbols-outlined text-sm text-red-400">logout</span>
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       <div className="flex flex-col lg:flex-row flex-1">
         {/* Navigation Sidebar Panel */}
-        <aside className={`w-full lg:w-64 bg-surface-base border-b lg:border-b-0 border-border-base/70 p-4 flex flex-col justify-between lg:h-[calc(100vh-64px)] lg:sticky lg:top-16 ${
+        <aside className={`w-full lg:w-64 bg-surface-base border-b lg:border-b-0 border-border-base/70 p-4 space-y-2 lg:h-[calc(100vh-64px)] lg:sticky lg:top-16 ${
           lang === 'ur' ? 'lg:border-l' : 'lg:border-r'
         }`}>
-          
-          {/* Menu Items */}
           <div className="space-y-1">
             {menuItems.map((item) => {
               const active = pathname === item.path;
@@ -127,67 +181,10 @@ export default function PageShell({ children }) {
             })}
           </div>
           
-          {/* User Identity Card Block & Dropdown Menu */}
-          {user && (
-            <div className="pt-4 border-t border-border-base/40 relative mt-4">
-              <div 
-                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className={`flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer transition-all ${
-                  lang === 'ur' ? 'flex-row-reverse text-right' : 'text-left'
-                }`}
-              >
-                {/* Dynamic Initials Avatar with premium dark gold outline */}
-                <div className="size-10 rounded-full border-2 border-primary-container text-primary-container flex items-center justify-center font-bold text-xs bg-primary-container/10 font-mono shadow-[0_0_10px_rgba(253,184,19,0.15)]">
-                  {user.initials || getInitials(user.name)}
-                </div>
-                
-                {/* User Details */}
-                <div className="flex-1 min-w-0">
-                  <div className="font-display font-bold text-white text-sm truncate">{user.name}</div>
-                  <div className="text-slate-400 text-xs truncate mt-0.5">{getTierBadgeText()}</div>
-                </div>
-
-                {/* Dropdown arrow toggle */}
-                <span className="material-symbols-outlined text-slate-500 text-sm">
-                  {profileMenuOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
-                </span>
-              </div>
-
-              {/* Floating Dropdown Menu Card */}
-              {profileMenuOpen && (
-                <div 
-                  onClick={(e) => e.stopPropagation()}
-                  className={`absolute bottom-16 z-50 w-full bg-surface-container-high border border-border-base rounded-xl shadow-2xl p-2 animate-fadeIn ${
-                    lang === 'ur' ? 'right-0 text-right' : 'left-0 text-left'
-                  }`}
-                >
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setProfileMenuOpen(false);
-                      router.push('/team-settings');
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white transition-all text-left rtl:text-right cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">settings</span>
-                    <span>Account Settings</span>
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setProfileMenuOpen(false);
-                      signOut();
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-all text-left rtl:text-right cursor-pointer border-t border-border-base/30 mt-1"
-                  >
-                    <span className="material-symbols-outlined text-sm text-red-400">logout</span>
-                    <span>Log Out</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
+          <div className="pt-4 border-t border-border-base/40 lg:hidden flex justify-between items-center text-xs font-mono">
+            <span className="text-slate-400">{company.name} ({company.plan} Tier)</span>
+            <span className="text-white font-bold">{company.proposals_generated} / {activeLimit}</span>
+          </div>
         </aside>
 
         {/* Dashboard workspace content area */}
