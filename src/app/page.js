@@ -92,8 +92,8 @@ export default function Home() {
     <PageShell>
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-12 animate-fadeIn" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
         
-        {/* Full-Bleed Cinematic Hero Banner Container */}
-        <section className="relative min-h-[450px] flex items-center p-6 sm:p-10 lg:p-12 rounded-3xl overflow-hidden border border-border-base/70 shadow-2xl">
+        {/* Full-Bleed Cinematic Hero Banner Container with isolate class to establish stacking context */}
+        <section className="relative min-h-[450px] flex items-center p-6 sm:p-10 lg:p-12 rounded-3xl overflow-hidden border border-border-base/70 shadow-2xl isolate">
           
           {/* Loop/High-Impact Background Video Tag */}
           <video 
@@ -108,7 +108,7 @@ export default function Home() {
           </video>
 
           {/* Translucent overlay for primary text contrast */}
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent rtl:bg-gradient-to-l rtl:from-slate-950/90 rtl:via-slate-950/60 rtl:to-transparent"></div>
+          <div className="absolute inset-0 -z-10 bg-slate-950/70 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent rtl:bg-gradient-to-l rtl:from-slate-950/90 rtl:via-slate-950/60 rtl:to-transparent"></div>
 
           {/* Banner content grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
