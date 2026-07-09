@@ -1,0 +1,120 @@
+{
+  "inverters": [
+    {
+      "id": "inv-1",
+      "brand_name": "Nitrox (Inverex)",
+      "model_name": "Nitrox 5kW Hybrid",
+      "capacity_kw": 5.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 240000,
+      "official_url": "https://inverex.com.pk"
+    },
+    {
+      "id": "inv-2",
+      "brand_name": "Nitrox (Inverex)",
+      "model_name": "Nitrox 10kW Hybrid",
+      "capacity_kw": 10.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 450000,
+      "official_url": "https://inverex.com.pk"
+    },
+    {
+      "id": "inv-3",
+      "brand_name": "Inverex",
+      "model_name": "Inverex 5kW Hybrid",
+      "capacity_kw": 5.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 240000,
+      "official_url": "https://inverex.com.pk"
+    },
+    {
+      "id": "inv-4",
+      "brand_name": "Solis",
+      "model_name": "Solis 5kW On-Grid",
+      "capacity_kw": 5.0,
+      "type": "On-Grid",
+      "estimated_base_price_pkr": 170000,
+      "official_url": "https://www.solisinverters.com"
+    },
+    {
+      "id": "inv-5",
+      "brand_name": "Huawei",
+      "model_name": "Huawei SUN2000-5KTL-M1",
+      "capacity_kw": 5.0,
+      "type": "On-Grid",
+      "estimated_base_price_pkr": 220000,
+      "official_url": "https://solar.huawei.com"
+    },
+    {
+      "id": "inv-6",
+      "brand_name": "GoodWe",
+      "model_name": "GoodWe GW5000-EH Hybrid",
+      "capacity_kw": 5.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 210000,
+      "official_url": "https://www.goodwe.com"
+    }
+  ],
+  "solar_panels": [
+    {
+      "id": "pan-1",
+      "manufacturer_name": "Longi",
+      "model_name": "Hi-Mo 7 / N-Type Bifacial",
+      "default_wattage": 580,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 40.0,
+      "official_url": "https://www.longi.com"
+    },
+    {
+      "id": "pan-2",
+      "manufacturer_name": "Jinko Solar",
+      "model_name": "Tiger Neo N-Type Bifacial",
+      "default_wattage": 575,
+      "cell_type": "Bifacial",
+      "price_per_watt_pkr": 42.5,
+      "official_url": "https://www.jinkosolar.com"
+    },
+    {
+      "id": "pan-3",
+      "manufacturer_name": "Canadian Solar",
+      "model_name": "TOPCon Bifacial Double Glass",
+      "default_wattage": 585,
+      "cell_type": "Mono PERC",
+      "price_per_watt_pkr": 42.5,
+      "official_url": "https://www.canadiansolar.com"
+    },
+    {
+      "id": "pan-4",
+      "manufacturer_name": "JA Solar",
+      "model_name": "DeepBlue 4.0 Pro N-Type",
+      "default_wattage": 580,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.0,
+      "official_url": "https://www.jasolar.com"
+    }
+  ],
+  "proposals": [
+    {
+      "id": "prop-1",
+      "customer_name": "Syed Bilal Faheem",
+      "installation_address": "House 123, Sector F-10, Islamabad",
+      "contact_number": "0301-3377675",
+      "email_address": "bilalfaheem47@gmail.com",
+      "status": "Draft",
+      "system_size_kw": 5.8,
+      "total_investment": 380000,
+      "created_at": "2026-07-10T01:42:00Z"
+    },
+    {
+      "id": "prop-2",
+      "customer_name": "Fahad Rizwan",
+      "installation_address": "45-C, DHA Phase 6, Lahore",
+      "contact_number": "0344-3160446",
+      "email_address": "fahad@rizwan.com",
+      "status": "Sent",
+      "system_size_kw": 10.0,
+      "total_investment": 650000,
+      "created_at": "2026-07-09T18:30:00Z"
+    }
+  ]
+}
