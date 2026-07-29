@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageShell from '../../components/PageShell';
 import { useApp } from '../../context/AppContext';
 import { saveLivePresentation } from '../../lib/firebaseService';
+import seedData from '../../../firebase/seed_data.json';
 
 export default function ConfigurationWizard() {
   const { 
@@ -19,6 +20,10 @@ export default function ConfigurationWizard() {
     formatPrice,
     showToast 
   } = useApp();
+
+  // Fail-safe hardware catalog fallback if local storage holds old 6-item cache
+  const activeInvertersList = (inverters && inverters.length >= 20) ? inverters : seedData.inverters;
+  const activePanelsList = (solarPanels && solarPanels.length >= 20) ? solarPanels : seedData.solar_panels;
 
   const [activeStep, setActiveStep] = useState(1); 
   const [profileMode, setProfileMode] = useState('ocr'); 
@@ -126,14 +131,14 @@ export default function ConfigurationWizard() {
 
   // Auto match inverter and panel
   useEffect(() => {
-    if (inverters.length > 0 && !calcParams.selectedInverter) {
-      const standardInv = inverters.find(i => i.capacity_kw === 5.0 && (i.type === 'Hybrid' || i.type === 'On-Grid')) || inverters[0];
+    if (activeInvertersList.length > 0 && !calcParams.selectedInverter) {
+      const standardInv = activeInvertersList.find(i => i.capacity_kw === 5.0 && (i.type === 'Hybrid' || i.type === 'On-Grid')) || activeInvertersList[0];
       setCalcParams(prev => ({ ...prev, selectedInverter: standardInv }));
     }
-    if (solarPanels.length > 0 && !calcParams.selectedPanel) {
-      setCalcParams(prev => ({ ...prev, selectedPanel: solarPanels[0] }));
+    if (activePanelsList.length > 0 && !calcParams.selectedPanel) {
+      setCalcParams(prev => ({ ...prev, selectedPanel: activePanelsList[0] }));
     }
-  }, [inverters, solarPanels]);
+  }, [activeInvertersList, activePanelsList]);
 
   // Dynamic calculations
   const calculateSystemSize = () => {
@@ -161,7 +166,7 @@ export default function ConfigurationWizard() {
   const paybackYears = parseFloat((totalCost / annualSavings).toFixed(1));
 
   // Filter Inverters & Batteries
-  const filteredInverters = inverters.filter(inv => {
+  const filteredInverters = activeInvertersList.filter(inv => {
     if (inverterCategory === 'All') return true;
     if (inverterCategory === 'Hybrid') return inv.type === 'Hybrid';
     if (inverterCategory === 'On-Grid') return inv.type === 'On-Grid';
@@ -171,7 +176,7 @@ export default function ConfigurationWizard() {
   });
 
   // Filter Solar Panels
-  const filteredPanels = solarPanels.filter(p => {
+  const filteredPanels = activePanelsList.filter(p => {
     const w = p.default_wattage || p.wattage || 580;
     if (panelCategory === 'All') return true;
     if (panelCategory === '575W-585W') return w >= 575 && w <= 585;
@@ -619,7 +624,7 @@ export default function ConfigurationWizard() {
                     <p className="text-xs text-slate-500 font-medium">On-Grid, Off-Grid, Hybrid Inverters & 48V Lithium-Ion Battery Storage</p>
                   </div>
                   <span className="text-xs font-mono font-bold text-slate-400">
-                    Showing {filteredInverters.length} of {inverters.length} models
+                    Showing {filteredInverters.length} of {activeInvertersList.length} models
                   </span>
                 </div>
 
@@ -629,9 +634,9 @@ export default function ConfigurationWizard() {
                     <button
                       key={cat}
                       onClick={() => setInverterCategory(cat)}
-                      className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                         inverterCategory === cat 
-                          ? 'bg-[#b45309] text-white shadow-sm' 
+                          ? 'bg-[#b45309] text-white shadow-sm ring-2 ring-[#b45309]/30' 
                           : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                       }`}
                     >
@@ -666,6 +671,8 @@ export default function ConfigurationWizard() {
                                 ? 'bg-purple-100 text-purple-800 border border-purple-300'
                                 : inv.type === 'On-Grid'
                                 ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                : inv.type === 'Off-Grid'
+                                ? 'bg-red-100 text-red-800 border border-red-300'
                                 : 'bg-amber-100 text-amber-800 border border-amber-300'
                             }`}>
                               {inv.type}
@@ -693,7 +700,7 @@ export default function ConfigurationWizard() {
                               onClick={e => e.stopPropagation()}
                               className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline pt-1"
                             >
-                              <span>🔗 Official Website & Live Prices</span>
+                              <span>🔗 Brand Website & Live Prices</span>
                               <span className="material-symbols-outlined text-xs">open_in_new</span>
                             </a>
                           )}
@@ -715,7 +722,7 @@ export default function ConfigurationWizard() {
                     <p className="text-xs text-slate-500 font-medium">Longi, Jinko, Canadian, JA, Trina (575W, 580W, 600W, 620W, 650W, 700W, 720W)</p>
                   </div>
                   <span className="text-xs font-mono font-bold text-slate-400">
-                    Showing {filteredPanels.length} of {solarPanels.length} models
+                    Showing {filteredPanels.length} of {activePanelsList.length} models
                   </span>
                 </div>
 
@@ -725,9 +732,9 @@ export default function ConfigurationWizard() {
                     <button
                       key={cat}
                       onClick={() => setPanelCategory(cat)}
-                      className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                         panelCategory === cat 
-                          ? 'bg-emerald-600 text-white shadow-sm' 
+                          ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30' 
                           : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                       }`}
                     >
