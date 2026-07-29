@@ -17,8 +17,11 @@ export default function PageShell({ children, headerTitle }) {
     toggleCurrency,
     toast, 
     company, 
+    distributors,
     getActiveLimit, 
     user, 
+    signInDistributor,
+    signInSuperAdmin,
     signOut, 
     viewMode, 
     setViewMode 
@@ -26,12 +29,10 @@ export default function PageShell({ children, headerTitle }) {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Protected route block render guard
   if (!user && pathname !== '/login' && pathname !== '/customer-view') {
     return null; 
   }
 
-  // Automatic path-to-view sync
   useEffect(() => {
     if (pathname === '/admin-desk') {
       setViewMode('admin');
@@ -40,18 +41,17 @@ export default function PageShell({ children, headerTitle }) {
     }
   }, [pathname]);
 
-  // Sidebar Menu Configs
   const workspaceMenuItems = [
     { label: 'Dashboard', urLabel: 'ڈیش بورڈ', path: '/', icon: 'grid_view' },
-    { label: 'Companies', urLabel: 'کمپنیاں', path: '/agent-hub', icon: 'domain' },
-    { label: 'Payments', urLabel: 'ادائیگیاں', path: '/team-settings', icon: 'payments' },
-    { label: 'Proposals', urLabel: 'پروپوزلز', path: '/configuration', icon: 'description' },
-    { label: 'Usage', urLabel: 'یوسیج', path: '/customer-view', icon: 'monitoring' },
+    { label: 'Client Projects', urLabel: 'کلائنٹ پراجیکٹس', path: '/agent-hub', icon: 'domain' },
+    { label: 'Payments & Billing', urLabel: 'ادائیگیاں', path: '/team-settings', icon: 'payments' },
+    { label: 'Solar Engineering', urLabel: 'انجینئرنگ', path: '/configuration', icon: 'description' },
+    { label: 'Live Presentation', urLabel: 'لائیو پیشکش', path: '/customer-view', icon: 'monitoring' },
   ];
 
   const adminMenuItems = [
     { label: 'Governance Desk', urLabel: 'گورننس ڈیسک', path: '/admin-desk', icon: 'shield_person' },
-    { label: 'Distributor Overview', urLabel: 'ڈسٹری بیوٹرز', path: '/agent-hub', icon: 'domain' },
+    { label: 'Distributor Hub', urLabel: 'ڈسٹری بیوٹرز', path: '/agent-hub', icon: 'domain' },
     { label: 'Payment Ledger', urLabel: 'لیجر', path: '/admin-desk', icon: 'payments' },
     { label: 'Tier Verification', urLabel: 'ٹیر سیکیورٹی', path: '/admin-desk', icon: 'verified' },
     { label: 'Workspace View', urLabel: 'ورک اسپیس ویو', path: '/', icon: 'home' }
@@ -72,10 +72,10 @@ export default function PageShell({ children, headerTitle }) {
 
   const getPageTitle = () => {
     if (headerTitle) return headerTitle;
-    if (pathname === '/team-settings') return 'Subscription Payment & Billing';
+    if (pathname === '/team-settings') return 'Distributor Subscription Payment & Billing';
     if (pathname === '/admin-desk') return 'Super Admin Verification & Governance Desk';
-    if (pathname === '/agent-hub') return 'Distributor Companies Workspace';
-    if (pathname === '/configuration') return 'Solar Engineering Proposals';
+    if (pathname === '/agent-hub') return 'Distributor Client Projects Hub';
+    if (pathname === '/configuration') return 'Solar Proposals Engineering';
     if (pathname === '/customer-view') return 'Live Presentation View';
     return 'Distributor Dashboard Workspace';
   };
@@ -127,6 +127,30 @@ export default function PageShell({ children, headerTitle }) {
                 </span>
               </div>
             </Link>
+
+            {/* Sidebar Dual-Role Toggle */}
+            <div className="bg-slate-100 dark:bg-[#0f1113] p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-xs font-bold font-display">
+              <button 
+                type="button"
+                onClick={() => { setViewMode('workspace'); router.push('/'); }}
+                className={`w-full py-1.5 px-3 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
+                  viewMode === 'workspace' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">domain</span>
+                <span>Distributor Portal</span>
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setViewMode('admin'); router.push('/admin-desk'); }}
+                className={`w-full py-1.5 px-3 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
+                  viewMode === 'admin' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">shield_person</span>
+                <span>Super Admin Desk</span>
+              </button>
+            </div>
 
             {/* Role Badge Indicator */}
             <div className={`p-3 rounded-xl border text-xs font-mono flex items-center justify-between ${
@@ -182,7 +206,9 @@ export default function PageShell({ children, headerTitle }) {
               </div>
               <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                 <div 
-                  className="h-full bg-[#b45309] rounded-full transition-all"
+                  className={`h-full rounded-full transition-all ${
+                    (company.proposals_generated || 0) >= activeLimit ? 'bg-red-500' : 'bg-[#b45309]'
+                  }`}
                   style={{ width: `${Math.min(100, ((company.proposals_generated || 0) / activeLimit) * 100)}%` }}
                 ></div>
               </div>
@@ -240,9 +266,29 @@ export default function PageShell({ children, headerTitle }) {
               )}
             </div>
 
-            {/* Utility Controls */}
+            {/* Utility Controls & Distributor Account Selector */}
             <div className="flex items-center gap-3">
-              
+
+              {/* Distributor Account Switcher Dropdown */}
+              <div className="hidden sm:block">
+                <select 
+                  value={user?.email || 'bilalfaheem47@gmail.com'}
+                  onChange={(e) => {
+                    if (e.target.value === 'superadmin@solaragent.pk') {
+                      signInSuperAdmin(e.target.value, 'demo');
+                    } else {
+                      signInDistributor(e.target.value, 'demo');
+                    }
+                  }}
+                  className="bg-slate-100 dark:bg-[#282a2d] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white px-3 py-1.5 rounded-xl text-xs font-bold font-mono cursor-pointer"
+                >
+                  <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (Silver - 35/35 Limit)</option>
+                  <option value="info@indussolar.pk">⚡ Indus Solar Systems (Platinum - 450/500)</option>
+                  <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (Gold - 120/250)</option>
+                  <option value="superadmin@solaragent.pk">👑 Super Admin Governance</option>
+                </select>
+              </div>
+
               {/* Currency Toggle */}
               <button 
                 onClick={toggleCurrency}
@@ -307,7 +353,6 @@ export default function PageShell({ children, headerTitle }) {
                     {user.initials || getInitials(user.name)}
                   </div>
 
-                  {/* PROMINENT LOGOUT BUTTON WITH RED HIGHLIGHT */}
                   <button 
                     onClick={signOut}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-red-500 transition-all"
