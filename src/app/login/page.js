@@ -13,15 +13,18 @@ export default function Login() {
     bankDetails,
     lang, 
     toggleLang, 
-    showToast 
+    showToast,
+    formatPrice,
+    currency,
+    toggleCurrency
   } = useApp();
 
   const [portalMode, setPortalMode] = useState('distributor'); // 'distributor' or 'admin'
   const [selectedDistributorAccount, setSelectedDistributorAccount] = useState('REGISTER_NEW'); 
 
-  // Sign In Form State
-  const [email, setEmail] = useState('kpkvolt@solaragent.pk');
-  const [password, setPassword] = useState('••••••••');
+  // Sign In Form State: Blank defaults for strict security (no pre-filled admin credentials)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [pendingError, setPendingError] = useState(null);
 
   // Dynamic Distributor Registration Form State
@@ -35,6 +38,10 @@ export default function Login() {
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [regModalData, setRegModalData] = useState(null);
   const [copiedIban, setCopiedIban] = useState(false);
+
+  // Legal Modals State
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   const translations = {
     en: {
@@ -57,19 +64,19 @@ export default function Login() {
       locationCityLabel: "LOCATION / CITY",
       locationCityPlaceholder: "Peshawar / Karachi",
       subTierLabel: "SUBSCRIPTION TIER PLAN",
-      silverPlanOpt: "Silver Plan (35 Proposals/mo - 35,000 PKR)",
-      goldPlanOpt: "Gold Tier Plan (60 Proposals/mo - 55,000 PKR)",
-      platPlanOpt: "Platinum Enterprise (100 Proposals/mo - 75,000 PKR)",
+      silverPlanOpt: `Silver Plan (35 Proposals/mo - ${formatPrice(35000)})`,
+      goldPlanOpt: `Gold Tier Plan (60 Proposals/mo - ${formatPrice(55000)})`,
+      platPlanOpt: `Platinum Enterprise (100 Proposals/mo - ${formatPrice(75000)})`,
       distWorkEmailLabel: "DISTRIBUTOR WORK EMAIL",
       accountPassLabel: "ACCOUNT PASSWORD",
-      provisionBtnText: "Submit Registration & View Payment Instructions",
+      provisionBtnText: "Submit Registration & View Wire Transfer Details",
       unlockWorkspaceBtnText: "Unlock Distributor Workspace",
       adminTitle: "Super Admin Governance Desk",
       adminSub: "Full system oversight, distributor approval & ledger management",
       adminEmailLabel: "SUPER ADMIN EMAIL",
       adminPassLabel: "GOVERNANCE PASSWORD",
       adminSubmitBtn: "Unlock Super Admin Governance Desk",
-      adminNote: "👑 Super Admin has global rights to view all registered distributors, verify receipts, and manage catalog settings.",
+      adminNote: "👑 Super Admin authentication is required to access governance tools. Enter registered admin credentials.",
       footerText: "© 2026 Solar Agent | B2B Solar SaaS Platform. Multi-Tenant Role Security Active."
     },
     ur: {
@@ -92,19 +99,19 @@ export default function Login() {
       locationCityLabel: "مقام / شہر",
       locationCityPlaceholder: "پشاور / کراچی",
       subTierLabel: "سبسکرپشن پلان کا انتخاب",
-      silverPlanOpt: "سلور پلان (35 پروپوزلز ماہانہ - 35,000 روپے)",
-      goldPlanOpt: "گولڈ ٹیر پلان (60 پروپوزلز ماہانہ - 55,000 روپے)",
-      platPlanOpt: "پلیٹینم انٹرپرائز (100 پروپوزلز ماہانہ - 75,000 روپے)",
+      silverPlanOpt: `سلور پلان (35 پروپوزلز ماہانہ - ${formatPrice(35000)})`,
+      goldPlanOpt: `گولڈ ٹیر پلان (60 پروپوزلز ماہانہ - ${formatPrice(55000)})`,
+      platPlanOpt: `پلیٹینم انٹرپرائز (100 پروپوزلز ماہانہ - ${formatPrice(75000)})`,
       distWorkEmailLabel: "ڈسٹری بیوٹر ورک ای میل",
       accountPassLabel: "اکاؤنٹ پاس ورڈ",
-      provisionBtnText: "درخواست جمع کریں اور پیمنٹ کی ہدایات دیکھیں",
+      provisionBtnText: "درخواست جمع کریں اور وائر ٹرانسفر کی تفصیلات دیکھیں",
       unlockWorkspaceBtnText: "ڈسٹری بیوٹر ورک اسپیس کھولیں",
       adminTitle: "سپر ایڈمن گورننس ڈیسک",
       adminSub: "مکمل سسٹم کنٹرول، ڈسٹری بیوٹر منظوری اور لیجر مینجمنٹ",
       adminEmailLabel: "سپر ایڈمن ای میل",
       adminPassLabel: "گورننس پاس ورڈ",
       adminSubmitBtn: "سپر ایڈمن گورننس ڈیسک کھولیں",
-      adminNote: "👑 سپر ایڈمن کو تمام رجسٹرڈ ڈسٹری بیوٹرز کا ڈیٹا دیکھنے، رسیدوں کی تصدیق کرنے اور کیٹلاگ سیٹنگز کا مکمل اختیار حاصل ہے۔",
+      adminNote: "👑 ایڈمن ٹولز تک رسائی کے لیے سپر ایڈمن لاگ ان ضروری ہے۔ اپنے کریڈنشلز درج کریں۔",
       footerText: "© 2026 سولر ایجنٹ | بی ٹو بی سولر ساس پلیٹ فارم۔ ملٹی ٹیننٹ سیکورٹی فعال ہے۔"
     }
   };
@@ -116,8 +123,10 @@ export default function Login() {
     setPendingError(null);
     if (val === 'REGISTER_NEW') {
       setEmail('');
+      setPassword('');
     } else {
       setEmail(val);
+      setPassword('');
     }
   };
 
@@ -172,6 +181,10 @@ export default function Login() {
 
   const handleAdminSignIn = (e) => {
     e.preventDefault();
+    if (!email || !password) {
+      showToast("⚠️ Please enter Super Admin Email and Password", "error");
+      return;
+    }
     signInSuperAdmin(email, password);
   };
 
@@ -197,12 +210,12 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Portal Switcher Buttons */}
+        {/* Portal Switcher & Controls Buttons */}
         <div className="flex items-center gap-3">
           <div className="flex bg-slate-200/80 p-1 rounded-xl gap-1 text-xs font-bold font-display border border-slate-300/60 shadow-xs">
             <button 
               type="button"
-              onClick={() => { setPortalMode('distributor'); setSelectedDistributorAccount('REGISTER_NEW'); setPendingError(null); }}
+              onClick={() => { setPortalMode('distributor'); setSelectedDistributorAccount('REGISTER_NEW'); setEmail(''); setPassword(''); setPendingError(null); }}
               className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
                 portalMode === 'distributor' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -213,7 +226,7 @@ export default function Login() {
 
             <button 
               type="button"
-              onClick={() => { setPortalMode('admin'); setEmail('superadmin@solaragent.pk'); setPendingError(null); }}
+              onClick={() => { setPortalMode('admin'); setEmail(''); setPassword(''); setPendingError(null); }}
               className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
                 portalMode === 'admin' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -222,6 +235,14 @@ export default function Login() {
               <span>{t.adminPortalBtn}</span>
             </button>
           </div>
+
+          <button 
+            onClick={toggleCurrency}
+            className="px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-amber-800 hover:text-amber-950 cursor-pointer shadow-xs font-mono"
+            title="Toggle Currency"
+          >
+            {currency} ⇄ {currency === 'PKR' ? 'USD' : 'PKR'}
+          </button>
 
           <button 
             onClick={toggleLang}
@@ -279,7 +300,7 @@ export default function Login() {
 
             <form onSubmit={handleSubmitDistributor} className="space-y-5">
               
-              {/* DISTRIBUTOR SELECT DROPDOWN (DYNAMICALLY RENDERED FROM DISTRIBUTORS STATE) */}
+              {/* DISTRIBUTOR SELECT DROPDOWN */}
               <div className="space-y-1.5">
                 <label className="text-xs font-extrabold text-[#b45309] uppercase tracking-wide block">
                   {t.selectDistributorLabel}
@@ -301,12 +322,25 @@ export default function Login() {
                 </select>
               </div>
 
-              {/* DYNAMIC REGISTRATION FIELDS (REVEALED WHEN REGISTER NEW DISTRIBUTOR IS SELECTED) */}
+              {/* DYNAMIC REGISTRATION FIELDS */}
               {selectedDistributorAccount === 'REGISTER_NEW' ? (
                 <div className="space-y-4 bg-[#fffbeb] p-5 rounded-2xl border border-[#fef08a] animate-fadeIn text-xs">
-                  <div className="text-xs font-extrabold text-[#854d0e] font-display uppercase border-b border-[#fef08a] pb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">badge</span>
-                    <span>{t.provSectionHeader}</span>
+                  <div className="text-xs font-extrabold text-[#854d0e] font-display uppercase border-b border-[#fef08a] pb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm">badge</span>
+                      <span>{t.provSectionHeader}</span>
+                    </span>
+                  </div>
+
+                  {/* Explicit Payment Gateway Notice */}
+                  <div className="bg-amber-100/70 p-3 rounded-xl border border-amber-300 text-amber-950 font-medium text-[11px] space-y-1">
+                    <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                      <span className="material-symbols-outlined text-sm">account_balance</span>
+                      <span>B2B Direct Wire Transfer Mode Active</span>
+                    </div>
+                    <p>
+                      Activations are currently verified via Direct Meezan Bank Wire Deposit. Digital card payment gateways are also supported inside Team Settings.
+                    </p>
                   </div>
 
                   {/* Company Name */}
@@ -384,6 +418,25 @@ export default function Login() {
                     </select>
                   </div>
 
+                  {/* Terms & Privacy Links */}
+                  <div className="pt-2 text-[10px] text-slate-500 font-sans flex items-center justify-center gap-4">
+                    <button 
+                      type="button" 
+                      onClick={() => setPrivacyModalOpen(true)}
+                      className="hover:underline text-[#b45309] font-bold cursor-pointer"
+                    >
+                      🔒 Privacy Policy
+                    </button>
+                    <span>•</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setTermsModalOpen(true)}
+                      className="hover:underline text-[#b45309] font-bold cursor-pointer"
+                    >
+                      📄 Terms of Service
+                    </button>
+                  </div>
+
                 </div>
               ) : (
                 /* EXISTING DISTRIBUTOR LOGIN FIELDS */
@@ -394,6 +447,7 @@ export default function Login() {
                     </label>
                     <input 
                       type="email" 
+                      placeholder="e.g. distributor@solaragent.pk"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
@@ -407,6 +461,7 @@ export default function Login() {
                     </label>
                     <input 
                       type="password" 
+                      placeholder="Enter account password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
@@ -434,7 +489,7 @@ export default function Login() {
 
           </div>
         ) : (
-          /* SUPER ADMIN GOVERNANCE PORTAL */
+          /* SUPER ADMIN GOVERNANCE PORTAL (STRICT EMPTY CREDENTIAL DEFAULTS) */
           <div className="space-y-6">
             <div className="border-b border-amber-200 pb-4 text-center space-y-2">
               <span className="size-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold mx-auto shadow-md">
@@ -449,6 +504,7 @@ export default function Login() {
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">{t.adminEmailLabel}</label>
                 <input 
                   type="email" 
+                  placeholder="Enter super admin email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono font-bold focus:outline-none shadow-xs"
@@ -460,9 +516,10 @@ export default function Login() {
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">{t.adminPassLabel}</label>
                 <input 
                   type="password" 
+                  placeholder="Enter governance password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono font-bold focus:outline-none shadow-xs"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
                   required
                 />
               </div>
@@ -496,7 +553,7 @@ export default function Login() {
                 </div>
                 <div>
                   <h3 className="font-display font-extrabold text-slate-900 text-lg">Registration Request Submitted</h3>
-                  <p className="text-xs text-slate-500 font-medium">Status: Pending Super Admin Approval & Verification</p>
+                  <p className="text-xs text-slate-500 font-medium">Status: Pending Super Admin Approval & Wire Verification</p>
                 </div>
               </div>
               <button 
@@ -514,7 +571,7 @@ export default function Login() {
                 <span>Automated Email Notification Policy</span>
               </div>
               <p className="leading-relaxed">
-                Once Super Admin receives your payment wire deposit and accepts the request, an automated email will be sent to your registered work email address (<strong className="font-mono text-slate-900">{regModalData.email}</strong>) stating:
+                Once Super Admin receives your Meezan Bank wire deposit and accepts the request, an automated email will be sent to your registered work email address (<strong className="font-mono text-slate-900">{regModalData.email}</strong>) stating:
               </p>
               <div className="p-3 bg-white border border-amber-300 rounded-xl font-mono text-amber-900 font-bold text-center">
                 "Your Account Has Been Successfully Created You Should Login Now"
@@ -563,9 +620,58 @@ export default function Login() {
         </div>
       )}
 
+      {/* PRIVACY POLICY MODAL */}
+      {privacyModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-4 shadow-2xl animate-scaleUp text-slate-900 text-xs">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="font-display font-extrabold text-lg">🔒 Solar Agent B2B Privacy Policy</h3>
+              <button onClick={() => setPrivacyModalOpen(false)} className="size-8 rounded-xl bg-slate-100 flex items-center justify-center">
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+            <div className="space-y-3 max-h-96 overflow-y-auto leading-relaxed text-slate-600">
+              <p><strong>1. Data Isolation & Confidentiality:</strong> Solar Agent enforces strict multi-tenant data isolation. Client proposals, project hardware specs, and pricing calculations generated by your distributor account are strictly isolated and never shared with other firms.</p>
+              <p><strong>2. Contact & Organization Details:</strong> Information collected during registration (company name, work email, contact numbers) is solely used for account provisioning, payment verification, and automated notification services.</p>
+              <p><strong>3. Security Standards:</strong> We implement encrypted communications and role-based access control (RBAC) to ensure unauthorized visitors cannot access distributor workspaces or administrative governance desks.</p>
+            </div>
+            <button onClick={() => setPrivacyModalOpen(false)} className="w-full py-3 bg-[#b45309] text-white font-extrabold rounded-xl text-xs">
+              Close Privacy Policy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TERMS OF SERVICE MODAL */}
+      {termsModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-4 shadow-2xl animate-scaleUp text-slate-900 text-xs">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="font-display font-extrabold text-lg">📄 Solar Agent Terms of Service</h3>
+              <button onClick={() => setTermsModalOpen(false)} className="size-8 rounded-xl bg-slate-100 flex items-center justify-center">
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+            <div className="space-y-3 max-h-96 overflow-y-auto leading-relaxed text-slate-600">
+              <p><strong>1. Distributor Subscription Terms:</strong> Distributors subscribe to monthly quota plans (Silver 35 proposals, Gold 60 proposals, Platinum 100 proposals). Account activation is subject to Super Admin wire deposit verification.</p>
+              <p><strong>2. Authorized Usage:</strong> Each distributor account is granted access strictly for commercial solar engineering proposal generation and project lead management.</p>
+              <p><strong>3. Super Admin Governance:</strong> Solar Agent reserves the right to review payment verification receipts and suspend unauthorized profiles violating terms.</p>
+            </div>
+            <button onClick={() => setTermsModalOpen(false)} className="w-full py-3 bg-[#b45309] text-white font-extrabold rounded-xl text-xs">
+              Close Terms of Service
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
-      <footer className="text-center text-xs text-slate-500 font-mono max-w-7xl mx-auto w-full pt-4">
-        {t.footerText}
+      <footer className="text-center text-xs text-slate-500 font-mono max-w-7xl mx-auto w-full pt-4 space-y-2">
+        <div className="flex items-center justify-center gap-4 text-[11px] font-sans">
+          <button onClick={() => setPrivacyModalOpen(true)} className="hover:underline text-slate-600 font-bold">Privacy Policy</button>
+          <span>•</span>
+          <button onClick={() => setTermsModalOpen(true)} className="hover:underline text-slate-600 font-bold">Terms of Service</button>
+        </div>
+        <p>{t.footerText}</p>
       </footer>
 
     </div>

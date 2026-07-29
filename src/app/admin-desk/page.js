@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import PageShell from '../../components/PageShell';
 import { useApp } from '../../context/AppContext';
 
 export default function AdminDesk() {
+  const router = useRouter();
   const { 
+    user,
     company, 
     distributors,
     approveDistributorRegistration,
@@ -29,6 +32,14 @@ export default function AdminDesk() {
     removeSolarPanel,
     formatPrice
   } = useApp();
+
+  // Role-Based Auth Protection Guard
+  useEffect(() => {
+    if (!user || user.role !== 'super_admin') {
+      showToast("🔒 Restricted Area: Super Admin Authorization Required", "error");
+      router.push('/login');
+    }
+  }, [user, router, showToast]);
 
   const [activeTab, setActiveTab] = useState('verification'); // 'verification', 'distributors', 'ledger', 'bank', 'catalog'
   const [channelFilter, setChannelFilter] = useState('All');
@@ -67,7 +78,8 @@ export default function AdminDesk() {
   const [panelPriceWatt, setPanelPriceWatt] = useState(40);
   const [panelCell, setPanelCell] = useState('N-Type TOPCon');
 
-  const pendingDistributorsCount = distributors.filter(d => d.status === 'Pending Verification' || d.status === 'Pending').length;
+  const pendingDistributors = distributors.filter(d => d.status === 'Pending Verification' || d.status === 'Pending');
+  const pendingDistributorsCount = pendingDistributors.length;
 
   const calculateChannelTotal = (chName) => {
     return transactions
@@ -89,27 +101,30 @@ export default function AdminDesk() {
       account_identifier: newPayId,
       reference_id: newPayRef,
       amount_pkr: Number(newPayAmount),
-      collector_agent: "Super Admin Desk"
+      collector_agent: `Manual Admin Verification Entry`
     });
     if (res) {
       setPaymentModalOpen(false);
     }
   };
 
-  const handleBankSubmit = (e) => {
+  const handleUpdateBankSubmit = (e) => {
     e.preventDefault();
     updateBankDetails(bankForm);
   };
 
   const handleAddInverterSubmit = async (e) => {
     e.preventDefault();
-    if (!invBrand || !invModel) return;
+    if (!invBrand || !invModel) {
+      showToast("Please fill in inverter brand and model", "error");
+      return;
+    }
     await addInverter({
       brand_name: invBrand,
       model_name: invModel,
       rated_kw: Number(invCapacity),
       type: invType,
-      estimated_price_pkr: Number(invPrice)
+      estimated_base_price_pkr: Number(invPrice)
     });
     setInvBrand('');
     setInvModel('');
@@ -117,7 +132,10 @@ export default function AdminDesk() {
 
   const handleAddPanelSubmit = async (e) => {
     e.preventDefault();
-    if (!panelMfg || !panelModel) return;
+    if (!panelMfg || !panelModel) {
+      showToast("Please fill in panel manufacturer and model", "error");
+      return;
+    }
     await addSolarPanel({
       manufacturer_name: panelMfg,
       model_name: panelModel,
@@ -129,480 +147,562 @@ export default function AdminDesk() {
     setPanelModel('');
   };
 
+  if (!user || user.role !== 'super_admin') {
+    return null;
+  }
+
   return (
-    <PageShell headerTitle="Super Admin Verification & Governance Desk">
+    <PageShell headerTitle="Super Admin Governance & Verification Desk">
       <main className="max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-8 animate-fadeIn text-[#0f172a] dark:text-[#f8fafc]">
         
-        {/* Top Header Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Governance Banner & Tab Switcher */}
+        <div className="bg-[#fffbeb] dark:bg-amber-950/40 border border-[#fef3c7] dark:border-amber-800 rounded-2xl p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-sm text-slate-800 dark:text-amber-200">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setPaymentModalOpen(true)}
-              className="px-5 py-2.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-sm">add_card</span>
-              <span>+ Record Installer Payment</span>
-            </button>
+            <div className="size-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold text-xl shadow-md">
+              <span className="material-symbols-outlined">shield_person</span>
+            </div>
+            <div>
+              <h2 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">
+                Super Admin Master Control & Verification
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 font-medium">
+                Verify wire deposits, approve distributor accounts, manage hardware catalogs, and oversee transactions ledger.
+              </p>
+            </div>
           </div>
 
-          {/* Main Tab Selector */}
-          <div className="flex flex-wrap bg-slate-100 dark:bg-[#282a2d] p-1 rounded-xl gap-1 text-xs font-bold font-display border border-slate-200 dark:border-slate-700">
+          <div className="flex bg-white dark:bg-black/40 p-1 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold font-display overflow-x-auto max-w-full">
             <button 
               onClick={() => setActiveTab('verification')}
-              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
-                activeTab === 'verification' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-[#0f172a]'
-              }`}
+              className={`px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'verification' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
             >
-              ⚡ Verification Desk ({pendingUpgradeRequests.length})
+              <span className="material-symbols-outlined text-sm">mark_email_unread</span>
+              <span>Pending Approvals ({pendingDistributorsCount + pendingUpgradeRequests.length})</span>
             </button>
             <button 
               onClick={() => setActiveTab('distributors')}
-              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
-                activeTab === 'distributors' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-[#0f172a]'
-              }`}
+              className={`px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'distributors' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
             >
-              🏢 Distributor Approvals ({pendingDistributorsCount})
+              <span className="material-symbols-outlined text-sm">domain</span>
+              <span>Distributors ({distributors.length})</span>
             </button>
             <button 
               onClick={() => setActiveTab('ledger')}
-              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
-                activeTab === 'ledger' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-[#0f172a]'
-              }`}
+              className={`px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'ledger' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
             >
-              🇵🇰 Payment Ledger ({transactions.length})
+              <span className="material-symbols-outlined text-sm">receipt_long</span>
+              <span>Transactions Ledger</span>
             </button>
             <button 
               onClick={() => setActiveTab('bank')}
-              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
-                activeTab === 'bank' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-[#0f172a]'
-              }`}
+              className={`px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'bank' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
             >
-              🏦 Bank Details CMS
+              <span className="material-symbols-outlined text-sm">account_balance</span>
+              <span>Bank Settings</span>
             </button>
             <button 
               onClick={() => setActiveTab('catalog')}
-              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
-                activeTab === 'catalog' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-[#0f172a]'
-              }`}
+              className={`px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'catalog' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
             >
-              Hardware CMS
+              <span className="material-symbols-outlined text-sm">precision_manufacturing</span>
+              <span>Hardware CMS</span>
             </button>
           </div>
         </div>
 
-        {/* SYSTEM NOTIFICATIONS LOG BANNER */}
-        {adminLogs && adminLogs.length > 0 && (
-          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl p-4 space-y-2 text-xs text-amber-900 dark:text-amber-200">
-            <div className="font-bold flex items-center gap-2 font-display uppercase tracking-wider text-amber-950 dark:text-amber-100">
-              <span className="material-symbols-outlined text-base">notifications</span>
-              <span>Super Admin Automated Notification & System Log Dispatch</span>
+        {/* System Logs Banner */}
+        {adminLogs.length > 0 && (
+          <div className="bg-slate-900 text-slate-100 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs font-mono">
+            <div className="flex justify-between items-center text-[#b45309] font-bold font-sans">
+              <span className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm">terminal</span>
+                <span>Super Admin Audit Stream</span>
+              </span>
+              <span className="text-[10px] text-slate-400">Live System Log Entries</span>
             </div>
-            <div className="space-y-1 font-mono text-[11px]">
-              {adminLogs.slice(0, 3).map((log, idx) => (
-                <div key={idx} className="bg-white/80 dark:bg-black/40 p-2 rounded-xl border border-amber-200 dark:border-amber-900/60 font-bold truncate">
-                  {log}
+            <div className="space-y-1 max-h-24 overflow-y-auto">
+              {adminLogs.slice(0, 4).map((log, i) => (
+                <div key={i} className="text-[11px] text-slate-300">{log}</div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 1: PENDING REGISTRATIONS & UPGRADE APPROVALS */}
+        {activeTab === 'verification' && (
+          <div className="space-y-8">
+            
+            {/* PENDING NEW DISTRIBUTOR REGISTRATIONS CARD */}
+            <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                  <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">
+                    Pending Distributor Registration Requests ({pendingDistributorsCount})
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Verify Meezan Bank wire deposits before dispatching automated approval email</p>
+                </div>
+                <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                  Approval Queue
+                </span>
+              </div>
+
+              {pendingDistributors.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 text-xs font-mono">
+                  ✓ No pending registration requests. All distributors are verified!
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingDistributors.map(d => (
+                    <div key={d.id} className="p-4 rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="size-8 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono">
+                            {d.name.slice(0, 2).toUpperCase()}
+                          </span>
+                          <div>
+                            <h4 className="font-extrabold text-slate-900 dark:text-white text-sm font-display">{d.name}</h4>
+                            <p className="text-xs text-slate-500 font-mono">{d.contact} | {d.city}</p>
+                          </div>
+                        </div>
+                        <div className="pt-1 flex items-center gap-2 font-mono text-xs">
+                          <span className="text-slate-600 dark:text-slate-400 font-bold">{d.email}</span>
+                          <span className="px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 font-bold text-[10px]">
+                            {d.plan} Plan ({d.limit} Quotes/mo)
+                          </span>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={() => approveDistributorRegistration(d.id)}
+                        className="px-5 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap"
+                      >
+                        <span className="material-symbols-outlined text-base">mark_email_read</span>
+                        <span>Accept & Dispatch Approval Email</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* PENDING TIER UPGRADE REQUESTS CARD */}
+            <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                  <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">
+                    Pending Plan Upgrades & Payment Receipts ({pendingUpgradeRequests.length})
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Verify attached payment receipts and expand distributor proposal quota</p>
+                </div>
+              </div>
+
+              {pendingUpgradeRequests.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 text-xs font-mono">
+                  ✓ No pending plan upgrade requests.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingUpgradeRequests.map(req => (
+                    <div key={req.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-black/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white font-display">{req.company_name}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900">
+                            {req.current_plan} ➔ {req.target_plan}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-mono">
+                          Amount: {formatPrice(req.amount_pkr)} | Ref: {req.reference_id} | Channel: {req.payment_channel}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {req.receipt_preview && (
+                          <button 
+                            onClick={() => setZoomReceipt(req.receipt_preview)}
+                            className="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-sm">visibility</span>
+                            <span>View Receipt</span>
+                          </button>
+                        )}
+                        
+                        <button 
+                          onClick={() => approveUpgradeRequestAndAutoUpgrade(req.id)}
+                          className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer"
+                        >
+                          Accept & Upgrade Quota
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 2: DISTRIBUTORS ROSTER */}
+        {activeTab === 'distributors' && (
+          <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
+              <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">
+                All Registered Solar EPC Distributors ({distributors.length})
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {distributors.map(d => (
+                <div key={d.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-black/20 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      {d.logo_url ? (
+                        <img src={d.logo_url} alt="Logo" className="size-8 rounded-full object-cover border border-[#b45309]" />
+                      ) : (
+                        <span className="size-8 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono">
+                          {d.name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white font-display">{d.name}</h4>
+                        <p className="text-[11px] text-slate-500 font-mono">{d.email}</p>
+                      </div>
+                    </div>
+
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono ${
+                      d.status === 'Verified' || d.status === 'Active'
+                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                        : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                    }`}>
+                      {d.status}
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center text-xs font-mono">
+                    <span className="font-bold text-slate-600 dark:text-slate-400">{d.plan} Tier ({d.limit} Quotes/mo)</span>
+                    <span className="font-bold text-[#b45309]">{d.used} Used</span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* 1. DISTRIBUTOR PLAN UPGRADE VERIFICATION DESK */}
-        {activeTab === 'verification' && (
-          <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl overflow-hidden shadow-sm space-y-4">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-amber-500/5">
-              <div className="flex items-center gap-3">
-                <span className="size-8 rounded-lg bg-[#b45309] text-white flex items-center justify-center font-bold">
-                  <span className="material-symbols-outlined text-base">verified</span>
-                </span>
-                <div>
-                  <h3 className="font-display font-extrabold text-slate-900 dark:text-white text-base">Pending Payment Receipts & Tier Upgrades</h3>
-                  <p className="text-xs text-slate-500 font-medium">Verify bank receipts, auto-upgrade distributor plans, and trigger automated approval emails</p>
-                </div>
+        {/* TAB 3: TRANSACTIONS LEDGER */}
+        {activeTab === 'ledger' && (
+          <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div>
+                <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">
+                  Distributor Payments Ledger ({transactions.length} Records)
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">Recorded subscription wire deposits and payment gateway receipts</p>
               </div>
-              <span className="text-xs font-mono font-bold px-3 py-1 bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 rounded-lg">
-                {pendingUpgradeRequests.length} Pending
-              </span>
+
+              <button 
+                onClick={() => setPaymentModalOpen(true)}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-display font-extrabold text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>
+                <span>Record Manual Payment</span>
+              </button>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse text-xs font-mono">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-black/40 border-b border-slate-200 dark:border-slate-800 text-slate-500 text-[10px] font-extrabold uppercase tracking-wider">
-                    <th className="px-6 py-3.5">DISTRIBUTOR COMPANY</th>
-                    <th className="px-6 py-3.5">UPGRADE TARGET</th>
-                    <th className="px-6 py-3.5">AMOUNT (PKR)</th>
-                    <th className="px-6 py-3.5">TRANSACTION REF</th>
-                    <th className="px-6 py-3.5">RECEIPT PROOF</th>
-                    <th className="px-6 py-3.5 text-right">AUTO-UPGRADE ACTION</th>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 text-[10px] uppercase">
+                    <th className="py-3 px-4">TXN ID</th>
+                    <th className="py-3 px-4">DISTRIBUTOR</th>
+                    <th className="py-3 px-4">PLAN</th>
+                    <th className="py-3 px-4">CHANNEL</th>
+                    <th className="py-3 px-4">AMOUNT</th>
+                    <th className="py-3 px-4">DATE</th>
+                    <th className="py-3 px-4">STATUS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {pendingUpgradeRequests.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-8 text-center text-slate-500 font-medium">
-                        No pending distributor plan upgrade verification requests right now.
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {transactions.map(t => (
+                    <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-black/20">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{t.id}</td>
+                      <td className="py-3.5 px-4 font-bold font-sans">{t.company_name}</td>
+                      <td className="py-3.5 px-4">{t.plan}</td>
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">{t.channel}</td>
+                      <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400">{formatPrice(t.amount_pkr)}</td>
+                      <td className="py-3.5 px-4 text-slate-400 text-[11px]">{t.date}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold">
+                          {t.status}
+                        </span>
                       </td>
                     </tr>
-                  ) : (
-                    pendingUpgradeRequests.map((req) => (
-                      <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-black/20">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 dark:text-white text-sm">{req.company_name}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{req.contact_email}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-mono uppercase ${
-                            req.target_plan === 'Platinum' ? 'bg-purple-100 text-purple-800' : 'bg-amber-100 text-amber-800'
-                          }`}>
-                            {req.current_plan} ➔ {req.target_plan}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-mono font-extrabold text-emerald-700 dark:text-emerald-400">
-                          {formatPrice(req.amount_pkr)}
-                        </td>
-                        <td className="px-6 py-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                          {req.reference_id}
-                        </td>
-                        <td className="px-6 py-4">
-                          <button 
-                            type="button"
-                            onClick={() => setZoomReceipt(req.receipt_preview)}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-300 dark:border-slate-700 font-mono text-xs font-bold cursor-pointer"
-                          >
-                            <span className="material-symbols-outlined text-sm text-[#b45309]">zoom_in</span>
-                            <span>View Receipt Screenshot</span>
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => approveUpgradeRequestAndAutoUpgrade(req.id)}
-                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5 ml-auto"
-                          >
-                            <span className="material-symbols-outlined text-sm">mark_email_read</span>
-                            <span>Accept & Dispatch Approval Email</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {/* 2. DISTRIBUTOR APPROVALS & REGISTRATION DESK */}
-        {activeTab === 'distributors' && (
-          <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl overflow-hidden shadow-sm space-y-4">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-              <div>
-                <h3 className="font-display font-extrabold text-slate-900 dark:text-white text-base">Registered Distributor Accounts & Pending Requests</h3>
-                <p className="text-xs text-slate-500 font-medium">Accept pending registrations, verify payment deposits, and send confirmation emails</p>
-              </div>
-              <span className="text-xs font-mono font-bold px-3 py-1 bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 rounded-lg">
-                {distributors.length} Total Registered
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-black/40 border-b border-slate-200 dark:border-slate-800 text-slate-500 text-[10px] font-extrabold uppercase tracking-wider">
-                    <th className="px-6 py-3.5">DISTRIBUTOR FIRM</th>
-                    <th className="px-6 py-3.5">WORK EMAIL</th>
-                    <th className="px-6 py-3.5">TIER PLAN</th>
-                    <th className="px-6 py-3.5">LOCATION</th>
-                    <th className="px-6 py-3.5">STATUS</th>
-                    <th className="px-6 py-3.5 text-right">SUPER ADMIN APPROVAL ACTION</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {distributors.map((d) => {
-                    const isPending = d.status === 'Pending Verification' || d.status === 'Pending';
-                    return (
-                      <tr key={d.id} className="hover:bg-slate-50 dark:hover:bg-black/20">
-                        <td className="px-6 py-4 flex items-center gap-3">
-                          <span className="size-9 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-xs">
-                            {d.name.slice(0, 2).toUpperCase()}
-                          </span>
-                          <div>
-                            <div className="font-bold text-slate-900 dark:text-white text-sm">{d.name}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">{d.contact || 'N/A'}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                          {d.email}
-                        </td>
-                        <td className="px-6 py-4 font-mono">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
-                            {d.plan} Plan ({d.limit} Quotes/mo)
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-mono text-slate-600 dark:text-slate-400">
-                          {d.city || 'Peshawar'}
-                        </td>
-                        <td className="px-6 py-4 font-mono">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                            isPending ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 animate-pulse' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                          }`}>
-                            {d.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {isPending ? (
-                            <button 
-                              onClick={() => approveDistributorRegistration(d.id)}
-                              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5 ml-auto"
-                            >
-                              <span className="material-symbols-outlined text-sm">mark_email_read</span>
-                              <span>Accept & Dispatch Approval Email</span>
-                            </button>
-                          ) : (
-                            <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-end gap-1">
-                              <span className="material-symbols-outlined text-sm">check_circle</span>
-                              <span>Account Verified & Active</span>
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* 3. PAKISTANI PAYMENT LEDGER VIEW */}
-        {activeTab === 'ledger' && (
-          <div className="space-y-6">
-            
-            {/* Bento Bar Breakdown */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-4 shadow-sm space-y-1">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-                  <span>📱 Easypaisa</span>
-                </div>
-                <div className="font-display font-extrabold text-base text-[#0f172a] dark:text-white">
-                  {formatPrice(calculateChannelTotal('Easypaisa'))}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-4 shadow-sm space-y-1">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-red-700 dark:text-red-400">
-                  <span>📱 JazzCash</span>
-                </div>
-                <div className="font-display font-extrabold text-base text-[#0f172a] dark:text-white">
-                  {formatPrice(calculateChannelTotal('JazzCash'))}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-4 shadow-sm space-y-1">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-700 dark:text-blue-400">
-                  <span>💳 Cards</span>
-                </div>
-                <div className="font-display font-extrabold text-base text-[#0f172a] dark:text-white">
-                  {formatPrice(calculateChannelTotal('Cards'))}
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-4 shadow-sm space-y-1">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-400">
-                  <span>⚡ SBP Raast</span>
-                </div>
-                <div className="font-display font-extrabold text-base text-[#0f172a] dark:text-white">
-                  {formatPrice(calculateChannelTotal('Raast'))}
-                </div>
-              </div>
-            </div>
-
-            {/* Full Transaction Ledger Table */}
-            <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl overflow-hidden shadow-sm">
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">Transaction History Ledger</h3>
-                <span className="text-xs font-mono font-bold text-slate-400">Showing {filteredTransactions.length} records</span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-black/40 border-b border-slate-200 dark:border-slate-800 text-slate-500 text-[10px] font-extrabold uppercase tracking-wider">
-                      <th className="px-6 py-3.5">TXN ID</th>
-                      <th className="px-6 py-3.5">COMPANY NAME</th>
-                      <th className="px-6 py-3.5">PAYMENT CHANNEL</th>
-                      <th className="px-6 py-3.5">ACCOUNT / IDENTIFIER</th>
-                      <th className="px-6 py-3.5">REFERENCE ID</th>
-                      <th className="px-6 py-3.5">AMOUNT (PKR)</th>
-                      <th className="px-6 py-3.5">TIMESTAMP</th>
-                      <th className="px-6 py-3.5 text-right">STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
-                    {filteredTransactions.map((txn) => (
-                      <tr key={txn.id} className="hover:bg-slate-50 dark:hover:bg-black/20">
-                        <td className="px-6 py-4 font-bold text-[#b45309]">{txn.id}</td>
-                        <td className="px-6 py-4 font-bold font-sans text-slate-900 dark:text-white">{txn.company_name}</td>
-                        <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{txn.channel}</td>
-                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{txn.account_identifier}</td>
-                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{txn.reference_id}</td>
-                        <td className="px-6 py-4 font-extrabold text-emerald-700 dark:text-emerald-400">{formatPrice(txn.amount_pkr)}</td>
-                        <td className="px-6 py-4 text-slate-400 text-[11px]">{txn.date}</td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
-                            {txn.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* 4. BANK WIRE DETAILS CMS */}
+        {/* TAB 4: BANK SETTINGS */}
         {activeTab === 'bank' && (
-          <div className="max-w-2xl mx-auto bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 max-w-2xl">
             <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
-              <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">Meezan Bank Direct Wire Account CMS</h3>
-              <p className="text-xs text-slate-500 font-medium">Update official bank transfer details displayed across distributor payment modals</p>
+              <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">
+                Official Bank Wire Deposit Settings (Meezan Bank)
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">Update account numbers and IBAN displayed to distributors during registration</p>
             </div>
 
-            <form onSubmit={handleBankSubmit} className="space-y-4 text-xs font-mono">
+            <form onSubmit={handleUpdateBankSubmit} className="space-y-4 text-xs font-mono">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase font-sans">Bank Name</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">BANK NAME</label>
                 <input 
                   type="text" 
-                  value={bankForm.bankName} 
+                  value={bankForm.bankName}
                   onChange={e => setBankForm({ ...bankForm, bankName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
+                  className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase font-sans">Account Title</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">ACCOUNT TITLE</label>
                 <input 
                   type="text" 
-                  value={bankForm.accountTitle} 
+                  value={bankForm.accountTitle}
                   onChange={e => setBankForm({ ...bankForm, accountTitle: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
+                  className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase font-sans">Account Number</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">ACCOUNT NUMBER</label>
                   <input 
                     type="text" 
-                    value={bankForm.accountNumber} 
+                    value={bankForm.accountNumber}
                     onChange={e => setBankForm({ ...bankForm, accountNumber: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
+                    className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase font-sans">IBAN Number</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">IBAN NUMBER</label>
                   <input 
                     type="text" 
-                    value={bankForm.iban} 
+                    value={bankForm.iban}
                     onChange={e => setBankForm({ ...bankForm, iban: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
+                    className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
 
               <button 
                 type="submit"
-                className="w-full py-3 bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs rounded-xl shadow-md cursor-pointer transition-all flex items-center justify-center gap-2 mt-2"
+                className="w-full py-3.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm">save</span>
-                <span>Save Bank Account Details in CMS</span>
+                Save Official Wire Account Details
               </button>
             </form>
           </div>
         )}
 
+        {/* TAB 5: HARDWARE CMS */}
+        {activeTab === 'catalog' && (
+          <div className="space-y-8">
+            
+            {/* Add Inverter & Panel Forms */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Add Inverter Form */}
+              <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 className="font-display font-extrabold text-slate-900 dark:text-white text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
+                  ➕ Add Solar Inverter / Battery Model
+                </h3>
+                <form onSubmit={handleAddInverterSubmit} className="space-y-3 text-xs font-mono">
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Brand (e.g. Inverex, Growatt, Solis)"
+                    value={invBrand}
+                    onChange={e => setInvBrand(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                  />
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Model Name (e.g. Nitrox 12kW Hybrid)"
+                    value={invModel}
+                    onChange={e => setInvModel(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input 
+                      type="number" 
+                      placeholder="Rated kW"
+                      value={invCapacity}
+                      onChange={e => setInvCapacity(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                    />
+                    <select 
+                      value={invType}
+                      onChange={e => setInvType(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-sans"
+                    >
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="On-Grid">On-Grid</option>
+                      <option value="Off-Grid">Off-Grid</option>
+                      <option value="Lithium Battery">Lithium Battery</option>
+                    </select>
+                  </div>
+                  <input 
+                    type="number" 
+                    placeholder="Estimated Base Price PKR"
+                    value={invPrice}
+                    onChange={e => setInvPrice(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                  />
+                  <button 
+                    type="submit"
+                    className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-display font-extrabold rounded-xl shadow-md text-xs"
+                  >
+                    Add Inverter to Catalog
+                  </button>
+                </form>
+              </div>
+
+              {/* Add Solar Panel Form */}
+              <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 className="font-display font-extrabold text-slate-900 dark:text-white text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
+                  ➕ Add Solar Panel Model
+                </h3>
+                <form onSubmit={handleAddPanelSubmit} className="space-y-3 text-xs font-mono">
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Manufacturer (e.g. Jinko, Longi, JA)"
+                    value={panelMfg}
+                    onChange={e => setPanelMfg(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                  />
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Model Name (e.g. Tiger Neo 585W)"
+                    value={panelModel}
+                    onChange={e => setPanelModel(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input 
+                      type="number" 
+                      placeholder="Wattage (W)"
+                      value={panelWattage}
+                      onChange={e => setPanelWattage(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                    />
+                    <input 
+                      type="number" 
+                      placeholder="Price / Watt PKR"
+                      value={panelPriceWatt}
+                      onChange={e => setPanelPriceWatt(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                    />
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Cell Tech (e.g. N-Type TOPCon)"
+                    value={panelCell}
+                    onChange={e => setPanelCell(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                  />
+                  <button 
+                    type="submit"
+                    className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-display font-extrabold rounded-xl shadow-md text-xs"
+                  >
+                    Add Solar Panel to Catalog
+                  </button>
+                </form>
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
       </main>
 
-      {/* Receipt Screenshot Zoom Modal */}
-      {zoomReceipt && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#181a1d] border border-[#2d3137] rounded-3xl p-6 max-w-xl w-full space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center">
-              <h3 className="font-display font-bold text-white text-sm">Payment Receipt Transfer Screenshot</h3>
-              <button 
-                onClick={() => setZoomReceipt(null)}
-                className="size-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer"
-              >
+      {/* Manual Payment Record Modal */}
+      {paymentModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl animate-scaleUp text-slate-900 dark:text-white">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
+              <h3 className="font-display font-extrabold text-base">Record Payment Entry</h3>
+              <button onClick={() => setPaymentModalOpen(false)} className="size-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <span className="material-symbols-outlined text-base">close</span>
               </button>
             </div>
-            <div className="rounded-2xl overflow-hidden border border-slate-700 max-h-96">
-              <img src={zoomReceipt} alt="Bank Deposit Receipt" className="w-full h-full object-cover" />
-            </div>
-            <button 
-              onClick={() => setZoomReceipt(null)}
-              className="w-full py-2.5 bg-[#b45309] text-white font-bold text-xs rounded-xl cursor-pointer"
-            >
-              Close Receipt Zoom
-            </button>
+
+            <form onSubmit={handleCreatePaymentRecord} className="space-y-4 text-xs font-mono">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">DISTRIBUTOR NAME</label>
+                <input 
+                  type="text" 
+                  value={newPayComp} 
+                  onChange={e => setNewPayComp(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">PLAN</label>
+                  <select 
+                    value={newPayPlan} 
+                    onChange={e => setNewPayPlan(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-sans"
+                  >
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Platinum">Platinum</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">AMOUNT PKR</label>
+                  <input 
+                    type="number" 
+                    value={newPayAmount} 
+                    onChange={e => setNewPayAmount(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">CHANNEL</label>
+                <input 
+                  type="text" 
+                  value={newPayChannel} 
+                  onChange={e => setNewPayChannel(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl"
+                />
+              </div>
+
+              <button type="submit" className="w-full py-3.5 bg-amber-600 text-white font-display font-extrabold rounded-xl shadow-md text-xs">
+                Save Record to Ledger
+              </button>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Record Payment Modal */}
-      {paymentModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h3 className="font-display font-extrabold text-slate-900 dark:text-white text-base">Record Installer Offline Payment</h3>
-              <button onClick={() => setPaymentModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleCreatePaymentRecord} className="space-y-3 text-xs font-mono">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 font-sans uppercase">Installer Company Name</label>
-                <input type="text" value={newPayComp} onChange={e=>setNewPayComp(e.target.value)} required className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border rounded-xl font-bold" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 font-sans uppercase">Selected Plan</label>
-                  <select value={newPayPlan} onChange={e=>setNewPayPlan(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border rounded-xl font-bold font-sans">
-                    <option value="Silver">Silver Plan</option>
-                    <option value="Gold">Gold Tier</option>
-                    <option value="Platinum">Platinum Enterprise</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 font-sans uppercase">Payment Channel</label>
-                  <select value={newPayChannel} onChange={e=>setNewPayChannel(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border rounded-xl font-bold font-sans">
-                    <option value="Easypaisa">Easypaisa</option>
-                    <option value="JazzCash">JazzCash</option>
-                    <option value="Cards (PayPak)">Cards (PayPak)</option>
-                    <option value="SBP Raast">SBP Raast</option>
-                    <option value="Sadapay/Nayapay">SadaPay / NayaPay</option>
-                    <option value="Cash Voucher">OTC Cash</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 font-sans uppercase">Amount (PKR)</label>
-                  <input type="number" value={newPayAmount} onChange={e=>setNewPayAmount(e.target.value)} required className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border rounded-xl font-bold" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 font-sans uppercase">Reference ID</label>
-                  <input type="text" value={newPayRef} onChange={e=>setNewPayRef(e.target.value)} required className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border rounded-xl font-bold" />
-                </div>
-              </div>
-              <button type="submit" className="w-full py-3 bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs rounded-xl shadow-md cursor-pointer mt-2">
-                Record Payment Entry
-              </button>
-            </form>
+      {/* Zoom Receipt Modal */}
+      {zoomReceipt && (
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full space-y-4 text-right">
+            <button onClick={() => setZoomReceipt(null)} className="px-4 py-2 bg-white rounded-xl text-slate-900 font-bold text-xs">
+              Close Preview ✕
+            </button>
+            <img src={zoomReceipt} alt="Receipt Preview" className="w-full max-h-[80vh] object-contain rounded-2xl border" />
           </div>
         </div>
       )}
