@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
@@ -13,40 +13,47 @@ export default function PageShell({ children, headerTitle }) {
     toggleTheme, 
     lang, 
     toggleLang, 
-    currency,
-    toggleCurrency,
-    toast, 
     company, 
-    distributors,
-    getActiveLimit, 
-    user, 
+    getActiveLimit,
+    toast,
+    user,
     signInDistributor,
     signInSuperAdmin,
-    signOut, 
-    viewMode, 
-    setViewMode 
+    signOut,
+    viewMode,
+    setViewMode,
+    currency,
+    toggleCurrency,
+    updateCompanyLogo
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const avatarInputRef = useRef(null);
 
-  if (!user && pathname !== '/login' && pathname !== '/customer-view') {
-    return null; 
-  }
-
-  useEffect(() => {
-    if (pathname === '/admin-desk') {
-      setViewMode('admin');
-    } else if (pathname !== '/login' && pathname !== '/customer-view') {
-      setViewMode('workspace');
+  const handleAvatarClick = () => {
+    if (avatarInputRef.current) {
+      avatarInputRef.current.click();
     }
-  }, [pathname]);
+  };
+
+  const handleAvatarFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (evt.target.result) {
+        updateCompanyLogo(evt.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const workspaceMenuItems = [
-    { label: 'Dashboard', urLabel: 'ڈیش بورڈ', path: '/', icon: 'grid_view' },
-    { label: 'Client Projects', urLabel: 'کلائنٹ پراجیکٹس', path: '/agent-hub', icon: 'domain' },
-    { label: 'Payments & Billing', urLabel: 'ادائیگیاں', path: '/team-settings', icon: 'payments' },
-    { label: 'Solar Engineering', urLabel: 'انجینئرنگ', path: '/configuration', icon: 'description' },
-    { label: 'Live Presentation', urLabel: 'لائیو پیشکش', path: '/customer-view', icon: 'monitoring' },
+    { label: 'Showcase Hub', urLabel: 'شوکیس ہب', path: '/', icon: 'space_dashboard' },
+    { label: 'Project Hub', urLabel: 'پراجیکٹ ہب', path: '/agent-hub', icon: 'folder_open' },
+    { label: 'Hardware Config', urLabel: 'ہارڈویئر کنفیگریشن', path: '/configuration', icon: 'settings_suggest' },
+    { label: 'Clearance Desk', urLabel: 'کلیئرنس ڈیسک', path: '/customer-view', icon: 'present_to_all' },
+    { label: 'Team Settings', urLabel: 'ٹیم سیٹنگز', path: '/team-settings', icon: 'manage_accounts' }
   ];
 
   const adminMenuItems = [
@@ -62,12 +69,12 @@ export default function PageShell({ children, headerTitle }) {
 
   const getTierBadgeText = () => {
     if (user?.role === 'super_admin' || viewMode === 'admin') return '👑 SUPER ADMIN';
-    return `DISTRIBUTOR (${company.plan || 'Silver'})`;
+    return `${company.plan || 'Silver'} Plan`;
   };
 
   const getInitials = (name) => {
-    if (!name) return 'SA';
-    return name.split(' ').map(w => w[0]).join('').toUpperCase();
+    if (!name) return 'DS';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   };
 
   const getPageTitle = () => {
@@ -87,6 +94,15 @@ export default function PageShell({ children, headerTitle }) {
         : 'bg-[#f8fafc] text-[#1e293b]'
     }`} dir={lang === 'ur' ? 'rtl' : 'ltr'}>
       
+      {/* Hidden File Input for Avatar / Company Logo Upload */}
+      <input 
+        type="file" 
+        ref={avatarInputRef} 
+        accept="image/*" 
+        onChange={handleAvatarFileChange} 
+        className="hidden" 
+      />
+
       {/* Toast Alert Overlay */}
       {toast && (
         <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl border shadow-2xl flex items-center gap-3 animate-bounce font-medium text-xs ${
@@ -152,23 +168,6 @@ export default function PageShell({ children, headerTitle }) {
               </button>
             </div>
 
-            {/* Role Badge Indicator */}
-            <div className={`p-3 rounded-xl border text-xs font-mono flex items-center justify-between ${
-              user?.role === 'super_admin'
-                ? 'bg-amber-950/40 border-amber-800 text-amber-300'
-                : 'bg-slate-50 dark:bg-black/30 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-            }`}>
-              <div className="flex items-center gap-2 truncate">
-                <span className="material-symbols-outlined text-base">
-                  {user?.role === 'super_admin' ? 'shield_person' : 'domain'}
-                </span>
-                <span className="font-bold truncate">{user?.company_name || 'Distributor Portal'}</span>
-              </div>
-              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-[#b45309] text-white">
-                {company.plan || 'Silver'}
-              </span>
-            </div>
-
             {/* Navigation Menu Links */}
             <nav className="space-y-1">
               {activeMenuItems.map((item) => {
@@ -177,7 +176,7 @@ export default function PageShell({ children, headerTitle }) {
                   <Link
                     key={item.path}
                     href={item.path}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-display font-extrabold text-xs transition-all cursor-pointer ${
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-display text-xs font-bold transition-all ${
                       isActive
                         ? 'bg-[#b45309] text-white shadow-sm'
                         : theme === 'dark'
@@ -193,9 +192,11 @@ export default function PageShell({ children, headerTitle }) {
             </nav>
           </div>
 
-          <div className="space-y-3 mt-6">
-            {/* Bottom Quota Progress Meter */}
-            <div className={`p-4 rounded-xl border space-y-2 ${
+          {/* Quota Progress & Logout Footer */}
+          <div className="pt-6 space-y-4 border-t border-slate-200 dark:border-slate-800">
+            
+            {/* Distributor Quota Status Card */}
+            <div className={`p-3.5 rounded-xl border space-y-2 ${
               theme === 'dark' ? 'bg-[#0f1113] border-[#2d3137]' : 'bg-slate-50 border-slate-200'
             }`}>
               <div className="flex justify-between items-center text-xs">
@@ -282,9 +283,11 @@ export default function PageShell({ children, headerTitle }) {
                   }}
                   className="bg-slate-100 dark:bg-[#282a2d] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white px-3 py-1.5 rounded-xl text-xs font-bold font-mono cursor-pointer"
                 >
-                  <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (Silver - 35/35 Limit)</option>
-                  <option value="info@indussolar.pk">⚡ Indus Solar Systems (Platinum - 450/500)</option>
-                  <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (Gold - 120/250)</option>
+                  <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (Silver Plan)</option>
+                  <option value="info@khybergreen.pk">⚡ Khyber Green Energy (Silver Plan)</option>
+                  <option value="google.partner@solaragent.pk">⚡ Google Partner Solar EPC (Silver Plan)</option>
+                  <option value="info@indussolar.pk">⚡ Indus Solar Systems (Platinum Tier)</option>
+                  <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (Gold Plan)</option>
                   <option value="superadmin@solaragent.pk">👑 Super Admin Governance</option>
                 </select>
               </div>
@@ -331,7 +334,7 @@ export default function PageShell({ children, headerTitle }) {
                 </span>
               </button>
 
-              {/* User Profile Pill & Prominent Logout Button */}
+              {/* DYNAMIC DISTRIBUTOR NAME, PLAN BADGE & PROFILE PHOTO UPLOADER */}
               {user && (
                 <div className={`flex items-center gap-3 pl-3 pr-2 py-1 rounded-xl border ${
                   theme === 'dark'
@@ -339,23 +342,42 @@ export default function PageShell({ children, headerTitle }) {
                     : 'bg-[#f8fafc] border-[#cbd5e1]'
                 }`}>
                   <div className="text-right hidden sm:block">
-                    <div className={`font-display font-bold text-xs leading-none ${
+                    <div className={`font-display font-extrabold text-xs leading-none ${
                       theme === 'dark' ? 'text-white' : 'text-[#0f172a]'
                     }`}>
-                      {user.name}
+                      {company.name || user.name || user.company_name || 'Distributor'}
                     </div>
-                    <div className="text-[#94a3b8] text-[9px] font-mono font-bold leading-none mt-1 uppercase">
+                    <div className="text-[#b45309] dark:text-amber-400 text-[9px] font-mono font-bold leading-none mt-1 uppercase">
                       {getTierBadgeText()}
                     </div>
                   </div>
 
-                  <div className="size-8 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm">
-                    {user.initials || getInitials(user.name)}
+                  {/* Clickable Avatar Circle with Hover Camera Overlay */}
+                  <div 
+                    onClick={handleAvatarClick}
+                    title="Click to upload company logo or profile picture"
+                    className="size-9 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm relative group cursor-pointer overflow-hidden ring-2 ring-[#b45309]/30"
+                  >
+                    {(company?.logo_url || user?.logo_url) ? (
+                      <img 
+                        src={company?.logo_url || user?.logo_url} 
+                        alt="Distributor Logo" 
+                        className="w-full h-full object-cover rounded-full" 
+                      />
+                    ) : (
+                      <span>{getInitials(company.name || user.name)}</span>
+                    )}
+
+                    {/* Camera Upload Overlay */}
+                    <div className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+                      <span className="material-symbols-outlined text-xs">photo_camera</span>
+                    </div>
                   </div>
 
+                  {/* Prominent Red Logout Button */}
                   <button 
                     onClick={signOut}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-red-500 transition-all"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-red-500 transition-all ml-1"
                     title="Log Out from Portal"
                   >
                     <span className="material-symbols-outlined text-sm">logout</span>

@@ -59,17 +59,18 @@ export const AppProvider = ({ children }) => {
     proposals_generated: 35,
     billing_status: "Active",
     receipt_uploaded: null,
-    override_quota: 0
+    override_quota: 0,
+    logo_url: null
   });
 
   // Registered Distributors List with Statuses (Active/Verified vs Pending Verification)
   const [distributors, setDistributors] = useState([
-    { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 35, status: 'Active', date: '2026-06-12', city: 'Islamabad', contact: '+92 300 1122334' },
-    { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 450, limit: 500, status: 'Verified', date: '2026-05-10', city: 'Karachi', contact: '+92 301 4455667' },
-    { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 120, limit: 250, status: 'Active', date: '2026-06-01', city: 'Lahore', contact: '+92 302 7788990' },
-    { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 35, status: 'Pending Verification', date: '2026-07-28', city: 'Peshawar', contact: '+92 303 9900112' },
-    { id: 'comp-5', name: 'Khyber Green Energy', email: 'info@khybergreen.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-29', city: 'Peshawar', contact: '+92 300 9876543' },
-    { id: 'comp-6', name: 'Google Partner Solar EPC', email: 'google.partner@solaragent.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-30', city: 'Lahore', contact: '+92 300 1234567' }
+    { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 35, status: 'Active', date: '2026-06-12', city: 'Islamabad', contact: '+92 300 1122334', logo_url: null },
+    { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 450, limit: 500, status: 'Verified', date: '2026-05-10', city: 'Karachi', contact: '+92 301 4455667', logo_url: null },
+    { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 120, limit: 250, status: 'Active', date: '2026-06-01', city: 'Lahore', contact: '+92 302 7788990', logo_url: null },
+    { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 35, status: 'Pending Verification', date: '2026-07-28', city: 'Peshawar', contact: '+92 303 9900112', logo_url: null },
+    { id: 'comp-5', name: 'Khyber Green Energy', email: 'info@khybergreen.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-29', city: 'Peshawar', contact: '+92 300 9876543', logo_url: null },
+    { id: 'comp-6', name: 'Google Partner Solar EPC', email: 'google.partner@solaragent.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-30', city: 'Lahore', contact: '+92 300 1234567', logo_url: null }
   ]);
 
   // Official Editable Bank Wire Details
@@ -83,6 +84,18 @@ export const AppProvider = ({ children }) => {
   const updateBankDetails = (newDetails) => {
     setBankDetails(prev => ({ ...prev, ...newDetails }));
     showToast("🏦 Bank wire details updated in CMS!");
+  };
+
+  // Update Company Logo / Profile Picture
+  const updateCompanyLogo = (logoDataUrl) => {
+    setCompany(prev => ({ ...prev, logo_url: logoDataUrl }));
+    setUser(prev => prev ? ({ ...prev, logo_url: logoDataUrl }) : null);
+
+    if (user?.email) {
+      setDistributors(prev => prev.map(d => d.email.toLowerCase() === user.email.toLowerCase() ? { ...d, logo_url: logoDataUrl } : d));
+    }
+
+    showToast("📸 Distributor profile picture & company logo updated!");
   };
 
   // System Notifications Log for Super Admin
@@ -153,7 +166,8 @@ export const AppProvider = ({ children }) => {
       initials: 'SA',
       role: 'super_admin',
       company_id: 'comp-admin',
-      company_name: 'Solar Agent HQ'
+      company_name: 'Solar Agent HQ',
+      logo_url: null
     });
     setViewMode('admin');
     showToast("👑 Authenticated as Super Admin! Full Governance Desk Unlocked.");
@@ -186,7 +200,8 @@ export const AppProvider = ({ children }) => {
       plan: 'Silver',
       used: 12,
       limit: 35,
-      status: 'Active'
+      status: 'Active',
+      logo_url: null
     };
 
     setUser({
@@ -196,7 +211,8 @@ export const AppProvider = ({ children }) => {
       initials: activeComp.name.slice(0, 2).toUpperCase(),
       role: 'distributor',
       company_id: activeComp.id,
-      company_name: activeComp.name
+      company_name: activeComp.name,
+      logo_url: activeComp.logo_url || null
     });
 
     setCompany({
@@ -205,7 +221,8 @@ export const AppProvider = ({ children }) => {
       plan: activeComp.plan,
       proposals_generated: activeComp.used || 0,
       billing_status: "Active",
-      override_quota: 0
+      override_quota: 0,
+      logo_url: activeComp.logo_url || null
     });
 
     setViewMode('workspace');
@@ -214,7 +231,7 @@ export const AppProvider = ({ children }) => {
     return { success: true };
   };
 
-  // Sign In with Google Simulation (Requires Super Admin Approval & Payment Verification ONCE)
+  // Sign In with Google Simulation
   const signInWithGoogle = (targetRole = 'distributor') => {
     if (targetRole === 'super_admin') {
       return signInSuperAdmin('superadmin@solaragent.pk', 'google-auth');
@@ -236,7 +253,8 @@ export const AppProvider = ({ children }) => {
         status: 'Pending Verification',
         date: new Date().toISOString().split('T')[0],
         city: 'Lahore',
-        contact: '+92 300 1234567'
+        contact: '+92 300 1234567',
+        logo_url: null
       };
 
       setDistributors(prev => [googleDist, ...prev]);
@@ -258,7 +276,6 @@ export const AppProvider = ({ children }) => {
       };
     }
 
-    // Once Verified, log straight in!
     return signInDistributor(googleEmail, 'google-auth');
   };
 
@@ -275,7 +292,8 @@ export const AppProvider = ({ children }) => {
       status: 'Pending Verification',
       date: new Date().toISOString().split('T')[0],
       city: city,
-      contact: contact || '+92 300 9876543'
+      contact: contact || '+92 300 9876543',
+      logo_url: null
     };
 
     setDistributors(prev => [newDistributor, ...prev]);
@@ -295,7 +313,6 @@ export const AppProvider = ({ children }) => {
     const target = distributors.find(d => d.id === distributorId || d.email === distributorId);
     if (!target) return false;
 
-    // Set status to Verified (Active)
     setDistributors(prev => prev.map(d => (d.id === distributorId || d.email === distributorId) ? { 
       ...d, 
       status: 'Verified',
@@ -632,6 +649,7 @@ export const AppProvider = ({ children }) => {
       inverters,
       solarPanels,
       company,
+      updateCompanyLogo,
       distributors,
       approveDistributorRegistration,
       adminLogs,

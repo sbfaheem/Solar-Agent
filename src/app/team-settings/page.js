@@ -6,7 +6,7 @@ import ProposalLimitModal from '../../components/ProposalLimitModal';
 import { useApp } from '../../context/AppContext';
 
 export default function TeamSettings() {
-  const { company, bankDetails, recordPayment, lang, showToast, formatPrice, theme } = useApp();
+  const { company, user, updateCompanyLogo, bankDetails, recordPayment, lang, showToast, formatPrice, theme } = useApp();
   
   const [activeTab, setActiveTab] = useState('checkout'); // 'checkout' or 'team'
   const [selectedPlan, setSelectedPlan] = useState(company.plan || 'Gold');
@@ -153,7 +153,7 @@ export default function TeamSettings() {
                 Distributor Workspace Management
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 font-medium">
-                Manage your subscription tier, Meezan Bank transfers, and local sales field engineering team.
+                Manage your subscription tier, logo profile photo, Meezan Bank transfers, and local sales field engineering team.
               </p>
             </div>
           </div>
@@ -188,9 +188,56 @@ export default function TeamSettings() {
         {activeTab === 'checkout' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* Left Column: Selected Package Summary (5 cols) */}
+            {/* Left Column: Selected Package Summary & Profile Logo Card (5 cols) */}
             <div className="lg:col-span-5 space-y-6">
               
+              {/* Profile Photo & Company Logo Upload Card */}
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h3 className="font-display font-extrabold text-base text-[#0f172a] dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#b45309]">photo_camera</span>
+                    <span>Distributor Profile Photo & Logo</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Upload custom company logo to appear on top header & proposals</p>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="size-16 rounded-2xl bg-[#b45309] text-white flex items-center justify-center font-bold text-xl font-mono shadow-md overflow-hidden ring-4 ring-[#b45309]/20 flex-shrink-0">
+                    {(company?.logo_url || user?.logo_url) ? (
+                      <img src={company?.logo_url || user?.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{(company.name || user?.name || 'DS').slice(0, 2).toUpperCase()}</span>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 flex-1">
+                    <h4 className="font-extrabold text-sm text-slate-900 dark:text-white font-display">{company.name || user?.name}</h4>
+                    <p className="text-xs text-slate-500 font-mono">{user?.email || 'distributor@solaragent.pk'}</p>
+                    
+                    <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white text-xs font-bold font-display cursor-pointer shadow-xs transition-all">
+                      <span className="material-symbols-outlined text-sm">cloud_upload</span>
+                      <span>Upload Logo Photo</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => {
+                          const file = e.target.files && e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (evt) => {
+                              if (evt.target.result) updateCompanyLogo(evt.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden" 
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Package Details & Quota Card */}
               <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-sm space-y-6">
                 <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
                   <h3 className="font-display font-extrabold text-base text-[#0f172a] dark:text-white">
@@ -219,23 +266,23 @@ export default function TeamSettings() {
                       }`}
                     >
                       <div>
-                        <div className="font-bold text-sm text-[#0f172a] dark:text-white">{p.plan} Plan</div>
-                        <div className="text-xs text-slate-500 font-medium">{p.desc}</div>
+                        <div className="font-bold text-sm text-slate-900 dark:text-white font-display">{p.plan} Tier</div>
+                        <div className="text-xs text-slate-500 font-mono mt-0.5">{p.desc}</div>
                       </div>
-                      <div className="font-mono text-sm font-black text-[#b45309]">
+                      <span className="font-mono font-black text-[#b45309] text-sm">
                         {formatPrice(p.price)}
-                      </div>
+                      </span>
                     </div>
                   ))}
                 </div>
 
-                {/* Meezan Bank Account Details Card */}
-                <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 text-xs font-mono">
-                  <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2 font-sans font-bold text-slate-900 dark:text-white">
-                    <span>Meezan Bank Direct Wire Details</span>
+                {/* Meezan Bank Account Reference Box */}
+                <div className="bg-slate-50 dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 font-mono text-xs">
+                  <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2">
+                    <span className="font-bold text-slate-900 dark:text-white font-sans">Official Wire Details</span>
                     <button 
                       onClick={handleCopyIban}
-                      className="px-2.5 py-1 rounded bg-[#b45309] hover:bg-[#92400e] text-white font-mono text-[10px] cursor-pointer"
+                      className="px-2.5 py-1 rounded bg-[#b45309] text-white text-[10px] font-mono cursor-pointer"
                     >
                       {copiedIban ? 'Copied ✓' : 'Copy IBAN'}
                     </button>
@@ -259,6 +306,7 @@ export default function TeamSettings() {
                     </div>
                   </div>
                 </div>
+
               </div>
 
             </div>
@@ -278,59 +326,155 @@ export default function TeamSettings() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs font-bold font-display">
                   {[
                     { id: 'easypaisa', name: 'Easypaisa', icon: 'smartphone' },
-                    { id: 'jazzcash', name: 'JazzCash', icon: 'smartphone' },
-                    { id: 'cards', name: 'Debit/Credit Cards', icon: 'credit_card' },
-                    { id: 'raast', name: 'SBP Raast Pay', icon: 'bolt' },
-                    { id: 'sadapay', name: 'SadaPay / NayaPay', icon: 'wallet' },
-                    { id: 'cash', name: 'OTC Cash Voucher', icon: 'payments' }
+                    { id: 'jazzcash', name: 'JazzCash', icon: 'payments' },
+                    { id: 'cards', name: 'Debit/Credit Card', icon: 'credit_card' },
+                    { id: 'raast', name: 'Raast / SBP', icon: 'account_balance' },
+                    { id: 'sadapay', name: 'SadaPay / NayaPay', icon: 'account_balance_wallet' },
+                    { id: 'cash', name: 'Over-the-Counter Cash', icon: 'local_atm' }
                   ].map(ch => (
                     <button
                       key={ch.id}
                       onClick={() => setPaymentChannel(ch.id)}
-                      className={`p-3 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
+                      className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                         paymentChannel === ch.id
-                          ? 'border-[#b45309] bg-[#fefce8] dark:bg-amber-950/30 text-[#b45309] dark:text-amber-300 font-extrabold shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-black/20 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                          ? 'border-[#b45309] bg-[#fefce8] dark:bg-amber-950/30 text-[#b45309] shadow-xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-black/20 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                       }`}
                     >
                       <span className="material-symbols-outlined text-base">{ch.icon}</span>
-                      <span className="truncate">{ch.name}</span>
+                      <span className="text-[11px] font-extrabold">{ch.name}</span>
                     </button>
                   ))}
                 </div>
 
-                {/* Dynamic Inputs */}
-                <div className="bg-slate-50 dark:bg-black/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-                  {(paymentChannel === 'easypaisa' || paymentChannel === 'jazzcash') && (
-                    <div className="space-y-3 font-mono text-xs">
-                      <div className="text-xs font-extrabold text-slate-700 dark:text-slate-300 font-sans uppercase">
-                        {paymentChannel === 'easypaisa' ? 'Easypaisa Mobile Account' : 'JazzCash Wallet'}
+                {/* Dynamic Inputs Based on Payment Channel */}
+                <div className="space-y-4 pt-2">
+                  
+                  {paymentChannel === 'cards' && (
+                    <div className="space-y-4 bg-slate-50 dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-mono">
+                      <div className="flex justify-between items-center">
+                        <span className="font-extrabold font-display text-slate-900 dark:text-white">PayPak / UnionPay / Visa / MasterCard</span>
+                        <select 
+                          value={cardNetwork} 
+                          onChange={e => setCardNetwork(e.target.value)}
+                          className="bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded p-1 font-bold text-xs"
+                        >
+                          <option value="PayPak">PayPak (Local PKR)</option>
+                          <option value="UnionPay">UnionPay 1LINK</option>
+                          <option value="Visa">Visa</option>
+                          <option value="MasterCard">MasterCard</option>
+                        </select>
                       </div>
-                      <div className="space-y-1 font-sans">
-                        <label className="text-xs font-bold text-slate-500">Account Mobile Number</label>
-                        <input type="text" value={mobileNumber} onChange={e=>setMobileNumber(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-900 border rounded-xl font-mono text-xs font-bold" />
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">CARDHOLDER NAME</label>
+                        <input 
+                          type="text" 
+                          value={cardHolder} 
+                          onChange={e => setCardHolder(e.target.value)}
+                          className="w-full p-2.5 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">CARD NUMBER</label>
+                        <input 
+                          type="text" 
+                          value={cardNumber} 
+                          onChange={e => setCardNumber(e.target.value)}
+                          className="w-full p-2.5 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(paymentChannel === 'easypaisa' || paymentChannel === 'jazzcash') && (
+                    <div className="space-y-3 bg-slate-50 dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-mono">
+                      <span className="font-extrabold font-display text-slate-900 dark:text-white block">
+                        {paymentChannel === 'easypaisa' ? 'Easypaisa Mobile Account' : 'JazzCash Wallet Direct'}
+                      </span>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">ACCOUNT NUMBER (03XX-XXXXXXX)</label>
+                        <input 
+                          type="text" 
+                          value={mobileNumber} 
+                          onChange={e => setMobileNumber(e.target.value)}
+                          className="w-full p-2.5 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white"
+                        />
                       </div>
                     </div>
                   )}
 
                   {paymentChannel === 'raast' && (
-                    <div className="space-y-3 text-xs font-mono">
-                      <div className="text-xs font-extrabold text-slate-700 dark:text-slate-300 font-sans uppercase">SBP Instant Raast Pay</div>
-                      <div className="space-y-1 font-sans">
-                        <label className="text-xs font-bold text-slate-500">Raast Identifier / IBAN</label>
-                        <input type="text" value={raastId} onChange={e=>setRaastId(e.target.value)} className="w-full p-2.5 bg-white dark:bg-slate-900 border rounded-xl font-mono text-xs font-bold" />
+                    <div className="space-y-3 bg-slate-50 dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-mono">
+                      <span className="font-extrabold font-display text-slate-900 dark:text-white block">SBP Raast Instant Gateway</span>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">RAAST ID / IBAN</label>
+                        <input 
+                          type="text" 
+                          value={raastId} 
+                          onChange={e => setRaastId(e.target.value)}
+                          className="w-full p-2.5 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white"
+                        />
                       </div>
                     </div>
                   )}
+
+                  {paymentChannel === 'sadapay' && (
+                    <div className="space-y-3 bg-slate-50 dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-mono">
+                      <span className="font-extrabold font-display text-slate-900 dark:text-white block">SadaPay / NayaPay Digital Handle</span>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">HANDLE / USERNAME</label>
+                        <input 
+                          type="text" 
+                          value={digitalHandle} 
+                          onChange={e => setDigitalHandle(e.target.value)}
+                          className="w-full p-2.5 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentChannel === 'cash' && (
+                    <div className="space-y-3 bg-slate-50 dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-mono">
+                      <span className="font-extrabold font-display text-slate-900 dark:text-white block">Over-the-Counter Cash Voucher Collection</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">VOUCHER #</label>
+                          <input 
+                            type="text" 
+                            value={voucherNumber} 
+                            onChange={e => setVoucherNumber(e.target.value)}
+                            className="w-full p-2.5 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">COLLECTION CITY</label>
+                          <input 
+                            type="text" 
+                            value={collectorCity} 
+                            onChange={e => setCollectorCity(e.target.value)}
+                            className="w-full p-2.5 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
-                <button
+                {/* Confirm Payment Action */}
+                <button 
                   onClick={handleProcessPayment}
                   disabled={submitting}
-                  className="w-full py-4 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-4 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer text-center flex items-center justify-center gap-2"
                 >
-                  <span>Process {formatPrice(planPrices[selectedPlan] || 55000)} Payment for {selectedPlan} Plan</span>
-                  <span className="material-symbols-outlined text-base">arrow_forward</span>
+                  <span className="material-symbols-outlined text-sm">payments</span>
+                  <span>
+                    {submitting 
+                      ? 'Processing Payment...' 
+                      : `Confirm & Record ${selectedPlan} Plan Payment (${formatPrice(planPrices[selectedPlan] || 55000)})`}
+                  </span>
                 </button>
 
               </div>
@@ -339,126 +483,116 @@ export default function TeamSettings() {
           </div>
         )}
 
-        {/* TAB 2: SALES ENGINEERS & FIELD TEAM MANAGEMENT */}
+        {/* TAB 2: FIELD SALES TEAM ROSTER */}
         {activeTab === 'team' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="space-y-8">
             
-            {/* Left Column: Add Team Member Form (5 cols) */}
-            <div className="lg:col-span-5 bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center gap-2">
-                <span className="size-8 rounded-lg bg-[#b45309] text-white flex items-center justify-center font-bold">
-                  <span className="material-symbols-outlined text-base">person_add</span>
-                </span>
-                <h3 className="font-display font-bold text-[#0f172a] dark:text-white text-base">Add Field Team Member</h3>
+            {/* Add Team Member Form */}
+            <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                <h3 className="font-display font-extrabold text-base text-[#0f172a] dark:text-white">
+                  Add Sales Engineer / Field Officer
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">Grant local field team members access to customer proposals and calculations</p>
               </div>
 
-              <form onSubmit={handleAddTeamMember} className="space-y-3 text-xs font-mono">
+              <form onSubmit={handleAddTeamMember} className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-xs font-mono">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase font-sans">Full Name</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">FULL NAME *</label>
                   <input 
                     type="text" 
                     required
-                    placeholder="Engr. Bilal Faheem"
+                    placeholder="Engr. Bilal Khan" 
                     value={newMemName}
                     onChange={e => setNewMemName(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase font-sans">Email Address</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">WORK EMAIL *</label>
                   <input 
                     type="email" 
                     required
-                    placeholder="bilal@indussolar.pk"
+                    placeholder="bilal@indussolar.pk" 
                     value={newMemEmail}
                     onChange={e => setNewMemEmail(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase font-sans">Assigned Role</label>
-                    <select 
-                      value={newMemRole}
-                      onChange={e => setNewMemRole(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white cursor-pointer font-sans"
-                    >
-                      <option value="Lead Solar Engineer">Lead Solar Engineer</option>
-                      <option value="Field Site Surveyor">Field Site Surveyor</option>
-                      <option value="Sales Partner">Sales Partner</option>
-                      <option value="DISCO Liaison Officer">DISCO Liaison Officer</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase font-sans">Base City</label>
-                    <input 
-                      type="text" 
-                      placeholder="Karachi / Lahore"
-                      value={newMemCity}
-                      onChange={e => setNewMemCity(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">ROLE</label>
+                  <select 
+                    value={newMemRole}
+                    onChange={e => setNewMemRole(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-sans font-bold cursor-pointer"
+                  >
+                    <option value="Lead Solar Engineer">Lead Solar Engineer</option>
+                    <option value="Field Site Surveyor">Field Site Surveyor</option>
+                    <option value="Sales Partner">Sales Partner</option>
+                    <option value="DISCO Liaison Officer">DISCO Liaison Officer</option>
+                  </select>
                 </div>
 
-                <button 
-                  type="submit"
-                  className="w-full py-3 bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs rounded-xl shadow-md cursor-pointer transition-all flex items-center justify-center gap-2 mt-2"
-                >
-                  <span className="material-symbols-outlined text-sm">group_add</span>
-                  <span>Register Field Officer</span>
-                </button>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">CONTACT PHONE</label>
+                  <input 
+                    type="text" 
+                    placeholder="0300-1234567" 
+                    value={newMemPhone}
+                    onChange={e => setNewMemPhone(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-3 lg:col-span-1 flex items-end">
+                  <button 
+                    type="submit"
+                    className="w-full py-3 bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-sm">person_add</span>
+                    <span>Add Member</span>
+                  </button>
+                </div>
               </form>
             </div>
 
-            {/* Right Column: Active Field Team Members List (7 cols) */}
-            <div className="lg:col-span-7 bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl overflow-hidden shadow-sm space-y-4">
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <h3 className="font-display font-bold text-[#0f172a] dark:text-white text-base">Active Field Team Roster</h3>
-                <span className="text-xs font-mono font-bold text-[#b45309] bg-amber-100 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg">
-                  {teamMembers.length} Active Officers
-                </span>
+            {/* Team Roster Grid */}
+            <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
+                <h3 className="font-display font-extrabold text-base text-[#0f172a] dark:text-white">
+                  Active Field Team Roster ({teamMembers.length} Members)
+                </h3>
+                <span className="text-xs text-slate-500 font-mono">{company.name} Authorized Staff</span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-black/40 border-b border-slate-200 dark:border-slate-800 text-slate-500 text-[10px] font-extrabold uppercase tracking-wider">
-                      <th className="px-6 py-3.5">MEMBER NAME</th>
-                      <th className="px-6 py-3.5">ASSIGNED ROLE</th>
-                      <th className="px-6 py-3.5">CITY</th>
-                      <th className="px-6 py-3.5 text-right">ACTION</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {teamMembers.map((m) => (
-                      <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-black/20">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-900 dark:text-white text-xs">{m.name}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{m.email}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold font-mono bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200">
-                            {m.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                          {m.city}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => handleRemoveTeamMember(m.id)}
-                            className="size-7 rounded bg-red-50 hover:bg-red-500 hover:text-white text-red-600 flex items-center justify-center ml-auto cursor-pointer"
-                          >
-                            <span className="material-symbols-outlined text-sm">delete</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {teamMembers.map(m => (
+                  <div key={m.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-black/20 space-y-3 flex flex-col justify-between">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-start">
+                        <span className="size-8 rounded-full bg-[#b45309]/20 text-[#b45309] dark:text-amber-300 font-extrabold font-mono text-xs flex items-center justify-center">
+                          {m.name.slice(0, 2).toUpperCase()}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold font-mono bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                          {m.status}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white pt-1">{m.name}</h4>
+                      <p className="text-xs text-[#b45309] font-semibold font-mono">{m.role}</p>
+                      <p className="text-[11px] text-slate-500 font-mono">{m.email}</p>
+                      <p className="text-[11px] text-slate-400 font-mono">{m.phone} | {m.city}</p>
+                    </div>
+
+                    <button 
+                      onClick={() => handleRemoveTeamMember(m.id)}
+                      className="w-full py-1.5 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 text-[10px] font-bold transition-all cursor-pointer text-center"
+                    >
+                      Remove Access
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -467,6 +601,7 @@ export default function TeamSettings() {
 
       </main>
 
+      {/* Upgrade Proposal Quota Modal */}
       <ProposalLimitModal 
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
