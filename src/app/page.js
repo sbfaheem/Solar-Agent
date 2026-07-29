@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import PageShell from '../components/PageShell';
+import SolarCalculatorModal from '../components/SolarCalculatorModal';
 import { useApp } from '../context/AppContext';
 import { seedDatabase } from '../lib/firebaseService';
 
 export default function Home() {
   const { company, lang, getActiveLimit, showToast, loadAllData } = useApp();
   const [solarActive, setSolarActive] = useState(true);
+  const [ocrModalOpen, setOcrModalOpen] = useState(false);
 
   const handleSeed = async () => {
     const ok = await seedDatabase();
@@ -134,6 +136,13 @@ export default function Home() {
                   <span className="material-symbols-outlined text-sm">wb_sunny</span>
                   {lang === 'ur' ? 'حساب کتاب شروع کریں' : 'New Solar Calculation'}
                 </Link>
+                <button 
+                  onClick={() => setOcrModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 hover:text-black border border-emerald-500/40 text-xs font-bold text-emerald-300 transition-all cursor-pointer shadow-md"
+                >
+                  <span className="material-symbols-outlined text-sm text-emerald-400">document_scanner</span>
+                  {lang === 'ur' ? 'جیمنائی بل OCR اسکینر' : 'Gemini Bill OCR Scanner'}
+                </button>
                 <button 
                   onClick={handleSeed}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all cursor-pointer backdrop-blur-sm"
@@ -333,6 +342,8 @@ export default function Home() {
         </section>
 
       </main>
+
+      <SolarCalculatorModal isOpen={ocrModalOpen} onClose={() => setOcrModalOpen(false)} />
     </PageShell>
   );
 }

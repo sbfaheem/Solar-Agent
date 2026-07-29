@@ -22,6 +22,7 @@ export default function ConfigurationWizard() {
   const [activeStep, setActiveStep] = useState(1); 
   const [profileMode, setProfileMode] = useState('ocr'); 
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState(null);
   
   // Local Edit Modal copy
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -61,18 +62,61 @@ export default function ConfigurationWizard() {
     }
   };
 
-  // OCR Upload simulator
-  const handleOcrUpload = (e) => {
+  // Real Gemini Vision OCR upload handler
+  const processBillFile = async (file) => {
+    if (!file) return;
     setOcrLoading(true);
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/ocr-bill', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOcrResult(data);
+        setCalcParams(prev => ({
+          ...prev,
+          monthlyUnits: data.monthlyUnits,
+          utilityProvider: data.disco || prev.utilityProvider
+        }));
+        showToast(
+          lang === 'ur' 
+            ? `⚡ ${data.discoFullName} بل اسکین ہو گیا! (${data.monthlyUnits} یونٹس)`
+            : `⚡ Parsed ${data.discoFullName}! Extracted ${data.monthlyUnits} kWh (PKR ${data.billAmount?.toLocaleString() || ''})`
+        );
+      } else {
+        showToast(data.error || "OCR Parsing failed", "error");
+      }
+    } catch (err) {
+      console.error("OCR API error:", err);
+      showToast("Error processing utility bill image via Gemini Vision", "error");
+    } finally {
       setOcrLoading(false);
-      setCalcParams(prev => ({
-        ...prev,
-        monthlyUnits: 580,
-        utilityProvider: 'KE'
-      }));
-      showToast(lang === 'ur' ? "💾 بل کامیابی کے ساتھ اسکین ہو گیا! 580 یونٹس حاصل ہوئے۔" : "💾 Bill scanned successfully! Extracted 580 kWh average.");
-    }, 2000);
+    }
+  };
+
+  const handleOcrUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      processBillFile(file);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processBillFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   // Auto match inverter and panel
@@ -359,27 +403,83 @@ export default function ConfigurationWizard() {
                       </div>
                     </div>
 
-                    {/* OCR Upload Area */}
-                    <div className="border-2 border-dashed border-border-base/50 rounded-xl p-8 text-center bg-black/10 hover:bg-black/20 hover:border-primary/50 transition-all relative">
+                    {/* OCR Upload Dropzone Area */}
+                    <div 
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      className="border-2 border-dashed border-border-base/50 rounded-xl p-8 text-center bg-black/10 hover:bg-black/20 hover:border-primary/50 transition-all relative cursor-pointer"
+                    >
                       <input 
                         type="file" 
                         accept="image/*,application/pdf"
                         onChange={handleOcrUpload}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
                       />
                       {ocrLoading ? (
                         <div className="space-y-3 py-4">
                           <span className="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
-                          <p className="text-sm font-semibold text-white">Analyzing utility bill with OCR scan...</p>
+                          <p className="text-sm font-semibold text-white">Analyzing utility bill via Gemini 3.6 Vision OCR...</p>
+                          <p className="text-xs text-slate-400">Extracting DISCO, billed kWh, reference number, and tariff rates</p>
                         </div>
                       ) : (
                         <div className="space-y-3 py-4">
-                          <span className="material-symbols-outlined text-4xl text-slate-500">upload_file</span>
+                          <span className="material-symbols-outlined text-4xl text-primary/80">upload_file</span>
                           <p className="text-sm font-semibold text-white">{t.ocrPlaceholder}</p>
-                          <p className="text-xs text-slate-500">{t.ocrSub}</p>
+                          <p className="text-xs text-slate-400">{t.ocrSub}</p>
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[11px] text-primary-container font-mono">
+                            <span>✨ Powered by Gemini Vision OCR</span>
+                          </div>
                         </div>
                       )}
                     </div>
+
+                    {/* Extracted Bill Details Card */}
+                    {ocrResult && (
+                      <div className="bg-surface-container/80 border border-emerald-500/30 rounded-xl p-5 space-y-4 animate-fadeIn">
+                        <div className="flex justify-between items-center border-b border-border-base/50 pb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-accent-emerald text-base">verified</span>
+                            <h4 className="font-display font-bold text-white text-sm">Extracted Bill Parameters</h4>
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-accent-emerald border border-emerald-500/20">
+                            Engine: {ocrResult.ocrEngine || 'Gemini Vision'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-mono">
+                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
+                            <span className="text-slate-400 text-[10px] uppercase block">Utility DISCO</span>
+                            <span className="font-bold text-primary text-sm">{ocrResult.discoFullName || ocrResult.disco}</span>
+                          </div>
+                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
+                            <span className="text-slate-400 text-[10px] uppercase block">Monthly Consumption</span>
+                            <span className="font-bold text-white text-sm">{ocrResult.monthlyUnits} kWh</span>
+                          </div>
+                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
+                            <span className="text-slate-400 text-[10px] uppercase block">Bill Amount</span>
+                            <span className="font-bold text-accent-emerald text-sm">PKR {ocrResult.billAmount?.toLocaleString()}</span>
+                          </div>
+                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
+                            <span className="text-slate-400 text-[10px] uppercase block">Reference Number</span>
+                            <span className="font-bold text-slate-200 text-xs">{ocrResult.referenceNumber}</span>
+                          </div>
+                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
+                            <span className="text-slate-400 text-[10px] uppercase block">Billing Cycle</span>
+                            <span className="font-bold text-slate-200 text-xs">{ocrResult.billingMonth}</span>
+                          </div>
+                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
+                            <span className="text-slate-400 text-[10px] uppercase block">Inferred Tariff</span>
+                            <span className="font-bold text-slate-200 text-xs">{ocrResult.tariffRate} PKR/kWh</span>
+                          </div>
+                        </div>
+
+                        {ocrResult.summary && (
+                          <p className="text-xs text-slate-300 bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-lg leading-relaxed">
+                            💡 {ocrResult.summary}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
