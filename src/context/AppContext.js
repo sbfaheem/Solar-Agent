@@ -62,12 +62,13 @@ export const AppProvider = ({ children }) => {
     override_quota: 0
   });
 
-  // Registered Distributors List for Super Admin Management
+  // Registered Distributors List with Statuses (Active vs Pending Verification)
   const [distributors, setDistributors] = useState([
-    { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 35, status: 'Active', date: '2026-06-12' },
-    { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 450, limit: 500, status: 'Verified', date: '2026-05-10' },
-    { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 120, limit: 250, status: 'Active', date: '2026-06-01' },
-    { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 35, status: 'Pending Verification', date: '2026-07-28' }
+    { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 35, status: 'Active', date: '2026-06-12', city: 'Islamabad', contact: '+92 300 1122334' },
+    { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 450, limit: 500, status: 'Verified', date: '2026-05-10', city: 'Karachi', contact: '+92 301 4455667' },
+    { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 120, limit: 250, status: 'Active', date: '2026-06-01', city: 'Lahore', contact: '+92 302 7788990' },
+    { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 35, status: 'Pending Verification', date: '2026-07-28', city: 'Peshawar', contact: '+92 303 9900112' },
+    { id: 'comp-5', name: 'Khyber Green Energy', email: 'info@khybergreen.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-29', city: 'Peshawar', contact: '+92 300 9876543' }
   ]);
 
   // Official Editable Bank Wire Details
@@ -82,6 +83,12 @@ export const AppProvider = ({ children }) => {
     setBankDetails(prev => ({ ...prev, ...newDetails }));
     showToast("🏦 Bank wire details updated in CMS!");
   };
+
+  // System Notifications Log for Super Admin
+  const [adminLogs, setAdminLogs] = useState([
+    "🔔 [NEW REGISTRATION] Khyber Green Energy (info@khybergreen.pk) submitted Silver Plan request.",
+    "📄 [UPGRADE REQUEST] KPK Volt Tech submitted Meezan Bank payment receipt for Gold Plan."
+  ]);
 
   // Pending Distributor Plan Upgrade Requests
   const [pendingUpgradeRequests, setPendingUpgradeRequests] = useState([
@@ -132,19 +139,6 @@ export const AppProvider = ({ children }) => {
       status: "Completed",
       date: "2026-07-27 11:15",
       collector_agent: "Mobilink Gateway"
-    },
-    {
-      id: "PK-TXN-98419",
-      company_name: "KPK Volt Tech",
-      plan: "Silver",
-      channel: "Cards (PayPak)",
-      channel_type: "Debit Card",
-      account_identifier: "**** **** **** 4912",
-      reference_id: "PAYPAK-3D-7718",
-      amount_pkr: 35000,
-      status: "Completed",
-      date: "2026-07-26 16:45",
-      collector_agent: "1LINK / PayPak"
     }
   ]);
 
@@ -164,44 +158,57 @@ export const AppProvider = ({ children }) => {
     router.push('/admin-desk');
   };
 
-  // Authenticate Distributor (Sign In)
+  // Authenticate Distributor (Sign In with Pending Status Access Guard)
   const signInDistributor = (email, password) => {
     const isSuper = email.toLowerCase().includes('admin');
     if (isSuper) {
       signInSuperAdmin(email, password);
-      return;
+      return { success: true };
     }
 
-    const matchedComp = distributors.find(d => d.email.toLowerCase() === email.toLowerCase()) || {
+    const matchedComp = distributors.find(d => d.email.toLowerCase() === email.toLowerCase());
+
+    if (matchedComp && (matchedComp.status === 'Pending Verification' || matchedComp.status === 'Pending')) {
+      showToast("⚠️ Account Pending Super Admin Approval & Payment Verification.", "error");
+      return { 
+        success: false, 
+        error: 'pending', 
+        message: "⚠️ Account Pending Super Admin Approval & Payment Verification. Access will be unlocked once approved." 
+      };
+    }
+
+    const activeComp = matchedComp || {
       id: `comp-${Math.floor(100 + Math.random() * 900)}`,
       name: email.split('@')[0].toUpperCase() + ' Solar',
       plan: 'Silver',
       used: 12,
-      limit: 35
+      limit: 35,
+      status: 'Active'
     };
 
     setUser({
-      id: `user-${matchedComp.id}`,
-      name: matchedComp.name,
+      id: `user-${activeComp.id}`,
+      name: activeComp.name,
       email: email,
-      initials: matchedComp.name.slice(0, 2).toUpperCase(),
+      initials: activeComp.name.slice(0, 2).toUpperCase(),
       role: 'distributor',
-      company_id: matchedComp.id,
-      company_name: matchedComp.name
+      company_id: activeComp.id,
+      company_name: activeComp.name
     });
 
     setCompany({
-      id: matchedComp.id,
-      name: matchedComp.name,
-      plan: matchedComp.plan,
-      proposals_generated: matchedComp.used,
+      id: activeComp.id,
+      name: activeComp.name,
+      plan: activeComp.plan,
+      proposals_generated: activeComp.used || 0,
       billing_status: "Active",
       override_quota: 0
     });
 
     setViewMode('workspace');
-    showToast(`⚡ Welcome to your Distributor Workspace, ${matchedComp.name}!`);
+    showToast(`⚡ Welcome to your Distributor Workspace, ${activeComp.name}!`);
     router.push('/');
+    return { success: true };
   };
 
   // Sign In with Google Simulation
@@ -213,8 +220,8 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Create an Account for Distributor Registration
-  const signUpDistributor = ({ companyName, name, email, password, plan = 'Silver' }) => {
+  // Create an Account for Distributor Registration (APPROVAL-BASED PENDING WORKFLOW)
+  const signUpDistributor = ({ companyName, name, email, password, plan = 'Silver', contact = '', city = 'Peshawar' }) => {
     const newCompId = `comp-${Math.floor(1000 + Math.random() * 9000)}`;
     const newDistributor = {
       id: newCompId,
@@ -223,34 +230,44 @@ export const AppProvider = ({ children }) => {
       plan: plan,
       used: 0,
       limit: plan === 'Silver' ? 35 : (plan === 'Gold' ? 60 : 100),
-      status: 'Active',
-      date: new Date().toISOString().split('T')[0]
+      status: 'Pending Verification',
+      date: new Date().toISOString().split('T')[0],
+      city: city,
+      contact: contact || '+92 300 9876543'
     };
 
+    // Store in distributors list as Pending Verification
     setDistributors(prev => [newDistributor, ...prev]);
 
-    setUser({
-      id: `user-${newCompId}`,
-      name: name || companyName,
-      email: email,
-      initials: companyName.slice(0, 2).toUpperCase(),
-      role: 'distributor',
-      company_id: newCompId,
-      company_name: companyName
-    });
+    // Dispatch log to Super Admin
+    setAdminLogs(prev => [
+      `🔔 [NEW REGISTRATION REQUEST] ${companyName} (${email}) registered for ${plan} Plan. Awaiting payment verification.`,
+      ...prev
+    ]);
 
-    setCompany({
-      id: newCompId,
-      name: companyName,
-      plan: plan,
-      proposals_generated: 0,
-      billing_status: 'Active',
-      override_quota: 0
-    });
+    showToast("📄 Registration submitted! Please review Meezan Bank wire details to complete verification.");
 
-    setViewMode('workspace');
-    showToast(`✨ Account created! Logged into ${companyName} Distributor Portal.`);
-    router.push('/');
+    return { status: 'pending', distributor: newDistributor };
+  };
+
+  // Super Admin Approval of Pending Distributor & Email Dispatch Simulation
+  const approveDistributorRegistration = (distributorId) => {
+    const target = distributors.find(d => d.id === distributorId);
+    if (!target) return false;
+
+    setDistributors(prev => prev.map(d => d.id === distributorId ? { ...d, status: 'Verified' } : d));
+
+    // Automated Email Dispatch Simulation
+    const emailMessage = `📧 [AUTOMATED EMAIL SENT TO ${target.email}]: "Your Account Has Been Successfully Created You Should Login Now"`;
+    
+    setAdminLogs(prev => [
+      `✅ Approved distributor ${target.name} (${target.email}).`,
+      emailMessage,
+      ...prev
+    ]);
+
+    showToast(`📩 Email Dispatched to ${target.email}: "Your Account Has Been Successfully Created You Should Login Now"`);
+    return true;
   };
 
   // Submit Upgrade Request with Payment Receipt
@@ -304,7 +321,12 @@ export const AppProvider = ({ children }) => {
 
     setTransactions(prev => [newTxn, ...prev]);
     setPendingUpgradeRequests(prev => prev.filter(r => r.id !== requestId));
-    showToast(`⚡ Approved & Auto-Upgraded ${req.company_name} to ${req.target_plan}!`);
+
+    // Automated Email Dispatch Log
+    const emailMsg = `📧 [AUTOMATED EMAIL SENT TO ${req.contact_email}]: "Your Account Has Been Successfully Created You Should Login Now"`;
+    setAdminLogs(prev => [emailMsg, ...prev]);
+
+    showToast(`📩 Dispatched Email: "Your Account Has Been Successfully Created You Should Login Now" to ${req.contact_email}`);
     return true;
   };
 
@@ -357,7 +379,7 @@ export const AppProvider = ({ children }) => {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 3000);
+    }, 4000);
   };
 
   const loadAllData = async () => {
@@ -568,6 +590,8 @@ export const AppProvider = ({ children }) => {
       solarPanels,
       company,
       distributors,
+      approveDistributorRegistration,
+      adminLogs,
       bankDetails,
       updateBankDetails,
       pendingUpgradeRequests,

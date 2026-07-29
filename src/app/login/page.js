@@ -9,6 +9,7 @@ export default function Login() {
     signInSuperAdmin, 
     signInWithGoogle, 
     signUpDistributor, 
+    bankDetails,
     lang, 
     toggleLang, 
     showToast 
@@ -20,6 +21,7 @@ export default function Login() {
   // Sign In Form State
   const [email, setEmail] = useState('kpkvolt@solaragent.pk');
   const [password, setPassword] = useState('••••••••');
+  const [pendingError, setPendingError] = useState(null);
 
   // Dynamic Distributor Registration Form State
   const [regCompany, setRegCompany] = useState('');
@@ -27,6 +29,11 @@ export default function Login() {
   const [regContact, setRegContact] = useState('');
   const [regCity, setRegCity] = useState('Peshawar');
   const [regPlan, setRegPlan] = useState('Silver');
+
+  // Registration Request & Payment Modal State
+  const [regModalOpen, setRegModalOpen] = useState(false);
+  const [regModalData, setRegModalData] = useState(null);
+  const [copiedIban, setCopiedIban] = useState(false);
 
   const translations = {
     en: {
@@ -54,7 +61,7 @@ export default function Login() {
       platPlanOpt: "Platinum Enterprise (100 Proposals/mo - 75,000 PKR)",
       distWorkEmailLabel: "DISTRIBUTOR WORK EMAIL",
       accountPassLabel: "ACCOUNT PASSWORD",
-      provisionBtnText: "Provision Distributor & Instant Launch Portal",
+      provisionBtnText: "Submit Registration & View Payment Instructions",
       unlockWorkspaceBtnText: "Unlock Distributor Workspace",
       adminTitle: "Super Admin Governance Desk",
       adminSub: "Full system oversight, distributor approval & ledger management",
@@ -89,7 +96,7 @@ export default function Login() {
       platPlanOpt: "پلیٹینم انٹرپرائز (100 پروپوزلز ماہانہ - 75,000 روپے)",
       distWorkEmailLabel: "ڈسٹری بیوٹر ورک ای میل",
       accountPassLabel: "اکاؤنٹ پاس ورڈ",
-      provisionBtnText: "ڈسٹری بیوٹر رجسٹر کریں اور پورٹل شروع کریں",
+      provisionBtnText: "درخواست جمع کریں اور پیمنٹ کی ہدایات دیکھیں",
       unlockWorkspaceBtnText: "ڈسٹری بیوٹر ورک اسپیس کھولیں",
       adminTitle: "سپر ایڈمن گورننس ڈیسک",
       adminSub: "مکمل سسٹم کنٹرول، ڈسٹری بیوٹر منظوری اور لیجر مینجمنٹ",
@@ -105,6 +112,7 @@ export default function Login() {
 
   const handleDropdownSelect = (val) => {
     setSelectedDistributorAccount(val);
+    setPendingError(null);
     if (val === 'REGISTER_NEW') {
       setEmail('');
     } else {
@@ -114,12 +122,15 @@ export default function Login() {
 
   const handleSubmitDistributor = (e) => {
     e.preventDefault();
+    setPendingError(null);
+
     if (selectedDistributorAccount === 'REGISTER_NEW') {
       if (!regCompany || !regEmail) {
         showToast(lang === 'ur' ? "⚠️ براہ کرم کمپنی کا نام اور ای میل درج کریں" : "⚠️ Please enter Company Name and Work Email", "error");
         return;
       }
-      signUpDistributor({
+
+      const res = signUpDistributor({
         companyName: regCompany,
         name: regCompany,
         email: regEmail,
@@ -128,18 +139,34 @@ export default function Login() {
         contact: regContact,
         city: regCity
       });
+
+      if (res && res.status === 'pending') {
+        setRegModalData(res.distributor);
+        setRegModalOpen(true);
+      }
     } else {
       if (!email) {
         showToast(lang === 'ur' ? "⚠️ براہ کرم درست ای میل درج کریں" : "⚠️ Please enter a valid email address", "error");
         return;
       }
-      signInDistributor(email, password);
+      
+      const res = signInDistributor(email, password);
+      if (res && res.error === 'pending') {
+        setPendingError(res.message);
+      }
     }
   };
 
   const handleAdminSignIn = (e) => {
     e.preventDefault();
     signInSuperAdmin(email, password);
+  };
+
+  const handleCopyIban = () => {
+    navigator.clipboard.writeText(bankDetails.iban);
+    setCopiedIban(true);
+    showToast("IBAN copied to clipboard!");
+    setTimeout(() => setCopiedIban(false), 2000);
   };
 
   return (
@@ -162,7 +189,7 @@ export default function Login() {
           <div className="flex bg-slate-200/80 p-1 rounded-xl gap-1 text-xs font-bold font-display border border-slate-300/60 shadow-xs">
             <button 
               type="button"
-              onClick={() => { setPortalMode('distributor'); setSelectedDistributorAccount('REGISTER_NEW'); }}
+              onClick={() => { setPortalMode('distributor'); setSelectedDistributorAccount('REGISTER_NEW'); setPendingError(null); }}
               className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
                 portalMode === 'distributor' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -173,7 +200,7 @@ export default function Login() {
 
             <button 
               type="button"
-              onClick={() => { setPortalMode('admin'); setEmail('superadmin@solaragent.pk'); }}
+              onClick={() => { setPortalMode('admin'); setEmail('superadmin@solaragent.pk'); setPendingError(null); }}
               className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
                 portalMode === 'admin' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -204,6 +231,17 @@ export default function Login() {
               <h2 className="font-display font-extrabold text-slate-900 text-2xl">{t.distributorTitle}</h2>
               <p className="text-slate-500 text-xs font-medium">{t.distributorSub}</p>
             </div>
+
+            {/* Inline Warning Alert for Pending Distributor Login Block */}
+            {pendingError && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-medium space-y-1 animate-bounce shadow-sm">
+                <div className="font-extrabold font-display flex items-center gap-2 text-amber-800">
+                  <span className="material-symbols-outlined text-base">hourglass_top</span>
+                  <span>Approval Pending Verification</span>
+                </div>
+                <p>{pendingError}</p>
+              </div>
+            )}
 
             {/* Google Sign-In Option */}
             <button 
@@ -239,9 +277,10 @@ export default function Login() {
                   className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/20 cursor-pointer shadow-xs"
                 >
                   <option value="REGISTER_NEW">{t.registerNewOption}</option>
-                  <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (kpkvolt@solaragent.pk - Silver Tier)</option>
-                  <option value="info@indussolar.pk">⚡ Indus Solar Systems (info@indussolar.pk - Platinum Tier)</option>
-                  <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (sales@punjabenergy.pk - Gold Tier)</option>
+                  <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (kpkvolt@solaragent.pk - Pending Verification)</option>
+                  <option value="info@khybergreen.pk">⚡ Khyber Green Energy (info@khybergreen.pk - Pending Verification)</option>
+                  <option value="info@indussolar.pk">⚡ Indus Solar Systems (info@indussolar.pk - Platinum Tier Verified)</option>
+                  <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (sales@punjabenergy.pk - Gold Tier Active)</option>
                 </select>
               </div>
 
@@ -427,6 +466,85 @@ export default function Login() {
         )}
 
       </main>
+
+      {/* REGISTRATION REQUEST & PAYMENT MODAL */}
+      {regModalOpen && regModalData && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl animate-scaleUp text-slate-900">
+            
+            <div className="flex justify-between items-start border-b border-slate-200 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-2xl bg-amber-100 text-[#b45309] flex items-center justify-center font-bold">
+                  <span className="material-symbols-outlined text-xl">mark_email_read</span>
+                </div>
+                <div>
+                  <h3 className="font-display font-extrabold text-slate-900 text-lg">Registration Request Submitted</h3>
+                  <p className="text-xs text-slate-500 font-medium">Status: Pending Super Admin Approval & Verification</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setRegModalOpen(false)}
+                className="size-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            {/* Notification Policy Statement */}
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl text-xs text-amber-900 space-y-2 font-medium">
+              <div className="font-bold flex items-center gap-2 text-amber-950 font-display">
+                <span className="material-symbols-outlined text-base">notifications_active</span>
+                <span>Automated Email Notification Policy</span>
+              </div>
+              <p className="leading-relaxed">
+                Once Super Admin receives your payment wire deposit and accepts the request, an automated email will be sent to your registered work email address (<strong className="font-mono text-slate-900">{regModalData.email}</strong>) stating:
+              </p>
+              <div className="p-3 bg-white border border-amber-300 rounded-xl font-mono text-amber-900 font-bold text-center">
+                "Your Account Has Been Successfully Created You Should Login Now"
+              </div>
+            </div>
+
+            {/* Meezan Bank Deposit Instructions Card */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 text-xs font-mono">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-2 font-sans font-bold text-slate-900">
+                <span>Meezan Bank Direct Deposit Wire</span>
+                <button 
+                  onClick={handleCopyIban}
+                  className="px-3 py-1 rounded-lg bg-[#b45309] hover:bg-[#92400e] text-white text-[11px] font-mono cursor-pointer shadow-xs"
+                >
+                  {copiedIban ? 'Copied ✓' : 'Copy IBAN'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-[11px]">
+                <div>
+                  <span className="text-slate-400 block text-[9px] uppercase">Bank Name</span>
+                  <span className="font-bold text-slate-800">{bankDetails.bankName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[9px] uppercase">Account Title</span>
+                  <span className="font-bold text-slate-800">{bankDetails.accountTitle}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[9px] uppercase">Account Number</span>
+                  <span className="font-bold text-slate-800">{bankDetails.accountNumber}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[9px] uppercase">IBAN Number</span>
+                  <span className="font-bold text-emerald-600 truncate block">{bankDetails.iban}</span>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setRegModalOpen(false)}
+              className="w-full py-3.5 bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all text-center"
+            >
+              Understood — Close & Await Verification
+            </button>
+
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="text-center text-xs text-slate-500 font-mono max-w-7xl mx-auto w-full pt-4">
