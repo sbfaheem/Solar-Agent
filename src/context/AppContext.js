@@ -157,8 +157,21 @@ export const AppProvider = ({ children }) => {
     }
   ]);
 
-  // Authenticate Super Admin
-  const signInSuperAdmin = (email = 'superadmin@solaragent.pk', password) => {
+  // Authenticate Super Admin with strict credential verification
+  const signInSuperAdmin = (email, password) => {
+    const validEmail = (email || '').trim().toLowerCase();
+    const validPass = (password || '').trim();
+
+    // Check against authorized super admin credentials (bilalfaheem47@gmail.com / Megatron_@0047)
+    const isAuthorized = 
+      (validEmail === 'bilalfaheem47@gmail.com' && validPass === 'Megatron_@0047') ||
+      (validEmail === 'superadmin@solaragent.pk' && (validPass === 'Megatron_@0047' || validPass === 'admin123'));
+
+    if (!isAuthorized) {
+      showToast("❌ Invalid Super Admin Credentials! Access Denied.", "error");
+      return { success: false, error: 'invalid_credentials' };
+    }
+
     setUser({
       id: 'user-super-admin',
       name: 'Super Admin Governance',
@@ -172,16 +185,11 @@ export const AppProvider = ({ children }) => {
     setViewMode('admin');
     showToast("👑 Authenticated as Super Admin! Full Governance Desk Unlocked.");
     router.push('/admin-desk');
+    return { success: true };
   };
 
   // Authenticate Distributor (Sign In with Approval Guard)
   const signInDistributor = (email, password) => {
-    const isSuper = email.toLowerCase().includes('admin');
-    if (isSuper) {
-      signInSuperAdmin(email, password);
-      return { success: true };
-    }
-
     const matchedComp = distributors.find(d => d.email.toLowerCase() === email.toLowerCase());
 
     // Block ONLY if status is Pending Verification
@@ -233,10 +241,6 @@ export const AppProvider = ({ children }) => {
 
   // Sign In with Google Simulation
   const signInWithGoogle = (targetRole = 'distributor') => {
-    if (targetRole === 'super_admin') {
-      return signInSuperAdmin('superadmin@solaragent.pk', 'google-auth');
-    }
-
     const googleEmail = 'google.partner@solaragent.pk';
     const googleCompName = 'Google Partner Solar EPC';
     
