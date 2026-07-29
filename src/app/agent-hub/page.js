@@ -10,6 +10,7 @@ export default function AgentHub() {
     loading, 
     company,
     lang, 
+    formatPrice,
     addLead, 
     updateLead, 
     removeLead, 
@@ -39,13 +40,13 @@ export default function AgentHub() {
   // Localizations translations dictionary
   const translations = {
     en: {
-      title: "Solar Agent | Project Hub",
+      title: "Project Hub & Companies Workspace",
       subtitle: "Review pipeline leads, update client specifications, and initiate calculations.",
       newCalc: "New Calculation",
       totalLeads: "Total Leads",
       sysSize: "Total System Size",
       pipeline: "Estimated Pipeline",
-      searchPlaceholder: "Search leads...",
+      searchPlaceholder: "Search leads by customer or location...",
       customerName: "Customer Name",
       location: "Site Location",
       contact: "Contact",
@@ -65,7 +66,7 @@ export default function AgentHub() {
       upgradePlan: "Upgrade Plan Settings"
     },
     ur: {
-      title: "سولر ایجنٹ | پراجیکٹ ہب",
+      title: "پراجیکٹ ہب اور انسٹالر ورک اسپیس",
       subtitle: "پراجیکٹ لیڈز کا جائزہ لیں، گاہک کی تفصیلات تبدیل کریں اور نیا حساب کتاب شروع کریں۔",
       newCalc: "نیا حساب کتاب",
       totalLeads: "کل پراجیکٹ لیڈز",
@@ -183,52 +184,52 @@ export default function AgentHub() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Closed':
-        return 'bg-emerald-500/10 text-accent-emerald border-emerald-500/20';
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700';
       case 'Sent':
-        return 'bg-amber-500/10 text-accent-amber border-amber-500/20';
+        return 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700';
       default:
-        return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+        return 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
     }
   };
 
   return (
-    <PageShell>
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-8" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
+    <PageShell headerTitle="Companies Project Hub">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-8 text-[#0f172a] dark:text-[#f8fafc]" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
         
         {/* Banner Headers */}
         <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 ${
           lang === 'ur' ? 'text-right' : 'text-left'
         }`}>
           <div>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight text-white">{t.title}</h1>
-            <p className="text-slate-400 text-sm mt-1">{t.subtitle}</p>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight text-[#0f172a] dark:text-white">{t.title}</h1>
+            <p className="text-[#475569] dark:text-slate-400 text-sm mt-1 font-medium">{t.subtitle}</p>
           </div>
           <button 
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-white text-black font-display font-semibold transition-all cursor-pointer shadow-md"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs transition-all cursor-pointer shadow-md"
           >
-            <span className="material-symbols-outlined">add_circle</span>
-            {t.newCalc}
+            <span className="material-symbols-outlined text-sm">add_circle</span>
+            <span>{t.newCalc}</span>
           </button>
         </div>
 
         {/* Multi-Tenant Quota Monitor Tracker */}
-        <section className="bg-surface-base border border-border-base rounded-xl p-5 shadow-sm space-y-3">
+        <section className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-sm space-y-3">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.limitText} Monitor</span>
-              <div className="text-sm font-semibold text-white mt-1">
+              <span className="text-xs font-bold text-[#475569] dark:text-slate-400 uppercase tracking-wider">{t.limitText} Monitor</span>
+              <div className="text-sm font-extrabold text-[#0f172a] dark:text-white mt-0.5">
                 {company.name} ({company.plan} Plan)
               </div>
             </div>
-            <div className="font-mono text-sm font-extrabold text-white">
-              {company.proposals_generated} / {activeLimit} <span className="text-xs text-slate-500">Proposals</span>
+            <div className="font-mono text-sm font-black text-[#0f172a] dark:text-white">
+              {company.proposals_generated} / {activeLimit} <span className="text-xs text-[#64748b] dark:text-slate-400 font-bold">Proposals</span>
             </div>
           </div>
-          <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden border border-border-base/50">
+          <div className="w-full h-3 bg-slate-100 dark:bg-black/40 rounded-full overflow-hidden border border-[#cbd5e1] dark:border-slate-800">
             <div 
-              className={`h-full transition-all duration-500 ${
-                usagePercentage >= 90 ? 'bg-accent-red' : usagePercentage >= 70 ? 'bg-accent-amber' : 'bg-primary'
+              className={`h-full transition-all duration-500 rounded-full ${
+                usagePercentage >= 90 ? 'bg-red-600' : usagePercentage >= 70 ? 'bg-[#b45309]' : 'bg-[#b45309]'
               }`}
               style={{ width: `${usagePercentage}%` }}
             ></div>
@@ -236,42 +237,49 @@ export default function AgentHub() {
         </section>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-surface-base border border-border-base p-5 rounded-xl flex items-center justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] p-6 rounded-2xl flex items-center justify-between shadow-sm">
             <div>
-              <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">{t.totalLeads}</span>
-              <div className="text-2xl font-extrabold font-mono mt-1 text-white">{loading ? '...' : totalLeads}</div>
+              <span className="text-[#475569] dark:text-slate-400 text-xs font-bold uppercase tracking-wider">{t.totalLeads}</span>
+              <div className="text-3xl font-black font-mono mt-1 text-[#0f172a] dark:text-white">{loading ? '...' : totalLeads}</div>
             </div>
-            <span className="material-symbols-outlined text-slate-500 text-3xl">leaderboard</span>
+            <div className="size-12 rounded-2xl bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 flex items-center justify-center font-bold">
+              <span className="material-symbols-outlined text-2xl">leaderboard</span>
+            </div>
           </div>
-          <div className="bg-surface-base border border-border-base p-5 rounded-xl flex items-center justify-between">
+          <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] p-6 rounded-2xl flex items-center justify-between shadow-sm">
             <div>
-              <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">{t.sysSize}</span>
-              <div className="text-2xl font-extrabold font-mono mt-1 text-white">
-                {loading ? '...' : totalKw.toFixed(1)} <span className="text-xs text-slate-500">kWp</span>
+              <span className="text-[#475569] dark:text-slate-400 text-xs font-bold uppercase tracking-wider">{t.sysSize}</span>
+              <div className="text-3xl font-black font-mono mt-1 text-[#0f172a] dark:text-white">
+                {loading ? '...' : totalKw.toFixed(1)} <span className="text-xs text-[#64748b] dark:text-slate-400 font-bold">kWp</span>
               </div>
             </div>
-            <span className="material-symbols-outlined text-accent-emerald text-3xl">solar_power</span>
+            <div className="size-12 rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 flex items-center justify-center font-bold">
+              <span className="material-symbols-outlined text-2xl">solar_power</span>
+            </div>
           </div>
-          <div className="bg-surface-base border border-border-base p-5 rounded-xl flex items-center justify-between">
+          <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] p-6 rounded-2xl flex items-center justify-between shadow-sm">
             <div>
-              <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">{t.pipeline}</span>
-              <div className="text-2xl font-extrabold font-mono mt-1 text-white">
-                {lang === 'ur' ? `${totalPkr.toLocaleString()} ${translations.ur.pkr}` : `${translations.en.pkr} ${totalPkr.toLocaleString()}`}
+              <span className="text-[#475569] dark:text-slate-400 text-xs font-bold uppercase tracking-wider">{t.pipeline}</span>
+              <div className="text-3xl font-black font-mono mt-1 text-[#b45309] dark:text-amber-400">
+                {formatPrice(totalPkr)}
               </div>
             </div>
-            <span className="material-symbols-outlined text-primary-container text-3xl">payments</span>
+            <div className="size-12 rounded-2xl bg-[#fef3c7] text-[#b45309] dark:bg-amber-950/40 dark:text-amber-400 flex items-center justify-center font-bold">
+              <span className="material-symbols-outlined text-2xl">payments</span>
+            </div>
           </div>
         </div>
 
-        {/* Filters and List */}
-        <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm">
-          <div className={`p-5 border-b border-border-base flex flex-col sm:flex-row items-center justify-between gap-4 ${
+        {/* Filters and Table List */}
+        <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl overflow-hidden shadow-sm">
+          
+          <div className={`p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 ${
             lang === 'ur' ? 'flex-row-reverse' : ''
           }`}>
             {/* Search Input */}
-            <div className="relative w-full sm:max-w-xs">
-              <span className={`absolute inset-y-0 flex items-center pointer-events-none text-slate-500 ${
+            <div className="relative w-full sm:max-w-sm">
+              <span className={`absolute inset-y-0 flex items-center pointer-events-none text-slate-400 ${
                 lang === 'ur' ? 'right-3' : 'left-3'
               }`}>
                 <span className="material-symbols-outlined text-lg">search</span>
@@ -281,22 +289,22 @@ export default function AgentHub() {
                 placeholder={t.searchPlaceholder} 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full py-2 text-sm bg-black/30 border border-border-base rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-primary transition-all ${
+                className={`w-full py-2.5 text-xs font-medium bg-[#f8fafc] dark:bg-[#282a2d] border border-[#cbd5e1] dark:border-[#3f474f] rounded-xl text-[#0f172a] dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#b45309] transition-all ${
                   lang === 'ur' ? 'pr-9 pl-4 text-right' : 'pl-9 pr-4 text-left'
                 }`}
               />
             </div>
 
-            {/* Status Pills */}
-            <div className="flex gap-1 bg-black/20 p-1 rounded-lg border border-border-base">
+            {/* Status Filter Tabs */}
+            <div className="flex gap-1 bg-slate-100 dark:bg-[#282a2d] p-1 rounded-xl border border-slate-200 dark:border-slate-700">
               {['All', 'Draft', 'Sent', 'Closed'].map((status) => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
-                  className={`px-3.5 py-1.5 rounded-md text-xs font-bold font-display transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-display transition-all cursor-pointer ${
                     statusFilter === status 
-                      ? 'bg-primary text-black' 
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#b45309] text-white shadow-sm' 
+                      : 'text-[#475569] dark:text-slate-400 hover:text-[#0f172a] dark:hover:text-white'
                   }`}
                 >
                   {status === 'All' && lang === 'ur' ? 'تمام' : status}
@@ -309,7 +317,7 @@ export default function AgentHub() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-black/10 border-b border-border-base text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                <tr className="bg-[#eff4ff] dark:bg-black/40 border-b border-slate-200 dark:border-slate-800 text-[#475569] dark:text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">
                   <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.customerName}</th>
                   <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.location}</th>
                   <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.contact}</th>
@@ -319,24 +327,32 @@ export default function AgentHub() {
                   <th className={`px-6 py-4 ${lang === 'ur' ? 'text-left' : 'text-right'}`}>{t.actions}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-base/40 text-sm">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-slate-400">{t.loading}</td>
+                    <td colSpan="7" className="px-6 py-8 text-center text-slate-500 font-medium">{t.loading}</td>
                   </tr>
                 ) : filteredProposals.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center text-slate-500">{t.noLeads}</td>
+                    <td colSpan="7" className="px-6 py-8 text-center text-slate-500 font-medium">{t.noLeads}</td>
                   </tr>
                 ) : (
                   filteredProposals.map((proposal) => (
-                    <tr key={proposal.id} className="hover:bg-white/5 transition-colors">
-                      <td className={`px-6 py-4 font-bold text-white ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{proposal.customer_name}</td>
-                      <td className={`px-6 py-4 text-slate-400 max-w-[200px] truncate ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{proposal.installation_address}</td>
-                      <td className={`px-6 py-4 font-mono text-xs text-slate-400 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{proposal.contact_number}</td>
-                      <td className={`px-6 py-4 font-mono text-xs text-slate-300 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{proposal.system_size_kw} kWp</td>
-                      <td className={`px-6 py-4 font-mono text-white ${lang === 'ur' ? 'text-right' : 'text-left'}`}>
-                        {lang === 'ur' ? `${proposal.total_investment?.toLocaleString()} روپے` : `${proposal.total_investment?.toLocaleString()} PKR`}
+                    <tr key={proposal.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                      <td className={`px-6 py-4 font-bold text-[#0f172a] dark:text-white text-sm ${lang === 'ur' ? 'text-right' : 'text-left'}`}>
+                        {proposal.customer_name}
+                      </td>
+                      <td className={`px-6 py-4 text-[#475569] dark:text-slate-400 max-w-[200px] truncate font-medium ${lang === 'ur' ? 'text-right' : 'text-left'}`}>
+                        {proposal.installation_address}
+                      </td>
+                      <td className={`px-6 py-4 font-mono text-xs font-semibold text-[#475569] dark:text-slate-400 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>
+                        {proposal.contact_number}
+                      </td>
+                      <td className={`px-6 py-4 font-mono text-xs font-bold text-[#0f172a] dark:text-white ${lang === 'ur' ? 'text-right' : 'text-left'}`}>
+                        {proposal.system_size_kw} kWp
+                      </td>
+                      <td className={`px-6 py-4 font-mono font-bold text-[#0f172a] dark:text-white ${lang === 'ur' ? 'text-right' : 'text-left'}`}>
+                        {formatPrice(proposal.total_investment)}
                       </td>
                       <td className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>
                         <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(proposal.status)}`}>
@@ -346,14 +362,14 @@ export default function AgentHub() {
                       <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                         <button 
                           onClick={() => handleOpenEditModal(proposal)}
-                          className="size-8 rounded-lg bg-surface-container hover:bg-primary hover:text-black flex items-center justify-center border border-border-base/50 text-slate-400 transition-all cursor-pointer"
+                          className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#b45309] hover:text-white flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
                           title="Edit Customer Info"
                         >
                           <span className="material-symbols-outlined text-sm">edit</span>
                         </button>
                         <button 
                           onClick={() => handleDelete(proposal.id)}
-                          className="size-8 rounded-lg bg-red-950/20 hover:bg-red-500 hover:text-white flex items-center justify-center border border-red-500/20 text-red-400 transition-all cursor-pointer"
+                          className="size-8 rounded-lg bg-red-50 dark:bg-red-950/20 hover:bg-red-600 hover:text-white flex items-center justify-center border border-red-200 dark:border-red-500/20 text-red-600 transition-all cursor-pointer"
                           title="Delete Lead"
                         >
                           <span className="material-symbols-outlined text-sm">delete</span>
@@ -369,17 +385,17 @@ export default function AgentHub() {
 
         {/* Lead Modal */}
         {modalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-surface-container-high border border-border-base rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-fadeIn" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
-              <div className={`px-6 py-4 border-b border-border-base flex justify-between items-center ${
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-fadeIn text-[#0f172a] dark:text-white" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
+              <div className={`px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center ${
                 lang === 'ur' ? 'flex-row-reverse' : ''
               }`}>
-                <h3 className="font-display font-bold text-white text-lg">
+                <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-lg">
                   {modalMode === 'create' ? `⚡ ${t.newCalc}` : `🖊️ ${t.updateBtn}`}
                 </h3>
                 <button 
                   onClick={() => setModalOpen(false)}
-                  className="text-slate-400 hover:text-white cursor-pointer"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -387,14 +403,14 @@ export default function AgentHub() {
 
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">{t.customerName} *</label>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">{t.customerName} *</label>
                   <input 
                     type="text" 
                     name="customer_name" 
                     value={formData.customer_name}
                     onChange={handleInputChange}
                     placeholder={lang === 'ur' ? 'صارف کا نام درج کریں' : 'Enter customer name'}
-                    className={`w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary ${
+                    className={`w-full px-3.5 py-2.5 text-sm bg-[#f8fafc] dark:bg-black/40 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-[#0f172a] dark:text-white focus:outline-none focus:border-[#b45309] font-medium ${
                       lang === 'ur' ? 'text-right' : 'text-left'
                     }`}
                     required
@@ -403,76 +419,81 @@ export default function AgentHub() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase">{t.contact} *</label>
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">{t.contact} *</label>
                     <input 
                       type="text" 
                       name="contact_number" 
                       value={formData.contact_number}
                       onChange={handleInputChange}
-                      placeholder="e.g. 0300-1234567"
-                      className={`w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary ${
+                      placeholder="0300-1234567"
+                      className={`w-full px-3.5 py-2.5 text-sm bg-[#f8fafc] dark:bg-black/40 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-[#0f172a] dark:text-white focus:outline-none focus:border-[#b45309] font-mono ${
                         lang === 'ur' ? 'text-right' : 'text-left'
                       }`}
                       required
                     />
                   </div>
+
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase">Email Address (Optional)</label>
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">Email</label>
                     <input 
                       type="email" 
                       name="email_address" 
                       value={formData.email_address}
                       onChange={handleInputChange}
-                      placeholder="e.g. email@example.com"
-                      className="w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary"
+                      placeholder="client@example.com"
+                      className={`w-full px-3.5 py-2.5 text-sm bg-[#f8fafc] dark:bg-black/40 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-[#0f172a] dark:text-white focus:outline-none focus:border-[#b45309] ${
+                        lang === 'ur' ? 'text-right' : 'text-left'
+                      }`}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">{t.location} *</label>
-                  <textarea 
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">{t.location} *</label>
+                  <input 
+                    type="text" 
                     name="installation_address" 
                     value={formData.installation_address}
                     onChange={handleInputChange}
-                    placeholder={lang === 'ur' ? 'انسٹالیشن کا پتہ درج کریں' : 'Enter site location address'}
-                    rows="2"
-                    className={`w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary ${
+                    placeholder={lang === 'ur' ? 'انسٹالیشن کا پتہ درج کریں' : 'House/Sector, City'}
+                    className={`w-full px-3.5 py-2.5 text-sm bg-[#f8fafc] dark:bg-black/40 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-[#0f172a] dark:text-white focus:outline-none focus:border-[#b45309] font-medium ${
                       lang === 'ur' ? 'text-right' : 'text-left'
                     }`}
                     required
-                  ></textarea>
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase">System (kWp)</label>
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">{t.specs} (kWp)</label>
                     <input 
                       type="number" 
                       step="0.1"
                       name="system_size_kw" 
                       value={formData.system_size_kw}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary font-mono text-center"
+                      className="w-full px-3.5 py-2.5 text-sm bg-[#f8fafc] dark:bg-black/40 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-[#0f172a] dark:text-white font-mono font-bold text-center"
                     />
                   </div>
+                  
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase">Investment (PKR)</label>
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">{t.investment}</label>
                     <input 
                       type="number" 
                       name="total_investment" 
                       value={formData.total_investment}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary font-mono text-center"
+                      className="w-full px-3.5 py-2.5 text-sm bg-[#f8fafc] dark:bg-black/40 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-[#0f172a] dark:text-white font-mono font-bold text-center"
                     />
                   </div>
+
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase">Pipeline Status</label>
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">{t.status}</label>
                     <select 
-                      name="status"
+                      name="status" 
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary cursor-pointer"
+                      className="w-full px-3.5 py-2.5 text-sm bg-[#f8fafc] dark:bg-black/40 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-[#0f172a] dark:text-white font-bold cursor-pointer"
                     >
                       <option value="Draft">Draft</option>
                       <option value="Sent">Sent</option>
@@ -481,55 +502,22 @@ export default function AgentHub() {
                   </div>
                 </div>
 
-                <div className={`pt-4 border-t border-border-base flex justify-end gap-3 ${
-                  lang === 'ur' ? 'flex-row-reverse' : ''
-                }`}>
+                <div className="pt-4 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
                   <button 
                     type="button"
                     onClick={() => setModalOpen(false)}
-                    className="px-4 py-2 rounded-lg bg-surface-container border border-border-base text-white text-xs font-bold font-display cursor-pointer hover:border-white/20"
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-display font-bold text-xs hover:bg-slate-100 cursor-pointer"
                   >
                     {t.cancel}
                   </button>
                   <button 
                     type="submit"
-                    className="px-4 py-2 rounded-lg bg-primary hover:bg-white text-black text-xs font-bold font-display cursor-pointer shadow-md"
+                    className="px-5 py-2.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs shadow-md cursor-pointer transition-all"
                   >
                     {modalMode === 'create' ? t.createBtn : t.updateBtn}
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
-
-        {/* Lockout Quota Hard Block Modal */}
-        {limitModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur flex items-center justify-center p-4">
-            <div className="bg-[#1c1f26] border-2 border-red-500/30 rounded-xl w-full max-w-md shadow-2xl p-6 text-center space-y-6 animate-bounce">
-              <div className="size-16 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto text-red-500">
-                <span className="material-symbols-outlined text-3xl">gavel</span>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="font-display font-extrabold text-white text-xl">{t.limitTitle}</h3>
-                <p className="text-slate-400 text-xs leading-relaxed">{t.limitBody}</p>
-              </div>
-
-              <div className="flex gap-2">
-                <button 
-                  onClick={handleRequestOverride}
-                  className="flex-1 py-2.5 rounded-lg bg-primary hover:bg-white text-black font-display font-semibold transition-all cursor-pointer shadow-md text-xs"
-                >
-                  {t.requestOverride}
-                </button>
-                <button 
-                  onClick={() => setLimitModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-surface-container border border-border-base text-white font-display font-semibold transition-all cursor-pointer text-xs"
-                >
-                  {t.cancel}
-                </button>
-              </div>
             </div>
           </div>
         )}
