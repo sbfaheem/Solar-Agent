@@ -40,33 +40,29 @@ export default function PageShell({ children, headerTitle }) {
     }
   }, [pathname]);
 
-  // Sidebar Menu Configs matching screenshot design
+  // Sidebar Menu Configs
   const workspaceMenuItems = [
     { label: 'Dashboard', urLabel: 'ڈیش بورڈ', path: '/', icon: 'grid_view' },
     { label: 'Companies', urLabel: 'کمپنیاں', path: '/agent-hub', icon: 'domain' },
     { label: 'Payments', urLabel: 'ادائیگیاں', path: '/team-settings', icon: 'payments' },
     { label: 'Proposals', urLabel: 'پروپوزلز', path: '/configuration', icon: 'description' },
-    { label: 'Tier Settings', urLabel: 'ٹیر سیٹنگز', path: '/admin-desk', icon: 'tune' },
     { label: 'Usage', urLabel: 'یوسیج', path: '/customer-view', icon: 'monitoring' },
   ];
 
   const adminMenuItems = [
-    { label: 'Dashboard', urLabel: 'ڈیش بورڈ', path: '/admin-desk', icon: 'grid_view' },
-    { label: 'Companies', urLabel: 'کمپنیاں', path: '/agent-hub', icon: 'domain' },
-    { label: 'Payments', urLabel: 'ادائیگیاں', path: '/team-settings', icon: 'payments' },
-    { label: 'Tier Settings', urLabel: 'ٹیر سیٹنگز', path: '/admin-desk', icon: 'tune' },
-    { label: 'Logs', urLabel: 'لاگز', path: '/admin-desk', icon: 'history' },
-    { label: 'Workspace Home', urLabel: 'ورک اسپیس ہوم', path: '/', icon: 'home' }
+    { label: 'Governance Desk', urLabel: 'گورننس ڈیسک', path: '/admin-desk', icon: 'shield_person' },
+    { label: 'Distributor Overview', urLabel: 'ڈسٹری بیوٹرز', path: '/agent-hub', icon: 'domain' },
+    { label: 'Payment Ledger', urLabel: 'لیجر', path: '/admin-desk', icon: 'payments' },
+    { label: 'Tier Verification', urLabel: 'ٹیر سیکیورٹی', path: '/admin-desk', icon: 'verified' },
+    { label: 'Workspace View', urLabel: 'ورک اسپیس ویو', path: '/', icon: 'home' }
   ];
 
-  const activeMenuItems = viewMode === 'admin' ? adminMenuItems : workspaceMenuItems;
+  const activeMenuItems = (user?.role === 'super_admin' || viewMode === 'admin') ? adminMenuItems : workspaceMenuItems;
   const activeLimit = getActiveLimit();
 
   const getTierBadgeText = () => {
-    if (viewMode === 'admin') return 'SUPER ADMIN';
-    if (company.plan === 'Silver') return 'SILVER AGENT';
-    if (company.plan === 'Gold') return 'GOLD AGENT';
-    return 'COMPANY ADMIN'; 
+    if (user?.role === 'super_admin' || viewMode === 'admin') return '👑 SUPER ADMIN';
+    return `DISTRIBUTOR (${company.plan || 'Silver'})`;
   };
 
   const getInitials = (name) => {
@@ -74,15 +70,14 @@ export default function PageShell({ children, headerTitle }) {
     return name.split(' ').map(w => w[0]).join('').toUpperCase();
   };
 
-  // Title calculation for header
   const getPageTitle = () => {
     if (headerTitle) return headerTitle;
-    if (pathname === '/team-settings') return 'Subscription Payment';
-    if (pathname === '/admin-desk') return 'Super Admin Overview';
-    if (pathname === '/agent-hub') return 'Companies Workspace';
-    if (pathname === '/configuration') return 'Solar Proposals Engineering';
+    if (pathname === '/team-settings') return 'Subscription Payment & Billing';
+    if (pathname === '/admin-desk') return 'Super Admin Verification & Governance Desk';
+    if (pathname === '/agent-hub') return 'Distributor Companies Workspace';
+    if (pathname === '/configuration') return 'Solar Engineering Proposals';
     if (pathname === '/customer-view') return 'Live Presentation View';
-    return 'Dashboard Workspace';
+    return 'Distributor Dashboard Workspace';
   };
 
   return (
@@ -108,7 +103,7 @@ export default function PageShell({ children, headerTitle }) {
 
       <div className="flex flex-col lg:flex-row flex-1 min-h-screen">
         
-        {/* Left Sidebar Navigation matching screenshot */}
+        {/* Left Sidebar Navigation */}
         <aside className={`w-full lg:w-64 flex-shrink-0 flex flex-col justify-between p-5 border-b lg:border-b-0 ${
           theme === 'dark'
             ? 'bg-[#181a1d] border-[#2d3137]'
@@ -118,91 +113,109 @@ export default function PageShell({ children, headerTitle }) {
           <div className="space-y-6">
             {/* Top Brand Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="size-10 rounded-xl bg-[#ca8a04] text-white flex items-center justify-center font-bold shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-xl">solar_power</span>
-              </div>
+              <span className="size-9 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined">solar_power</span>
+              </span>
               <div>
-                <div className={`font-display font-extrabold text-lg tracking-tight leading-tight ${
-                  theme === 'dark' ? 'text-white' : 'text-[#854d0e]'
+                <span className={`font-display font-extrabold text-base tracking-tight block ${
+                  theme === 'dark' ? 'text-white' : 'text-[#0f172a]'
                 }`}>
                   Solar Agent
-                </div>
-                <div className="font-mono text-[9px] font-bold uppercase tracking-widest text-[#94a3b8]">
-                  ENGINEERING PRECISION
-                </div>
+                </span>
+                <span className="text-[10px] text-[#94a3b8] font-mono block">
+                  {user?.role === 'super_admin' ? 'Super Admin Portal' : 'Distributor SaaS'}
+                </span>
               </div>
             </Link>
 
-            {/* Nav Menu Items */}
+            {/* Role Badge Indicator */}
+            <div className={`p-3 rounded-xl border text-xs font-mono flex items-center justify-between ${
+              user?.role === 'super_admin'
+                ? 'bg-amber-950/40 border-amber-800 text-amber-300'
+                : 'bg-slate-50 dark:bg-black/30 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+            }`}>
+              <div className="flex items-center gap-2 truncate">
+                <span className="material-symbols-outlined text-base">
+                  {user?.role === 'super_admin' ? 'shield_person' : 'domain'}
+                </span>
+                <span className="font-bold truncate">{user?.company_name || 'Distributor Portal'}</span>
+              </div>
+              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-[#b45309] text-white">
+                {company.plan || 'Silver'}
+              </span>
+            </div>
+
+            {/* Navigation Menu Links */}
             <nav className="space-y-1">
               {activeMenuItems.map((item) => {
-                const active = pathname === item.path;
+                const isActive = pathname === item.path;
                 return (
-                  <Link 
-                    key={item.label} 
+                  <Link
+                    key={item.path}
                     href={item.path}
-                    onClick={() => {
-                      if (item.path === '/') setViewMode('workspace');
-                    }}
-                    className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
-                      active 
-                        ? theme === 'dark'
-                          ? 'bg-[#ca8a04]/15 text-[#facc15] font-bold border-r-4 border-[#ca8a04]'
-                          : 'bg-[#fefce8] text-[#854d0e] font-bold border-r-4 border-[#ca8a04]'
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-display font-extrabold text-xs transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-[#b45309] text-white shadow-sm'
                         : theme === 'dark'
-                          ? 'text-[#94a3b8] hover:bg-white/5 hover:text-white'
-                          : 'text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#0f172a]'
+                          ? 'text-[#94a3b8] hover:text-white hover:bg-white/5'
+                          : 'text-[#64748b] hover:text-[#0f172a] hover:bg-slate-100'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className={`material-symbols-outlined text-lg ${active ? 'text-[#ca8a04]' : 'text-slate-400'}`}>
-                        {item.icon}
-                      </span>
-                      <span>{lang === 'ur' ? item.urLabel : item.label}</span>
-                    </div>
+                    <span className="material-symbols-outlined text-lg">{item.icon}</span>
+                    <span>{lang === 'ur' ? item.urLabel : item.label}</span>
                   </Link>
                 );
               })}
             </nav>
           </div>
 
-          {/* Bottom Action Button */}
-          <div className="pt-6 space-y-3">
-            <button 
-              onClick={() => router.push('/configuration')}
-              className="w-full py-3 px-4 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs shadow-md shadow-amber-900/10 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.02]"
+          {/* Bottom Quota Progress Meter */}
+          <div className={`p-4 rounded-xl border space-y-2 mt-6 ${
+            theme === 'dark' ? 'bg-[#0f1113] border-[#2d3137]' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-[#94a3b8] font-medium text-[10px] uppercase font-mono">Monthly Quota</span>
+              <span className="font-mono font-bold text-[#b45309] text-[11px]">
+                {company.proposals_generated || 0} / {activeLimit}
+              </span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+              <div 
+                className="h-full bg-[#b45309] rounded-full transition-all"
+                style={{ width: `${Math.min(100, ((company.proposals_generated || 0) / activeLimit) * 100)}%` }}
+              ></div>
+            </div>
+            <Link 
+              href="/team-settings" 
+              className="text-[10px] font-bold text-[#b45309] hover:underline block text-center mt-1"
             >
-              <span className="material-symbols-outlined text-sm">add</span>
-              <span>New Solar Calculation</span>
-            </button>
+              + Upgrade Distributor Quota
+            </Link>
           </div>
+
         </aside>
 
-        {/* Main Content Area */}
+        {/* Right Main Content Viewport */}
         <div className="flex-1 flex flex-col min-w-0">
           
-          {/* Top Header Bar matching screenshot */}
-          <header className={`h-16 px-6 border-b flex items-center justify-between sticky top-0 z-30 ${
-            theme === 'dark'
-              ? 'bg-[#181a1d]/90 border-[#2d3137] backdrop-blur-md'
-              : 'bg-white/90 border-[#e2e8f0] backdrop-blur-md'
+          {/* Top Navigation Header */}
+          <header className={`px-6 py-4 border-b flex items-center justify-between gap-4 ${
+            theme === 'dark' ? 'bg-[#181a1d] border-[#2d3137]' : 'bg-white border-[#e2e8f0]'
           }`}>
             
-            {/* Title / Search Bar */}
-            <div className="flex items-center gap-4 flex-1 max-w-md">
-              {viewMode === 'admin' ? (
-                <div className="relative w-full">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                    search
-                  </span>
+            {/* Left Header Title / Search */}
+            <div className="flex items-center gap-4 flex-1">
+              {pathname === '/agent-hub' ? (
+                <div className="relative max-w-xs w-full">
+                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
                   <input 
                     type="text" 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search companies..." 
+                    placeholder="Search distributor proposals..." 
                     className={`w-full pl-9 pr-4 py-2 text-xs rounded-xl border focus:outline-none transition-all ${
                       theme === 'dark'
-                        ? 'bg-[#0f1113] border-[#3f474f] text-white focus:border-[#ca8a04]'
+                        ? 'bg-[#0f1113] border-[#3f474f] text-white focus:border-[#b45309]'
                         : 'bg-[#f8fafc] border-[#cbd5e1] text-slate-800 focus:border-[#b45309]'
                     }`}
                   />
@@ -219,7 +232,7 @@ export default function PageShell({ children, headerTitle }) {
             {/* Utility Controls */}
             <div className="flex items-center gap-3">
               
-              {/* PKR/USD Currency Toggle */}
+              {/* Currency Toggle */}
               <button 
                 onClick={toggleCurrency}
                 className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
@@ -243,20 +256,7 @@ export default function PageShell({ children, headerTitle }) {
                 }`}
               >
                 <span className="material-symbols-outlined text-sm">translate</span>
-                <span>{lang === 'en' ? 'English/Urdu' : 'اردو/English'}</span>
-              </button>
-
-              {/* Notification Bell Icon */}
-              <button 
-                className={`size-9 rounded-xl border flex items-center justify-center relative cursor-pointer transition-all ${
-                  theme === 'dark'
-                    ? 'bg-[#282a2d] border-[#3f474f] text-slate-300 hover:text-white'
-                    : 'bg-[#f8fafc] border-[#cbd5e1] text-slate-600 hover:text-slate-900'
-                }`}
-                title="Notifications"
-              >
-                <span className="material-symbols-outlined text-sm">notifications</span>
-                <span className="size-2 rounded-full bg-red-500 absolute top-2 right-2 animate-pulse"></span>
+                <span>{lang === 'en' ? 'English' : 'اردو'}</span>
               </button>
 
               {/* Theme Switcher */}
@@ -274,7 +274,7 @@ export default function PageShell({ children, headerTitle }) {
                 </span>
               </button>
 
-              {/* User Profile Pill Block */}
+              {/* User Profile Pill */}
               {user && (
                 <div className={`flex items-center gap-3 pl-3 pr-2 py-1 rounded-xl border ${
                   theme === 'dark'
@@ -292,7 +292,7 @@ export default function PageShell({ children, headerTitle }) {
                     </div>
                   </div>
 
-                  <div className="size-8 rounded-full bg-[#ca8a04] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm">
+                  <div className="size-8 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm">
                     {user.initials || getInitials(user.name)}
                   </div>
 
@@ -309,7 +309,7 @@ export default function PageShell({ children, headerTitle }) {
             </div>
           </header>
 
-          {/* Main Dashboard Workspace Viewport */}
+          {/* Main Viewport */}
           <main className="flex-1 overflow-y-auto">
             {children}
           </main>

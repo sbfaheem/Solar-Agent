@@ -28,7 +28,7 @@ export const AppProvider = ({ children }) => {
 
   const [theme, setTheme] = useState('light'); 
   const [lang, setLang] = useState('en'); 
-  const [currency, setCurrency] = useState('PKR'); // 'PKR' or 'USD'
+  const [currency, setCurrency] = useState('PKR'); 
 
   const toggleCurrency = () => {
     setCurrency(prev => prev === 'PKR' ? 'USD' : 'PKR');
@@ -46,24 +46,37 @@ export const AppProvider = ({ children }) => {
   const [inverters, setInverters] = useState([]);
   const [solarPanels, setSolarPanels] = useState([]);
   
-  // Dynamic view mode toggle (B2B SaaS Workspace frontend vs Super User Admin CMS backend)
   const [viewMode, setViewMode] = useState('workspace'); // 'workspace' or 'admin'
 
+  // User State with Role-Based Access Control (RBAC)
   const [user, setUser] = useState({
-    name: 'Syed Bilal',
-    email: 'bilalfaheem47@gmail.com',
-    initials: 'SA'
+    id: 'user-admin',
+    name: 'Super Admin',
+    email: 'superadmin@solaragent.pk',
+    initials: 'SA',
+    role: 'super_admin', // 'super_admin' or 'distributor'
+    company_id: 'comp-admin',
+    company_name: 'Solar Agent Corporate'
   });
 
+  // Active Company State
   const [company, setCompany] = useState({
     id: "comp-1",
     name: "Solar Solutions Ltd",
     plan: "Silver", 
-    proposals_generated: 35, // At 35/35 limit for Silver Plan testing
+    proposals_generated: 35,
     billing_status: "Active",
     receipt_uploaded: null,
     override_quota: 0
   });
+
+  // Registered Distributors List for Super Admin Management
+  const [distributors, setDistributors] = useState([
+    { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 35, status: 'Active', date: '2026-06-12' },
+    { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 450, limit: 500, status: 'Verified', date: '2026-05-10' },
+    { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 120, limit: 250, status: 'Active', date: '2026-06-01' },
+    { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 35, status: 'Pending Verification', date: '2026-07-28' }
+  ]);
 
   // Official Editable Bank Wire Details
   const [bankDetails, setBankDetails] = useState({
@@ -82,7 +95,7 @@ export const AppProvider = ({ children }) => {
   const [pendingUpgradeRequests, setPendingUpgradeRequests] = useState([
     {
       id: "UPG-99120",
-      company_id: "comp-2",
+      company_id: "comp-4",
       company_name: "KPK Volt Tech",
       contact_email: "kpkvolt@solaragent.pk",
       current_plan: "Silver",
@@ -104,7 +117,7 @@ export const AppProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([
     {
       id: "PK-TXN-98421",
-      company_name: "Indus Solar Solutions",
+      company_name: "Indus Solar Systems",
       plan: "Platinum",
       channel: "Easypaisa",
       channel_type: "Mobile Wallet",
@@ -117,7 +130,7 @@ export const AppProvider = ({ children }) => {
     },
     {
       id: "PK-TXN-98420",
-      company_name: "Punjab Energy Systems",
+      company_name: "Punjab Energy EPC",
       plan: "Gold",
       channel: "JazzCash",
       channel_type: "Mobile Wallet",
@@ -143,6 +156,111 @@ export const AppProvider = ({ children }) => {
     }
   ]);
 
+  // Authenticate Super Admin
+  const signInSuperAdmin = (email = 'superadmin@solaragent.pk', password) => {
+    setUser({
+      id: 'user-super-admin',
+      name: 'Super Admin Governance',
+      email: email,
+      initials: 'SA',
+      role: 'super_admin',
+      company_id: 'comp-admin',
+      company_name: 'Solar Agent HQ'
+    });
+    setViewMode('admin');
+    showToast("👑 Authenticated as Super Admin! Full Governance Desk Unlocked.");
+    router.push('/admin-desk');
+  };
+
+  // Authenticate Distributor (Sign In)
+  const signInDistributor = (email, password) => {
+    const isSuper = email.toLowerCase().includes('admin');
+    if (isSuper) {
+      signInSuperAdmin(email, password);
+      return;
+    }
+
+    const matchedComp = distributors.find(d => d.email.toLowerCase() === email.toLowerCase()) || {
+      id: `comp-${Math.floor(100 + Math.random() * 900)}`,
+      name: email.split('@')[0].toUpperCase() + ' Solar',
+      plan: 'Silver',
+      used: 12,
+      limit: 35
+    };
+
+    setUser({
+      id: `user-${matchedComp.id}`,
+      name: matchedComp.name,
+      email: email,
+      initials: matchedComp.name.slice(0, 2).toUpperCase(),
+      role: 'distributor',
+      company_id: matchedComp.id,
+      company_name: matchedComp.name
+    });
+
+    setCompany({
+      id: matchedComp.id,
+      name: matchedComp.name,
+      plan: matchedComp.plan,
+      proposals_generated: matchedComp.used,
+      billing_status: "Active",
+      override_quota: 0
+    });
+
+    setViewMode('workspace');
+    showToast(`⚡ Welcome to your Distributor Workspace, ${matchedComp.name}!`);
+    router.push('/');
+  };
+
+  // Sign In with Google Simulation
+  const signInWithGoogle = (targetRole = 'distributor') => {
+    if (targetRole === 'super_admin') {
+      signInSuperAdmin('superadmin@solaragent.pk', 'google-auth');
+    } else {
+      signInDistributor('indussolar@solaragent.pk', 'google-auth');
+    }
+  };
+
+  // Create an Account for Distributor Registration
+  const signUpDistributor = ({ companyName, name, email, password, plan = 'Silver' }) => {
+    const newCompId = `comp-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newDistributor = {
+      id: newCompId,
+      name: companyName,
+      email: email,
+      plan: plan,
+      used: 0,
+      limit: plan === 'Silver' ? 35 : (plan === 'Gold' ? 60 : 100),
+      status: 'Active',
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    setDistributors(prev => [newDistributor, ...prev]);
+
+    setUser({
+      id: `user-${newCompId}`,
+      name: name || companyName,
+      email: email,
+      initials: companyName.slice(0, 2).toUpperCase(),
+      role: 'distributor',
+      company_id: newCompId,
+      company_name: companyName
+    });
+
+    setCompany({
+      id: newCompId,
+      name: companyName,
+      plan: plan,
+      proposals_generated: 0,
+      billing_status: 'Active',
+      override_quota: 0
+    });
+
+    setViewMode('workspace');
+    showToast(`✨ Account created! Logged into ${companyName} Distributor Portal.`);
+    router.push('/');
+  };
+
   // Submit Upgrade Request with Payment Receipt
   const submitUpgradeRequest = async (reqData) => {
     const newReq = {
@@ -160,7 +278,14 @@ export const AppProvider = ({ children }) => {
     const req = pendingUpgradeRequests.find(r => r.id === requestId);
     if (!req) return false;
 
-    // Upgrades company plan & expands quota
+    // Upgrades distributor in state
+    setDistributors(prev => prev.map(d => d.name === req.company_name ? {
+      ...d,
+      plan: req.target_plan,
+      limit: req.target_plan === 'Gold' ? 60 : 100,
+      status: 'Verified'
+    } : d));
+
     if (company.name === req.company_name || req.company_id === company.id) {
       const updatedComp = {
         ...company,
@@ -217,7 +342,6 @@ export const AppProvider = ({ children }) => {
     panelCount: 0
   });
 
-  // Toggle theme
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
@@ -228,7 +352,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Toggle Language
   const toggleLang = () => {
     const nextLang = lang === 'en' ? 'ur' : 'en';
     setLang(nextLang);
@@ -239,7 +362,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Toast notification system
   const [toast, setToast] = useState(null);
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -248,7 +370,6 @@ export const AppProvider = ({ children }) => {
     }, 3000);
   };
 
-  // Load initial data
   const loadAllData = async () => {
     setLoading(true);
     try {
@@ -281,29 +402,22 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  // Auth Handlers
-  const signIn = (email, password) => {
-    setUser({
-      name: email ? email.split('@')[0].toUpperCase() : 'Syed Bilal',
-      email: email || 'bilalfaheem47@gmail.com',
-      initials: 'SA'
-    });
-    showToast(`Welcome back, ${email || 'Syed Bilal'}!`);
-  };
-
   const signOut = () => {
     setUser(null);
-    showToast("Signed out successfully");
+    showToast("Signed out from portal");
     router.push('/login');
   };
 
-  // Calculate active proposal limit based on plan
   const getActiveLimit = () => {
     const baseLimit = company.plan === 'Silver' ? 35 : (company.plan === 'Gold' ? 60 : 100);
     return baseLimit + (company.override_quota || 0);
   };
 
-  // Proposals CRUD handlers
+  // Multi-Tenant Proposals: Strict Data Isolation by Distributor
+  const filteredProposals = user?.role === 'super_admin' 
+    ? proposals 
+    : proposals.filter(p => !p.company_id || p.company_id === user?.company_id || p.company_name === user?.company_name);
+
   const addLead = async (leadData) => {
     const currentLimit = getActiveLimit();
     if (company.proposals_generated >= currentLimit) {
@@ -312,13 +426,18 @@ export const AppProvider = ({ children }) => {
     }
 
     try {
-      const created = await apiCreateProposal(leadData);
+      const payload = {
+        ...leadData,
+        company_id: user?.company_id || company.id,
+        company_name: user?.company_name || company.name
+      };
+      const created = await apiCreateProposal(payload);
       setProposals(prev => [created, ...prev]);
       setCompany(prev => ({
         ...prev,
         proposals_generated: (prev.proposals_generated || 0) + 1
       }));
-      showToast("⚡ Lead created successfully!");
+      showToast("⚡ Lead created successfully in your distributor workspace!");
       return created;
     } catch (err) {
       showToast("❌ Failed to create proposal", "error");
@@ -352,7 +471,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Override quota request handler
   const requestOverrideQuota = async (requestDetails) => {
     try {
       const created = await createOverrideRequest(requestDetails);
@@ -365,7 +483,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Super admin approve override
   const approveOverride = async (requestId) => {
     try {
       const success = await approveOverrideRequest(requestId);
@@ -384,7 +501,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Submits offline receipt proof
   const submitOfflinePayment = async (file) => {
     const updated = await updateCompanyState({
       receipt_uploaded: file ? file.name : 'receipt.pdf',
@@ -403,7 +519,6 @@ export const AppProvider = ({ children }) => {
     showToast("✅ Subscription verified by Super Admin!");
   };
 
-  // Hardware CMS Handlers
   const addInverter = async (inverterData) => {
     try {
       const created = await apiCreateInverter(inverterData);
@@ -458,10 +573,12 @@ export const AppProvider = ({ children }) => {
       toggleTheme,
       lang,
       toggleLang,
-      proposals,
+      proposals: filteredProposals,
+      allProposals: proposals,
       inverters,
       solarPanels,
       company,
+      distributors,
       bankDetails,
       updateBankDetails,
       pendingUpgradeRequests,
@@ -487,7 +604,10 @@ export const AppProvider = ({ children }) => {
       showToast,
       loadAllData,
       user,
-      signIn,
+      signInDistributor,
+      signInSuperAdmin,
+      signInWithGoogle,
+      signUpDistributor,
       signOut,
       viewMode,
       setViewMode,
