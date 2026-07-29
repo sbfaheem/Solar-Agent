@@ -169,28 +169,39 @@ export default function PageShell({ children, headerTitle }) {
             </nav>
           </div>
 
-          {/* Bottom Quota Progress Meter */}
-          <div className={`p-4 rounded-xl border space-y-2 mt-6 ${
-            theme === 'dark' ? 'bg-[#0f1113] border-[#2d3137]' : 'bg-slate-50 border-slate-200'
-          }`}>
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-[#94a3b8] font-medium text-[10px] uppercase font-mono">Monthly Quota</span>
-              <span className="font-mono font-bold text-[#b45309] text-[11px]">
-                {company.proposals_generated || 0} / {activeLimit}
-              </span>
+          <div className="space-y-3 mt-6">
+            {/* Bottom Quota Progress Meter */}
+            <div className={`p-4 rounded-xl border space-y-2 ${
+              theme === 'dark' ? 'bg-[#0f1113] border-[#2d3137]' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-[#94a3b8] font-medium text-[10px] uppercase font-mono">Monthly Quota</span>
+                <span className="font-mono font-bold text-[#b45309] text-[11px]">
+                  {company.proposals_generated || 0} / {activeLimit}
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                <div 
+                  className="h-full bg-[#b45309] rounded-full transition-all"
+                  style={{ width: `${Math.min(100, ((company.proposals_generated || 0) / activeLimit) * 100)}%` }}
+                ></div>
+              </div>
+              <Link 
+                href="/team-settings" 
+                className="text-[10px] font-bold text-[#b45309] hover:underline block text-center mt-1"
+              >
+                + Upgrade Distributor Quota
+              </Link>
             </div>
-            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-              <div 
-                className="h-full bg-[#b45309] rounded-full transition-all"
-                style={{ width: `${Math.min(100, ((company.proposals_generated || 0) / activeLimit) * 100)}%` }}
-              ></div>
-            </div>
-            <Link 
-              href="/team-settings" 
-              className="text-[10px] font-bold text-[#b45309] hover:underline block text-center mt-1"
+
+            {/* Sidebar Logout Button */}
+            <button 
+              onClick={signOut}
+              className="w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 font-display font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              + Upgrade Distributor Quota
-            </Link>
+              <span className="material-symbols-outlined text-base">logout</span>
+              <span>Logout from Portal</span>
+            </button>
           </div>
 
         </aside>
@@ -274,7 +285,7 @@ export default function PageShell({ children, headerTitle }) {
                 </span>
               </button>
 
-              {/* User Profile Pill */}
+              {/* User Profile Pill & Prominent Logout Button */}
               {user && (
                 <div className={`flex items-center gap-3 pl-3 pr-2 py-1 rounded-xl border ${
                   theme === 'dark'
@@ -296,12 +307,14 @@ export default function PageShell({ children, headerTitle }) {
                     {user.initials || getInitials(user.name)}
                   </div>
 
+                  {/* PROMINENT LOGOUT BUTTON WITH RED HIGHLIGHT */}
                   <button 
                     onClick={signOut}
-                    className="size-7 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 flex items-center justify-center transition-colors cursor-pointer"
-                    title="Log Out"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-red-500 transition-all"
+                    title="Log Out from Portal"
                   >
                     <span className="material-symbols-outlined text-sm">logout</span>
+                    <span>Logout</span>
                   </button>
                 </div>
               )}

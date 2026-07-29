@@ -2,12 +2,13 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 
-export default function PageShell({ children }) {
+export default function PageShell({ children, headerTitle }) {
   const pathname = usePathname();
-  const { theme, toggleTheme, toast } = useApp();
+  const router = useRouter();
+  const { theme, toggleTheme, toast, user, signOut, company, lang, toggleLang, currency, toggleCurrency } = useApp();
 
   const menuItems = [
     { name: 'Showcase Hub', path: '/', icon: 'dashboard' },
@@ -28,7 +29,7 @@ export default function PageShell({ children }) {
           </div>
           <div>
             <h2 className="font-display text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
-              Stitch <span className="text-primary-container">Solar Agent</span>
+              Solar Agent
             </h2>
             <p className="text-xs text-slate-400 font-medium">B2B SaaS Energy Platform</p>
           </div>
@@ -55,8 +56,17 @@ export default function PageShell({ children }) {
           })}
         </nav>
 
-        {/* Utilities: Theme Toggle & Mock Toggles */}
+        {/* Utilities: Theme Toggle, User Profile & Prominent Logout Button */}
         <div className="flex items-center gap-3">
+          
+          {/* Currency Toggle */}
+          <button 
+            onClick={toggleCurrency}
+            className="px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-amber-300 text-xs font-mono font-bold cursor-pointer hover:bg-slate-800"
+          >
+            {currency} ⇄ {currency === 'PKR' ? 'USD' : 'PKR'}
+          </button>
+
           {/* Theme Toggle */}
           <button 
             onClick={toggleTheme} 
@@ -68,16 +78,31 @@ export default function PageShell({ children }) {
             </span>
           </button>
 
-          {/* User Profile Info Mock */}
-          <div className="flex items-center gap-2 pl-3 border-l border-border-base">
-            <div className="size-8 rounded-full bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary-container text-xs font-bold font-mono">
-              SA
+          {/* User Profile Info Badge */}
+          <div className="flex items-center gap-3 pl-3 border-l border-border-base">
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-full bg-[#b45309] text-white flex items-center justify-center text-xs font-bold font-mono shadow-sm">
+                {user?.initials || 'SA'}
+              </div>
+              <div className="hidden md:flex flex-col text-left">
+                <span className="text-xs font-bold text-white leading-none">{user?.name || 'Syed Bilal'}</span>
+                <span className="text-[10px] text-amber-400 font-mono font-bold leading-normal">
+                  {user?.role === 'super_admin' ? '👑 Super Admin' : `${company?.plan || 'Silver'} Agent`}
+                </span>
+              </div>
             </div>
-            <div className="hidden md:flex flex-col text-left">
-              <span className="text-xs font-bold text-white leading-none">Syed Bilal</span>
-              <span className="text-[10px] text-slate-500 font-medium leading-normal">Premium Agent</span>
-            </div>
+
+            {/* PROMINENT LOGOUT BUTTON */}
+            <button 
+              onClick={signOut}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600/90 hover:bg-red-600 text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer border border-red-500"
+              title="Log Out from Portal"
+            >
+              <span className="material-symbols-outlined text-sm">logout</span>
+              <span>Logout</span>
+            </button>
           </div>
+
         </div>
       </header>
 
