@@ -5,358 +5,277 @@ import PageShell from '../../components/PageShell';
 import { useApp } from '../../context/AppContext';
 
 export default function TeamSettings() {
-  const { company, submitOfflinePayment, lang, showToast } = useApp();
-
-  // Active Team members
-  const [members, setMembers] = useState([
-    { id: 1, name: 'Syed Bilal Faheem', email: 'bilalfaheem47@gmail.com', role: 'Super Admin', status: 'Active' },
-    { id: 2, name: 'Majeed Shb', email: 'majeed@solarpak.com', role: 'Admin / Editor', status: 'Active' },
-    { id: 3, name: 'Fahad Rizwan', email: 'fahad@rizwan.com', role: 'Field Installer', status: 'Active' }
-  ]);
-
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('Field Installer');
+  const { company, submitOfflinePayment, lang, showToast, formatPrice, theme } = useApp();
   
-  // Local billing form states
-  const [selectedPlan, setSelectedPlan] = useState('Silver');
-  const [paymentMethod, setPaymentMethod] = useState('bank'); // 'bank' or 'cash'
-  const [uploadedFile, setUploadedFile] = useState(null);
-  
-  // API Integration configurations
-  const [apiKeys, setApiKeys] = useState({
-    googleMaps: 'AIzaSyA412...0912',
-    ocrScanner: 'OCR_Stitch_9912...4412',
-  });
+  const [selectedPlan, setSelectedPlan] = useState(company.plan || 'Gold');
+  const [checkoutMethod, setCheckoutMethod] = useState('bank'); // 'bank' or 'cash'
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [copiedIban, setCopiedIban] = useState(false);
 
-  const handleInvite = (e) => {
-    e.preventDefault();
-    if (!inviteEmail) {
-      showToast("⚠️ Please enter a valid email", "error");
-      return;
-    }
-    const newMember = {
-      id: Date.now(),
-      name: inviteEmail.split('@')[0],
-      email: inviteEmail,
-      role: inviteRole,
-      status: 'Pending Invite'
-    };
-    setMembers(prev => [...prev, newMember]);
-    setInviteEmail('');
-    showToast(`📩 Invitation email sent to ${inviteEmail}!`);
+  const planPrices = {
+    Silver: 30000,
+    Gold: 50000,
+    Platinum: 75000
   };
 
-  const handleOfflinePaymentSubmit = async (e) => {
-    e.preventDefault();
-    if (paymentMethod === 'bank' && !uploadedFile) {
-      showToast("⚠️ Please upload a payment transfer receipt screenshot!", "error");
-      return;
-    }
-    const fileName = uploadedFile ? uploadedFile.name : `Cash_Ticket_${Date.now()}.png`;
-    const ok = await submitOfflinePayment(selectedPlan, paymentMethod, fileName);
-    if (ok) {
-      setUploadedFile(null);
-    }
+  const handleCopyIban = () => {
+    navigator.clipboard.writeText("PK64MEZN001234567890");
+    setCopiedIban(true);
+    showToast("IBAN copied to clipboard!");
+    setTimeout(() => setCopiedIban(false), 2000);
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0]);
-      showToast("📎 Payment receipt attached successfully!");
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setReceiptFile(file);
+      showToast(`Selected receipt file: ${file.name}`);
     }
   };
 
-  // Translations
-  const translations = {
-    en: {
-      teamHeader: "Workspace Members",
-      inviteHeader: "Invite Collaborator",
-      billingHeader: "Company Billing Portal",
-      selectPlan: "Select Upgrade Plan Tier",
-      bankDetails: "Corporate Banking Details",
-      bankName: "Bank Name",
-      accountTitle: "Account Title",
-      accountNo: "Account Number",
-      cashDetails: "Cash Branch Collection Instructions",
-      cashInstructions: "Submit payments directly to our Islamabad Office or LESCO Region collection offices. Contact representative:",
-      uploadLabel: "Upload Payment Receipt / Screenshot *",
-      submitCheckout: "Submit offline checkout receipt",
-      apiHeader: "API Integration Settings",
-      pkr: "PKR",
-      pkrSymbol: "Rs.",
-      statusActive: "Active",
-      statusPending: "Pending Verification",
-      membersCount: "Users Total"
-    },
-    ur: {
-      teamHeader: "ورک اسپیس ممبران",
-      inviteHeader: "ٹیم ممبر کو مدعو کریں",
-      billingHeader: "کمپنی بلنگ پورٹل",
-      selectPlan: "اپ گریڈ سبسکرپشن پلان منتخب کریں",
-      bankDetails: "کارپوریٹ بینک اکاؤنٹ کی تفصیلات",
-      bankName: "بینک کا نام",
-      accountTitle: "اکاؤنٹ ٹائٹل",
-      accountNo: "اکاؤنٹ نمبر",
-      cashDetails: "نقدی (کیش) کی ادائیگی کی ہدایات",
-      cashInstructions: "ادائیگی براہ راست ہمارے اسلام آباد ہیڈ آفس یا ریجنل برانچ آفسز میں جمع کروائیں۔ نمائندے کا نمبر:",
-      uploadLabel: "ادائیگی کی رسید / اسکرین شاٹ اپ لوڈ کریں *",
-      submitCheckout: "رسید جمع کروائیں",
-      apiHeader: "API انٹیگریشنز",
-      pkr: "روپے",
-      pkrSymbol: "روپے",
-      statusActive: "فعال",
-      statusPending: "پینڈنگ رسید تصدیق",
-      membersCount: "کل ممبران"
+  const handleSubmitReceipt = async () => {
+    setSubmitting(true);
+    const slipName = receiptFile ? receiptFile.name : "Meezan_Bank_Transfer_Slip.png";
+    const ok = await submitOfflinePayment(selectedPlan, checkoutMethod, slipName);
+    setSubmitting(false);
+    if (ok) {
+      setReceiptFile(null);
     }
   };
-
-  const t = translations[lang];
 
   return (
-    <PageShell>
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-8" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
+    <PageShell headerTitle="Subscription Payment">
+      <main className="max-w-6xl mx-auto w-full p-4 lg:p-8 space-y-6 animate-fadeIn">
         
-        {/* Banner Headers */}
-        <div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight text-white">
-            {lang === 'ur' ? 'ورک اسپیس ترتیبات اور بلنگ' : 'Workspace Billing & Settings'}
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            {lang === 'ur' ? 'سبسکرپشنز اپ گریڈ کریں، رسیدیں اپ لوڈ کریں اور ٹیم انٹیگریشنز منظم کریں۔' : 'Configure workspace integrations, invite field installers, and audit subscription layers.'}
-          </p>
+        {/* Top Warning Alert Banner matching Screenshot 1 */}
+        <div className="bg-[#fffbeb] border border-[#fef3c7] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm text-slate-800">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="size-10 rounded-full bg-[#fde047]/30 text-[#b45309] flex items-center justify-center flex-shrink-0 font-bold">
+              <span className="material-symbols-outlined text-xl">warning</span>
+            </div>
+            <div>
+              <h3 className="font-display font-extrabold text-slate-900 text-sm sm:text-base">
+                Action Required: Payment Verification
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Your subscription is currently in <span className="font-bold text-slate-800">Pending Upload</span> state. Please provide receipt to activate service.
+              </p>
+            </div>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fef3c7] border border-[#fde047] text-[#92400e] text-xs font-mono font-bold uppercase tracking-wider flex-shrink-0">
+            <span className="size-2 rounded-full bg-[#b45309] animate-pulse"></span>
+            <span>STATUS: {company.billing_status === 'Active' ? 'ACTIVE' : 'PENDING'}</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Two-Column Payment Layout matching Screenshot 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          {/* Billing Portal Panel */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Left Column: Selected Package Plan Summary (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
             
-            {/* Plan Selector */}
-            <div className="bg-surface-base border border-border-base rounded-xl p-6 space-y-6 shadow-sm">
-              <div>
-                <h3 className="font-display font-bold text-white text-base">{t.billingHeader}</h3>
-                <p className="text-xs text-slate-400 mt-1">Current Active Status: <span className="text-primary-container font-semibold">{company.plan} Plan ({company.billing_status})</span></p>
+            <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-sm space-y-6 text-slate-800">
+              
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-mono font-extrabold tracking-widest text-slate-400 uppercase">
+                  SELECTED PACKAGE
+                </span>
+                <span className="px-3 py-1 rounded-lg bg-[#fefce8] border border-[#fef08a] text-[#854d0e] font-display font-bold text-xs">
+                  Solar B2B
+                </span>
               </div>
 
-              {/* Subscriptions Matrix Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { tier: 'Silver', quota: '30 Proposals', price: '30,000' },
-                  { tier: 'Gold', quota: '50 Proposals', price: '50,000' },
-                  { tier: 'Platinum', quota: '75 Proposals', price: '75,000' }
-                ].map((plan) => (
-                  <div 
-                    key={plan.tier}
-                    onClick={() => setSelectedPlan(plan.tier)}
-                    className={`border rounded-xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
-                      selectedPlan === plan.tier
-                        ? 'border-primary bg-primary/5 shadow-md'
-                        : 'border-border-base/40 bg-black/20 hover:border-border-base'
-                    }`}
-                  >
-                    <div>
-                      <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded border border-border-base text-slate-300 font-mono font-bold uppercase">{plan.quota}</span>
-                      <h4 className="font-display font-extrabold text-white text-base mt-2">{plan.tier} Plan</h4>
-                    </div>
-                    <div className="font-mono text-sm font-extrabold text-primary-container mt-4 pt-2 border-t border-border-base/30">
-                      {plan.price} {t.pkr} <span className="text-[10px] text-slate-500 font-medium font-sans">/mo</span>
-                    </div>
+              {/* Plan Selector */}
+              <div className="space-y-1">
+                <div className="flex items-baseline justify-between">
+                  <h2 className="font-display text-3xl font-extrabold text-slate-900">
+                    {selectedPlan} Plan
+                  </h2>
+                  <div className="flex gap-1 text-xs">
+                    {['Silver', 'Gold', 'Platinum'].map(p => (
+                      <button 
+                        key={p}
+                        onClick={() => setSelectedPlan(p)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          selectedPlan === p 
+                            ? 'bg-[#b45309] text-white' 
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
 
-              {/* Offline Manual Payments Gateway Forms */}
-              <div className="border border-border-base/50 rounded-xl overflow-hidden bg-black/10">
-                {/* Method Toggles */}
-                <div className="flex border-b border-border-base bg-black/20 p-1">
-                  <button 
-                    type="button"
-                    onClick={() => setPaymentMethod('bank')}
-                    className={`flex-1 py-2 text-center text-xs font-bold font-display cursor-pointer transition-all rounded-lg ${
-                      paymentMethod === 'bank' ? 'bg-primary text-black' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Bank Transfer
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setPaymentMethod('cash')}
-                    className={`flex-1 py-2 text-center text-xs font-bold font-display cursor-pointer transition-all rounded-lg ${
-                      paymentMethod === 'cash' ? 'bg-primary text-black' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Cash Payment
-                  </button>
+              <div className="space-y-3 pt-2 border-t border-slate-100 text-xs font-medium">
+                <div className="flex justify-between items-center text-slate-500">
+                  <span>Billing Cycle</span>
+                  <span className="font-bold text-slate-800">Annual (12 Months)</span>
                 </div>
+                <div className="flex justify-between items-center text-slate-500">
+                  <span>Next Renewal</span>
+                  <span className="font-bold text-slate-800">May 24, 2025</span>
+                </div>
+              </div>
 
-                <form onSubmit={handleOfflinePaymentSubmit} className="p-5 space-y-4">
-                  {/* Bank transfer content */}
-                  {paymentMethod === 'bank' && (
-                    <div className="space-y-4">
-                      <div className="bg-black/30 border border-border-base rounded-lg p-4 space-y-2 text-xs font-mono">
-                        <h4 className="text-white font-bold text-sm font-display mb-1">{t.bankDetails}</h4>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">{t.bankName}:</span>
-                          <span className="text-white font-bold">Bank Alfalah Pakistan</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">{t.accountTitle}:</span>
-                          <span className="text-white font-bold">Solar Agent Pvt Ltd</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">{t.accountNo}:</span>
-                          <span className="text-white font-bold">0192-887162541</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">IBAN:</span>
-                          <span className="text-white font-bold">PK82ALFA0192887162541</span>
-                        </div>
-                      </div>
+              <div className="pt-4 border-t border-slate-100 space-y-1">
+                <div className="text-xs text-slate-500 font-semibold">Total Payable</div>
+                <div className="font-display text-3xl font-black text-slate-900 tracking-tight">
+                  {formatPrice(planPrices[selectedPlan] || 50000)}
+                </div>
+              </div>
 
-                      {/* File Uploader Screenshot */}
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase">{t.uploadLabel}</label>
-                        <div className="relative border border-dashed border-border-base/50 rounded-lg p-4 text-center hover:border-primary transition-all bg-black/20 cursor-pointer">
-                          <input 
-                            type="file" 
-                            accept="image/*"
-                            onChange={handleFileChange}
-                            className="absolute inset-0 opacity-0 cursor-pointer"
-                          />
-                          <span className="material-symbols-outlined text-xl text-slate-500">upload_file</span>
-                          <div className="text-xs text-slate-300 font-semibold mt-1">
-                            {uploadedFile ? uploadedFile.name : "Attach receipt photo"}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Cash content */}
-                  {paymentMethod === 'cash' && (
-                    <div className="bg-black/30 border border-border-base rounded-lg p-4 text-xs space-y-2">
-                      <h4 className="text-white font-bold text-sm font-display mb-1">{t.cashDetails}</h4>
-                      <p className="text-slate-400 leading-relaxed font-sans">{t.cashInstructions}</p>
-                      <div className="font-mono text-white font-bold text-sm pt-2">
-                        +92 301 3377675 (Majeed Shb)
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Submit checkout receipt */}
-                  <button 
-                    type="submit"
-                    className="w-full py-2.5 rounded-lg bg-primary hover:bg-white text-black font-display font-semibold transition-all cursor-pointer shadow-md text-xs text-center flex items-center justify-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-sm">payment</span>
-                    {t.submitCheckout} ({selectedPlan} Plan)
-                  </button>
-
-                </form>
+              {/* Info Note Callout */}
+              <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-xl p-4 flex gap-3 text-xs text-[#1e40af]">
+                <span className="material-symbols-outlined text-lg text-[#3b82f6] flex-shrink-0">info</span>
+                <p className="leading-relaxed">
+                  Payments are usually verified within 24-48 business hours after submission. You will receive an email confirmation.
+                </p>
               </div>
 
             </div>
 
-            {/* Team Members List */}
-            <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm">
-              <div className={`px-6 py-4 bg-black/10 border-b border-border-base flex justify-between items-center ${
-                lang === 'ur' ? 'flex-row-reverse' : ''
-              }`}>
-                <h3 className="font-display font-bold text-white text-base">{t.teamHeader}</h3>
-                <span className="text-[10px] bg-slate-500/10 border border-border-base/50 text-slate-300 px-2 py-0.5 rounded font-bold uppercase">
-                  {members.length} {t.membersCount}
-                </span>
+            {/* Need Help Support Desk Box */}
+            <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-sm flex items-center justify-between gap-4 text-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+                  <span className="material-symbols-outlined">headset_mic</span>
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-slate-900 text-xs sm:text-sm">Need help with payment?</h4>
+                  <p className="text-[11px] text-slate-500">Contact our billing department</p>
+                </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-black/5 border-b border-border-base text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>Member Name</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>Access Role</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-base/40 text-sm">
-                    {members.map((member) => (
-                      <tr key={member.id} className="hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-white">{member.name}</div>
-                          <div className="text-xs text-slate-500">{member.email}</div>
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-slate-300">{member.role}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-accent-emerald border border-emerald-500/20`}>
-                            {member.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <button 
+                onClick={() => alert("Direct Help Line: +92 301 3377675\nEmail: billing@solaragent.pk")}
+                className="px-4 py-2 rounded-xl bg-[#fefce8] hover:bg-[#fef9c3] border border-[#fef08a] text-[#854d0e] font-display font-bold text-xs transition-all cursor-pointer"
+              >
+                Support Desk
+              </button>
             </div>
 
           </div>
 
-          {/* Right Column - Invites and APIs */}
-          <div className="space-y-6">
+          {/* Right Column: Official Details & Upload Box (7 cols) */}
+          <div className="lg:col-span-7 space-y-6">
             
-            {/* Invite box */}
-            <div className="bg-surface-base border border-border-base rounded-xl p-6 shadow-sm">
-              <h3 className="font-display font-bold text-white text-base border-b border-border-base pb-3">
-                {t.inviteHeader}
-              </h3>
-              <form onSubmit={handleInvite} className="space-y-4 pt-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Email Address</label>
-                  <input 
-                    type="email" 
-                    placeholder="name@company.com" 
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className={`w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary ${
-                      lang === 'ur' ? 'text-right' : 'text-left'
-                    }`}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Role</label>
-                  <select 
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary cursor-pointer"
-                  >
-                    <option value="Admin / Editor">Admin / Editor</option>
-                    <option value="Field Installer">Field Installer</option>
-                    <option value="Viewer Only">Viewer Only</option>
-                  </select>
-                </div>
-                <button 
-                  type="submit"
-                  className="w-full py-2 rounded-lg bg-primary hover:bg-white text-black font-display font-semibold transition-all cursor-pointer shadow-md text-xs"
-                >
-                  Send Invite Link
-                </button>
-              </form>
-            </div>
-
-            {/* API Settings Box */}
-            <div className="bg-surface-base border border-border-base rounded-xl p-6 shadow-sm">
-              <h3 className="font-display font-bold text-white text-base border-b border-border-base pb-3">
-                {t.apiHeader}
-              </h3>
+            <div className="bg-white border border-[#e2e8f0] rounded-2xl overflow-hidden shadow-sm text-slate-800">
               
-              <div className="space-y-4 pt-4 text-xs font-mono">
-                <div className="space-y-1">
-                  <span className="text-slate-500">Google Maps Geocoding:</span>
-                  <div className="font-bold text-white">{apiKeys.googleMaps}</div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-slate-500">OCR Scanner Token:</span>
-                  <div className="font-bold text-white">{apiKeys.ocrScanner}</div>
-                </div>
+              {/* Payment Channel Tabs matching Screenshot 1 */}
+              <div className="flex border-b border-slate-200 bg-slate-50 text-xs font-bold font-display">
+                <button 
+                  onClick={() => setCheckoutMethod('bank')}
+                  className={`flex-1 py-3.5 px-6 transition-all border-b-2 cursor-pointer ${
+                    checkoutMethod === 'bank' 
+                      ? 'border-[#b45309] text-[#b45309] bg-white' 
+                      : 'border-transparent text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  Bank Transfer
+                </button>
+                <button 
+                  onClick={() => setCheckoutMethod('cash')}
+                  className={`flex-1 py-3.5 px-6 transition-all border-b-2 cursor-pointer ${
+                    checkoutMethod === 'cash' 
+                      ? 'border-[#b45309] text-[#b45309] bg-white' 
+                      : 'border-transparent text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  Cash
+                </button>
               </div>
+
+              <div className="p-6 space-y-6">
+                
+                {/* Official Account Details Card */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 font-display font-bold text-slate-900 text-sm">
+                    <span className="material-symbols-outlined text-[#b45309]">account_balance</span>
+                    <span>Official Account Details</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 space-y-1">
+                      <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">BANK NAME</span>
+                      <div className="font-display font-bold text-slate-900 text-base">Meezan Bank</div>
+                    </div>
+                    <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 space-y-1">
+                      <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">ACCOUNT TITLE</span>
+                      <div className="font-display font-bold text-slate-900 text-base">Solar Agent PVT LTD</div>
+                    </div>
+                  </div>
+
+                  {/* IBAN Box with Copy Button */}
+                  <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 flex items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">IBAN NUMBER</span>
+                      <div className="font-mono font-extrabold text-slate-900 text-sm sm:text-base tracking-wider">
+                        PK64MEZN001234567890
+                      </div>
+                    </div>
+                    <button 
+                      onClick={handleCopyIban}
+                      className="size-9 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-all cursor-pointer"
+                      title="Copy IBAN"
+                    >
+                      <span className="material-symbols-outlined text-base">
+                        {copiedIban ? 'check' : 'content_copy'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Upload Payment Receipt Dropzone matching Screenshot 1 */}
+                <div className="space-y-3 pt-2">
+                  <label className="font-display font-bold text-slate-900 text-xs sm:text-sm block">
+                    Upload Payment Receipt (Screenshot/Image)
+                  </label>
+
+                  <div className="border-2 border-dashed border-[#cbd5e1] hover:border-[#b45309] rounded-2xl p-8 text-center bg-[#f8fafc] hover:bg-[#fefce8]/50 transition-all relative cursor-pointer">
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="space-y-3 py-2">
+                      <div className="size-12 rounded-xl bg-slate-200/80 text-slate-600 flex items-center justify-center mx-auto">
+                        <span className="material-symbols-outlined text-2xl">file_upload</span>
+                      </div>
+                      <div>
+                        <p className="font-display font-bold text-slate-900 text-sm">
+                          {receiptFile ? receiptFile.name : 'Drag & drop receipt here'}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          JPG, PNG, or PDF up to 10MB
+                        </p>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="px-5 py-2 rounded-xl bg-[#78350f] text-white font-display font-bold text-xs shadow-sm transition-all cursor-pointer"
+                      >
+                        Choose File
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Button matching Screenshot 1 */}
+                <button 
+                  onClick={handleSubmitReceipt}
+                  disabled={submitting}
+                  className="w-full py-3.5 rounded-xl bg-[#cbd5e1] hover:bg-[#b45309] hover:text-white text-slate-700 font-display font-bold text-sm transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-base">verified</span>
+                  <span>{submitting ? 'Submitting Receipt...' : 'Submit Receipt for Verification'}</span>
+                </button>
+
+              </div>
+
             </div>
 
           </div>

@@ -26,8 +26,21 @@ export const AppProvider = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [theme, setTheme] = useState('dark'); 
+  const [theme, setTheme] = useState('light'); 
   const [lang, setLang] = useState('en'); 
+  const [currency, setCurrency] = useState('PKR'); // 'PKR' or 'USD'
+
+  const toggleCurrency = () => {
+    setCurrency(prev => prev === 'PKR' ? 'USD' : 'PKR');
+  };
+
+  const formatPrice = (pkrAmount) => {
+    if (currency === 'USD') {
+      const usd = Math.round(pkrAmount / 280);
+      return `$${usd.toLocaleString()} USD`;
+    }
+    return `${Number(pkrAmount).toLocaleString()} PKR`;
+  };
   const [proposals, setProposals] = useState([]);
   const [inverters, setInverters] = useState([]);
   const [solarPanels, setSolarPanels] = useState([]);
@@ -402,7 +415,10 @@ export const AppProvider = ({ children }) => {
       addInverter,
       removeInverter,
       addSolarPanel,
-      removeSolarPanel
+      removeSolarPanel,
+      currency,
+      toggleCurrency,
+      formatPrice
     }}>
       {children}
     </AppContext.Provider>

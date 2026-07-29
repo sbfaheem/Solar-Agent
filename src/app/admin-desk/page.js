@@ -17,10 +17,11 @@ export default function AdminDesk() {
     addInverter,
     removeInverter,
     addSolarPanel,
-    removeSolarPanel
+    removeSolarPanel,
+    formatPrice
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState('clearance');
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'clearance', 'override', 'catalog'
   const [modalOpen, setModalOpen] = useState(false);
   const [activeSlip, setActiveSlip] = useState(null);
 
@@ -38,65 +39,13 @@ export default function AdminDesk() {
   const [panelPriceWatt, setPanelPriceWatt] = useState(38);
   const [panelCell, setPanelCell] = useState('Monocrystalline');
 
-  // Translations
-  const translations = {
-    en: {
-      title: "Super User Admin Control CMS",
-      subtitle: "Review offline transactions, manage quotas, and edit the master hardware database.",
-      tabClearance: "Clearance Desk",
-      tabOverrides: "Override Requests",
-      tabCatalog: "Hardware CMS Catalog",
-      clearanceHeader: "Pending Invoice Receipts Verification",
-      noClearance: "No pending payments in verification queue.",
-      agentName: "Agent / Company Details",
-      tierName: "Upgrade Plan Tier",
-      reference: "Transaction Reference",
-      amount: "Amount",
-      actions: "Actions",
-      approveBtn: "Verify & Activate Quota",
-      rejectBtn: "Reject Payout",
-      overrideHeader: "Actionable Quota Extension Requests",
-      noOverrides: "No active override requests submitted.",
-      currentUsage: "Current Usage",
-      currentLimit: "Current Limit",
-      status: "Status",
-      approveOverrideBtn: "Approve Quota +10",
-      pkr: "PKR",
-      pendingText: "Awaiting Verification",
-      viewSlip: "View Receipt Screenshot",
-      addInvHeader: "Add New Inverter Model",
-      addPanelHeader: "Add New Solar Panel Model"
-    },
-    ur: {
-      title: "سپر ایڈمنسٹریٹر کنٹرول پینل",
-      subtitle: "آف لائن بینک ٹرانسفرز کی تصدیق کریں، سبسکرپشنز کو فعال کریں، اور ہارڈویئر کیٹلاگ منظم کریں۔",
-      tabClearance: "پیمنٹ کلیئرنس ڈیسک",
-      tabOverrides: "اضافی حد کی درخواستیں",
-      tabCatalog: "ہارڈویئر کیٹلاگ CMS",
-      clearanceHeader: "آف لائن پیمنٹ رسیدوں کی تصدیق",
-      noClearance: "تصدیق کے لیے کوئی رسید پینڈنگ نہیں ہے۔",
-      agentName: "کمپنی اور ایجنٹ کی تفصیلات",
-      tierName: "مطلوبہ سبسکرپشن پلان",
-      reference: "ٹرانزیکشن رسید نمبر",
-      amount: "رقم",
-      actions: "کارروائی",
-      approveBtn: "رسید کی تصدیق اور کوٹہ بحال کریں",
-      rejectBtn: "رسید مسترد کریں",
-      overrideHeader: "کوٹہ میں اضافے کی فعال درخواستیں",
-      noOverrides: "کوٹہ میں اضافے کی کوئی درخواست پینڈنگ نہیں ہے۔",
-      currentUsage: "موجودہ استعمال",
-      currentLimit: "موجودہ حد",
-      status: "حیثیت",
-      approveOverrideBtn: "پروپوزل کوٹہ +10 بڑھائیں",
-      pkr: "روپے",
-      pendingText: "تصدیق کے منتظر",
-      viewSlip: "رسید کا اسکرین شاٹ دیکھیں",
-      addInvHeader: "نیا انورٹر ماڈل شامل کریں",
-      addPanelHeader: "نیا سولر پینل ماڈل شامل کریں"
-    }
-  };
-
-  const t = translations[lang];
+  // Mock companies list matching Screenshot 2
+  const mockCompanies = [
+    { id: 1, initials: 'IS', name: 'Indus Solar Solutions', tier: 'Platinum', used: 450, limit: 500, pct: 98, status: 'Verified' },
+    { id: 2, initials: 'PE', name: 'Punjab Energy Systems', tier: 'Gold', used: 120, limit: 250, pct: 48, status: 'Pending' },
+    { id: 3, initials: 'KV', name: 'KPK Volt Tech', tier: 'Silver', used: 15, limit: 100, pct: 15, status: 'Verified' },
+    { id: 4, initials: 'SK', name: 'Sindh Kar Solar', tier: 'Gold', used: 210, limit: 250, pct: 84, status: 'Pending' }
+  ];
 
   const handleApprovePayment = async () => {
     const ok = await clearPendingSubscription();
@@ -151,456 +100,481 @@ export default function AdminDesk() {
   };
 
   return (
-    <PageShell>
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-8" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
+    <PageShell headerTitle="Super Admin Overview">
+      <main className="max-w-7xl mx-auto w-full p-4 lg:p-8 space-y-8 animate-fadeIn text-slate-800">
         
-        {/* Banner Headers */}
-        <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-          lang === 'ur' ? 'text-right' : 'text-left'
-        }`}>
-          <div>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight text-white">{t.title}</h1>
-            <p className="text-slate-400 text-sm mt-1">{t.subtitle}</p>
-          </div>
+        {/* Top Summary Stat Cards matching Screenshot 2 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Dashboard Section Toggles */}
-          <div className="flex bg-black/20 p-1 rounded-lg border border-border-base flex-wrap gap-1">
+          {/* Stat Card 1: Registered Companies */}
+          <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-sm flex justify-between items-start">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-slate-500">Registered Companies</span>
+              <div className="font-display font-extrabold text-3xl text-slate-900">1,248</div>
+              <div className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">trending_up</span>
+                <span>+12% vs last month</span>
+              </div>
+            </div>
+            <div className="size-12 rounded-2xl bg-[#fef3c7] text-[#b45309] flex items-center justify-center font-bold">
+              <span className="material-symbols-outlined text-2xl">domain</span>
+            </div>
+          </div>
+
+          {/* Stat Card 2: Total Monthly Revenue */}
+          <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-sm flex justify-between items-start">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-slate-500">Total Monthly Revenue</span>
+              <div className="font-display font-extrabold text-3xl text-slate-900">PKR 18.4M</div>
+              <div className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">trending_up</span>
+                <span>+8.2% vs last month</span>
+              </div>
+            </div>
+            <div className="size-12 rounded-2xl bg-[#dcfce7] text-[#166534] flex items-center justify-center font-bold">
+              <span className="material-symbols-outlined text-2xl">payments</span>
+            </div>
+          </div>
+
+          {/* Stat Card 3: Pending Verifications */}
+          <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-sm flex justify-between items-start">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-slate-500">Pending Verifications</span>
+              <div className="font-display font-extrabold text-3xl text-slate-900">42</div>
+              <div className="text-xs font-semibold text-red-600 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">priority_high</span>
+                <span>Requires attention</span>
+              </div>
+            </div>
+            <div className="size-12 rounded-2xl bg-[#fee2e2] text-[#991b1b] flex items-center justify-center font-bold">
+              <span className="material-symbols-outlined text-2xl">shield</span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Sub-header Action Buttons & Tab Switcher matching Screenshot 2 */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => setActiveTab('clearance')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold font-display cursor-pointer transition-all ${
-                activeTab === 'clearance' ? 'bg-primary text-black' : 'text-slate-400 hover:text-white'
+              className={`px-5 py-2.5 rounded-xl font-display font-bold text-xs shadow-sm cursor-pointer transition-all flex items-center gap-2 ${
+                activeTab === 'clearance'
+                  ? 'bg-[#78350f] text-white'
+                  : 'bg-[#78350f] text-white hover:bg-[#92400e]'
               }`}
             >
-              {t.tabClearance}
+              <span className="material-symbols-outlined text-sm">assignment</span>
+              <span>Manual Verification Desk</span>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('catalog')}
+              className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-display font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">settings</span>
+              <span>Global Settings</span>
+            </button>
+          </div>
+
+          {/* Tab Selector */}
+          <div className="flex bg-slate-200/80 p-1 rounded-xl gap-1 text-xs font-bold font-display">
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
+                activeTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Registered Companies
+            </button>
+            <button 
+              onClick={() => setActiveTab('clearance')}
+              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
+                activeTab === 'clearance' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Clearance Desk ({company.billing_status === 'Pending Verification' ? 1 : 0})
             </button>
             <button 
               onClick={() => setActiveTab('override')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold font-display cursor-pointer transition-all ${
-                activeTab === 'override' ? 'bg-primary text-black' : 'text-slate-400 hover:text-white'
+              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
+                activeTab === 'override' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {t.tabOverrides}
+              Quota Requests ({overrideRequests.filter(r => r.status === 'Pending').length})
             </button>
             <button 
               onClick={() => setActiveTab('catalog')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold font-display cursor-pointer transition-all ${
-                activeTab === 'catalog' ? 'bg-primary text-black' : 'text-slate-400 hover:text-white'
+              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all ${
+                activeTab === 'catalog' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {t.tabCatalog}
+              Hardware CMS Catalog
             </button>
           </div>
         </div>
 
-        {/* 1. CLEARANCE DESK VIEW */}
+        {/* 1. REGISTERED COMPANIES TABLE VIEW matching Screenshot 2 */}
+        {activeTab === 'overview' && (
+          <div className="bg-white border border-[#e2e8f0] rounded-2xl overflow-hidden shadow-sm space-y-4">
+            
+            <div className="p-6 pb-2 flex justify-between items-center border-b border-slate-100">
+              <h3 className="font-display font-bold text-slate-900 text-base">Registered Companies</h3>
+              <button 
+                onClick={() => setActiveTab('clearance')}
+                className="text-xs font-bold text-[#b45309] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>View All</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#eff4ff] border-b border-slate-200 text-slate-600 text-[10px] font-extrabold uppercase tracking-wider">
+                    <th className="px-6 py-3.5">COMPANY NAME</th>
+                    <th className="px-6 py-3.5">CURRENT TIER</th>
+                    <th className="px-6 py-3.5">PROPOSALS USED/LIMIT</th>
+                    <th className="px-6 py-3.5">SUBSCRIPTION STATUS</th>
+                    <th className="px-6 py-3.5 text-right">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {mockCompanies.map((c) => (
+                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="size-8 rounded-lg bg-[#dbeafe] text-[#1e40af] flex items-center justify-center font-mono font-bold text-xs">
+                            {c.initials}
+                          </div>
+                          <span className="font-bold text-slate-900 text-sm">{c.name}</span>
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                          c.tier === 'Platinum' 
+                            ? 'bg-[#fef3c7] text-[#92400e] border border-[#fde047]'
+                            : c.tier === 'Gold'
+                            ? 'bg-[#fef9c3] text-[#854d0e] border border-[#fef08a]'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
+                          {c.tier}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="space-y-1 max-w-xs">
+                          <div className="flex justify-between font-mono font-bold text-[11px] text-slate-700">
+                            <span>{c.used} / {c.limit}</span>
+                            <span className={c.pct > 90 ? 'text-red-600' : 'text-slate-500'}>{c.pct}%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full ${
+                                c.pct > 90 ? 'bg-red-500' : c.pct > 60 ? 'bg-amber-500' : 'bg-emerald-500'
+                              }`} 
+                              style={{ width: `${c.pct}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                          c.status === 'Verified' 
+                            ? 'bg-[#dcfce7] text-[#15803d]' 
+                            : 'bg-[#fee2e2] text-[#b91c1c]'
+                        }`}>
+                          <span className={`size-1.5 rounded-full ${c.status === 'Verified' ? 'bg-emerald-600' : 'bg-red-600'}`}></span>
+                          <span>{c.status}</span>
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4 text-right">
+                        <button className="size-8 rounded-lg hover:bg-slate-200 text-slate-500 flex items-center justify-center ml-auto cursor-pointer">
+                          <span className="material-symbols-outlined text-base">more_vert</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Footer */}
+            <div className="p-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+              <span>Showing 4 of 1,248 companies</span>
+              <div className="flex gap-2">
+                <button className="size-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 cursor-not-allowed">
+                  <span className="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                <button className="size-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer">
+                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* 2. MANUAL CLEARANCE DESK VIEW */}
         {activeTab === 'clearance' && (
-          <div className="space-y-6">
-            <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm">
-              <div className={`px-6 py-4 bg-black/10 border-b border-border-base flex justify-between items-center ${
-                lang === 'ur' ? 'flex-row-reverse' : ''
-              }`}>
-                <h3 className="font-display font-bold text-white text-base">{t.clearanceHeader}</h3>
-                {company.billing_status === "Pending Verification" && (
-                  <span className="text-[10px] bg-amber-500/10 border border-amber-500/20 text-accent-amber px-2.5 py-0.5 rounded-full font-bold uppercase">
-                    1 {t.pendingText}
-                  </span>
-                )}
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-black/5 border-b border-border-base text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.agentName}</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.tierName}</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.reference}</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.amount}</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-left' : 'text-right'}`}>{t.actions}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-base/40 text-sm">
-                    {company.billing_status !== "Pending Verification" ? (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-slate-500">{t.noClearance}</td>
-                      </tr>
-                    ) : (
-                      <tr className="hover:bg-white/5 transition-colors animate-pulse">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-white">{company.name}</div>
-                          <div className="text-xs text-slate-500">Owner Terminal</div>
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-slate-300">Upgrade to {company.plan} Plan</td>
-                        <td className="px-6 py-4">
-                          <button 
-                            onClick={() => openSlipModal(company.receipt_uploaded)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-black/40 border border-border-base hover:border-primary text-xs text-slate-300 transition-all cursor-pointer font-mono"
-                          >
-                            <span className="material-symbols-outlined text-sm text-primary">receipt_long</span>
-                            {company.receipt_uploaded}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 font-mono font-bold text-primary-container">
-                          {company.plan === "Silver" ? "30,000" : company.plan === "Gold" ? "50,000" : "75,000"} {t.pkr}
-                        </td>
-                        <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                          <button 
-                            onClick={handleApprovePayment}
-                            className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-display text-xs font-bold transition-all cursor-pointer shadow-md"
-                          >
-                            {t.approveBtn}
-                          </button>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 2. OVERRIDES REQUEST DESK VIEW */}
-        {activeTab === 'override' && (
-          <div className="space-y-6">
-            <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm">
-              <div className={`px-6 py-4 bg-black/10 border-b border-border-base flex justify-between items-center ${
-                lang === 'ur' ? 'flex-row-reverse' : ''
-              }`}>
-                <h3 className="font-display font-bold text-white text-base">{t.overrideHeader}</h3>
-                <span className="text-[10px] bg-slate-500/10 border border-border-base/50 text-slate-300 px-2 py-0.5 rounded font-bold uppercase">
-                  {overrideRequests.filter(r => r.status === 'Pending').length} Pending
+          <div className="bg-white border border-[#e2e8f0] rounded-2xl overflow-hidden shadow-sm space-y-4">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-display font-bold text-slate-900 text-base">Pending Offline Receipts Verification</h3>
+              {company.billing_status === "Pending Verification" && (
+                <span className="text-[10px] bg-[#fef3c7] text-[#92400e] px-2.5 py-1 rounded-full font-bold uppercase">
+                  1 Awaiting Action
                 </span>
-              </div>
+              )}
+            </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-black/5 border-b border-border-base text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>Company Name</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.currentUsage}</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.currentLimit}</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-right' : 'text-left'}`}>{t.status}</th>
-                      <th className={`px-6 py-4 ${lang === 'ur' ? 'text-left' : 'text-right'}`}>{t.actions}</th>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#eff4ff] border-b border-slate-200 text-slate-600 text-[10px] font-extrabold uppercase tracking-wider">
+                    <th className="px-6 py-3.5">COMPANY NAME</th>
+                    <th className="px-6 py-3.5">TARGET TIER</th>
+                    <th className="px-6 py-3.5">SLIP ATTACHMENT</th>
+                    <th className="px-6 py-3.5">AMOUNT PAYABLE</th>
+                    <th className="px-6 py-3.5 text-right">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {company.billing_status !== "Pending Verification" ? (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-8 text-center text-slate-500 font-medium">
+                        No pending offline payment receipts requiring manual clearance.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-base/40 text-sm">
-                    {overrideRequests.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-slate-500">{t.noOverrides}</td>
-                      </tr>
-                    ) : (
-                      overrideRequests.map((req) => (
-                        <tr key={req.id} className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 font-bold text-white">{req.company_name}</td>
-                          <td className="px-6 py-4 font-mono text-xs text-slate-300">{req.current_usage} Proposals</td>
-                          <td className="px-6 py-4 font-mono text-xs text-slate-300">{req.current_limit} limit</td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              req.status === 'Approved'
-                                ? 'bg-emerald-500/10 text-accent-emerald border-emerald-500/20'
-                                : 'bg-amber-500/10 text-accent-amber border-amber-500/20 animate-pulse'
-                            }`}>
-                              {req.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                            {req.status === 'Pending' ? (
-                              <button 
-                                onClick={() => approveOverride(req.id)}
-                                className="px-3 py-1.5 rounded-lg bg-primary hover:bg-white text-black font-display text-xs font-bold transition-all cursor-pointer shadow-md"
-                              >
-                                {t.approveOverrideBtn}
-                              </button>
-                            ) : (
-                              <span className="text-xs text-slate-500 font-semibold font-mono">Quota Added ✓</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  ) : (
+                    <tr className="hover:bg-slate-50">
+                      <td className="px-6 py-4 font-bold text-slate-900">{company.name}</td>
+                      <td className="px-6 py-4 font-bold text-[#b45309]">{company.plan} Plan</td>
+                      <td className="px-6 py-4">
+                        <button 
+                          onClick={() => openSlipModal(company.receipt_uploaded)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono font-bold cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm text-[#b45309]">receipt_long</span>
+                          <span>{company.receipt_uploaded}</span>
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 font-mono font-bold text-slate-900">
+                        {formatPrice(company.plan === "Silver" ? 30000 : company.plan === "Gold" ? 50000 : 75000)}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={handleApprovePayment}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs shadow-sm cursor-pointer"
+                        >
+                          Verify & Activate Quota
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* 3. HARDWARE CATALOG CMS VIEW */}
+        {/* 3. OVERRIDE QUOTA REQUESTS VIEW */}
+        {activeTab === 'override' && (
+          <div className="bg-white border border-[#e2e8f0] rounded-2xl overflow-hidden shadow-sm space-y-4">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-display font-bold text-slate-900 text-base">Actionable Quota Override Requests</h3>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#eff4ff] border-b border-slate-200 text-slate-600 text-[10px] font-extrabold uppercase tracking-wider">
+                    <th className="px-6 py-3.5">COMPANY NAME</th>
+                    <th className="px-6 py-3.5">CURRENT USAGE</th>
+                    <th className="px-6 py-3.5">ACTIVE LIMIT</th>
+                    <th className="px-6 py-3.5">STATUS</th>
+                    <th className="px-6 py-3.5 text-right">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {overrideRequests.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-8 text-center text-slate-500 font-medium">
+                        No active quota override extension requests submitted.
+                      </td>
+                    </tr>
+                  ) : (
+                    overrideRequests.map((req) => (
+                      <tr key={req.id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4 font-bold text-slate-900">{req.company_name}</td>
+                        <td className="px-6 py-4 font-mono font-semibold text-slate-700">{req.current_usage} Proposals</td>
+                        <td className="px-6 py-4 font-mono font-semibold text-slate-700">{req.current_limit} limit</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            req.status === 'Approved' ? 'bg-[#dcfce7] text-[#15803d]' : 'bg-[#fef9c3] text-[#854d0e]'
+                          }`}>
+                            {req.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {req.status === 'Pending' ? (
+                            <button 
+                              onClick={() => approveOverride(req.id)}
+                              className="px-3.5 py-1.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs cursor-pointer"
+                            >
+                              Approve Quota +10
+                            </button>
+                          ) : (
+                            <span className="font-mono text-emerald-600 font-bold">Quota Added ✓</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 4. HARDWARE CATALOG CMS VIEW */}
         {activeTab === 'catalog' && (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
             
-            {/* INVERTERS SECTION (7 cols) */}
-            <div className="xl:col-span-6 space-y-6">
-              <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm p-5 space-y-6">
-                <div className="border-b border-border-base pb-3">
-                  <h3 className="font-display font-bold text-white text-base">🔌 Inverters Database CMS</h3>
-                </div>
-
-                {/* Listing */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-black/20 border-b border-slate-800 text-slate-400 uppercase font-bold text-[9px] tracking-wider">
-                        <th className="px-3 py-2.5">Model / Brand</th>
-                        <th className="px-3 py-2.5">Spec</th>
-                        <th className="px-3 py-2.5">Price</th>
-                        <th className="px-3 py-2.5 text-right">Delete</th>
+            {/* Inverters (6 cols) */}
+            <div className="xl:col-span-6 bg-white border border-[#e2e8f0] rounded-2xl p-6 space-y-6 shadow-sm">
+              <h3 className="font-display font-bold text-slate-900 text-base border-b pb-3">Inverters Catalog CMS</h3>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-slate-500 font-bold uppercase text-[9px]">
+                      <th className="p-2.5">Brand / Model</th>
+                      <th className="p-2.5">Capacity</th>
+                      <th className="p-2.5">Price</th>
+                      <th className="p-2.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {inverters.map(inv => (
+                      <tr key={inv.id}>
+                        <td className="p-2.5">
+                          <div className="font-bold text-slate-900">{inv.brand}</div>
+                          <div className="text-[10px] text-slate-500">{inv.model}</div>
+                        </td>
+                        <td className="p-2.5 font-mono">{inv.capacity_kw}kW ({inv.type})</td>
+                        <td className="p-2.5 font-mono font-bold text-[#b45309]">{formatPrice(inv.cost_pkr)}</td>
+                        <td className="p-2.5 text-right">
+                          <button 
+                            onClick={() => removeInverter(inv.id)}
+                            className="size-7 rounded bg-red-50 hover:bg-red-500 hover:text-white text-red-600 flex items-center justify-center ml-auto cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/40">
-                      {inverters.map(inv => (
-                        <tr key={inv.id} className="hover:bg-white/5">
-                          <td className="px-3 py-3">
-                            <span className="font-bold text-white">{inv.brand}</span>
-                            <span className="block text-[10px] text-slate-500">{inv.model}</span>
-                          </td>
-                          <td className="px-3 py-3 font-mono text-slate-300">{inv.capacity_kw}kW ({inv.type})</td>
-                          <td className="px-3 py-3 font-mono text-primary-container">{inv.cost_pkr.toLocaleString()} PKR</td>
-                          <td className="px-3 py-3 text-right">
-                            <button 
-                              type="button" 
-                              onClick={() => removeInverter(inv.id)}
-                              className="size-7 rounded bg-red-950/20 hover:bg-red-500 border border-red-500/30 text-red-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                              title="Delete model"
-                            >
-                              <span className="material-symbols-outlined text-sm">delete</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Add Form */}
-                <form onSubmit={handleAddInverterSubmit} className="bg-black/30 border border-border-base/50 p-4 rounded-xl space-y-4">
-                  <h4 className="font-display font-bold text-white text-xs">{t.addInvHeader}</h4>
-                  
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Brand Name</label>
-                      <input 
-                        type="text" 
-                        value={invBrand} 
-                        onChange={(e) => setInvBrand(e.target.value)}
-                        placeholder="e.g. Solis" 
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Model Name</label>
-                      <input 
-                        type="text" 
-                        value={invModel} 
-                        onChange={(e) => setInvModel(e.target.value)}
-                        placeholder="e.g. S5-GR3P10K" 
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 text-xs">
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Capacity (kW)</label>
-                      <input 
-                        type="number" 
-                        value={invCapacity} 
-                        onChange={(e) => setInvCapacity(e.target.value)}
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Type</label>
-                      <select 
-                        value={invType} 
-                        onChange={(e) => setInvType(e.target.value)}
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none cursor-pointer"
-                      >
-                        <option value="On-Grid">On-Grid</option>
-                        <option value="Off-Grid">Off-Grid</option>
-                        <option value="Hybrid">Hybrid</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Base Price (PKR)</label>
-                      <input 
-                        type="number" 
-                        value={invPrice} 
-                        onChange={(e) => setInvPrice(e.target.value)}
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    className="w-full py-2 rounded-lg bg-primary hover:bg-white text-black font-display font-bold text-xs transition-all cursor-pointer shadow"
-                  >
-                    🚀 Save Inverter to Catalog
-                  </button>
-                </form>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
 
-            {/* SOLAR PANELS SECTION (6 cols) */}
-            <div className="xl:col-span-6 space-y-6">
-              <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-sm p-5 space-y-6">
-                <div className="border-b border-border-base pb-3">
-                  <h3 className="font-display font-bold text-white text-base">☀️ Solar Panels Database CMS</h3>
+              {/* Form */}
+              <form onSubmit={handleAddInverterSubmit} className="bg-slate-50 p-4 rounded-xl space-y-3 text-xs border">
+                <h4 className="font-bold text-slate-800">Add Inverter Model</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="text" value={invBrand} onChange={e=>setInvBrand(e.target.value)} placeholder="Brand" className="p-2 bg-white border rounded" />
+                  <input type="text" value={invModel} onChange={e=>setInvModel(e.target.value)} placeholder="Model" className="p-2 bg-white border rounded" />
                 </div>
-
-                {/* Listing */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-black/20 border-b border-slate-800 text-slate-400 uppercase font-bold text-[9px] tracking-wider">
-                        <th className="px-3 py-2.5">Model / Mfg</th>
-                        <th className="px-3 py-2.5">Spec</th>
-                        <th className="px-3 py-2.5">Rate / Watt</th>
-                        <th className="px-3 py-2.5 text-right">Delete</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/40">
-                      {solarPanels.map(panel => (
-                        <tr key={panel.id} className="hover:bg-white/5">
-                          <td className="px-3 py-3">
-                            <span className="font-bold text-white">{panel.mfg}</span>
-                            <span className="block text-[10px] text-slate-500">{panel.model}</span>
-                          </td>
-                          <td className="px-3 py-3 font-mono text-slate-300">{panel.wattage}W ({panel.cell_type})</td>
-                          <td className="px-3 py-3 font-mono text-primary-container">{panel.cost_per_watt} PKR/W</td>
-                          <td className="px-3 py-3 text-right">
-                            <button 
-                              type="button" 
-                              onClick={() => removeSolarPanel(panel.id)}
-                              className="size-7 rounded bg-red-950/20 hover:bg-red-500 border border-red-500/30 text-red-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                              title="Delete model"
-                            >
-                              <span className="material-symbols-outlined text-sm">delete</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="grid grid-cols-3 gap-2">
+                  <input type="number" value={invCapacity} onChange={e=>setInvCapacity(e.target.value)} placeholder="Capacity kW" className="p-2 bg-white border rounded" />
+                  <select value={invType} onChange={e=>setInvType(e.target.value)} className="p-2 bg-white border rounded">
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="On-Grid">On-Grid</option>
+                  </select>
+                  <input type="number" value={invPrice} onChange={e=>setInvPrice(e.target.value)} placeholder="PKR Price" className="p-2 bg-white border rounded" />
                 </div>
-
-                {/* Add Form */}
-                <form onSubmit={handleAddPanelSubmit} className="bg-black/30 border border-border-base/50 p-4 rounded-xl space-y-4">
-                  <h4 className="font-display font-bold text-white text-xs">{t.addPanelHeader}</h4>
-                  
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Manufacturer</label>
-                      <input 
-                        type="text" 
-                        value={panelMfg} 
-                        onChange={(e) => setPanelMfg(e.target.value)}
-                        placeholder="e.g. Jinko Solar" 
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Model Name</label>
-                      <input 
-                        type="text" 
-                        value={panelModel} 
-                        onChange={(e) => setPanelModel(e.target.value)}
-                        placeholder="e.g. Tiger Neo" 
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 text-xs">
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Wattage (W)</label>
-                      <input 
-                        type="number" 
-                        value={panelWattage} 
-                        onChange={(e) => setPanelWattage(e.target.value)}
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-slate-400">Cell Type</label>
-                      <select 
-                        value={panelCell} 
-                        onChange={(e) => setPanelCell(e.target.value)}
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none cursor-pointer"
-                      >
-                        <option value="Monocrystalline">Monocrystalline</option>
-                        <option value="Polocrystalline">Polocrystalline</option>
-                        <option value="Bifacial">Bifacial</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-slate-400">PKR per Watt</label>
-                      <input 
-                        type="number" 
-                        value={panelPriceWatt} 
-                        onChange={(e) => setPanelPriceWatt(e.target.value)}
-                        className="w-full bg-slate-900 border border-border-base/50 rounded-lg p-2 text-white focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    className="w-full py-2 rounded-lg bg-primary hover:bg-white text-black font-display font-bold text-xs transition-all cursor-pointer shadow"
-                  >
-                    🚀 Save Solar Panel to Catalog
-                  </button>
-                </form>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* MOCK RECEIPT MODAL PREVIEW */}
-        {modalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-            <div className="bg-surface-container border border-border-base rounded-xl w-full max-w-md shadow-2xl p-6 text-center space-y-6">
-              <div className="flex justify-between items-center border-b border-border-base pb-3">
-                <h4 className="font-display font-bold text-white text-base">{t.viewSlip}</h4>
-                <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
-                  <span className="material-symbols-outlined">close</span>
+                <button type="submit" className="w-full py-2 bg-[#b45309] text-white font-bold rounded-lg cursor-pointer">
+                  Save Inverter
                 </button>
-              </div>
-
-              {/* Receipt mockup card */}
-              <div className="bg-white/5 border border-border-base/50 rounded-xl p-8 space-y-4">
-                <span className="material-symbols-outlined text-5xl text-primary">receipt_long</span>
-                <div className="space-y-1 font-mono">
-                  <div className="text-xs text-slate-500">File Attachment</div>
-                  <div className="text-sm font-bold text-white">{activeSlip}</div>
-                </div>
-                <div className="text-left border-t border-slate-800/80 pt-4 space-y-2 text-xs font-mono">
-                  <div className="flex justify-between text-slate-400">
-                    <span>Sender:</span>
-                    <span className="text-white font-semibold">{company.name}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>Tier requested:</span>
-                    <span className="text-white font-semibold">{company.plan}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>Off-line Channel:</span>
-                    <span className="text-white font-semibold">Bank Transfer</span>
-                  </div>
-                </div>
-              </div>
-
-              <button 
-                onClick={handleApprovePayment}
-                className="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-display font-semibold transition-all cursor-pointer shadow-md text-xs"
-              >
-                {t.approveBtn}
-              </button>
+              </form>
             </div>
+
+            {/* Panels (6 cols) */}
+            <div className="xl:col-span-6 bg-white border border-[#e2e8f0] rounded-2xl p-6 space-y-6 shadow-sm">
+              <h3 className="font-display font-bold text-slate-900 text-base border-b pb-3">Solar Panels Catalog CMS</h3>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-slate-500 font-bold uppercase text-[9px]">
+                      <th className="p-2.5">Mfg / Model</th>
+                      <th className="p-2.5">Wattage</th>
+                      <th className="p-2.5">Rate / Watt</th>
+                      <th className="p-2.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {solarPanels.map(panel => (
+                      <tr key={panel.id}>
+                        <td className="p-2.5">
+                          <div className="font-bold text-slate-900">{panel.mfg}</div>
+                          <div className="text-[10px] text-slate-500">{panel.model}</div>
+                        </td>
+                        <td className="p-2.5 font-mono">{panel.wattage}W</td>
+                        <td className="p-2.5 font-mono font-bold text-[#b45309]">{panel.cost_per_watt} PKR/W</td>
+                        <td className="p-2.5 text-right">
+                          <button 
+                            onClick={() => removeSolarPanel(panel.id)}
+                            className="size-7 rounded bg-red-50 hover:bg-red-500 hover:text-white text-red-600 flex items-center justify-center ml-auto cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleAddPanelSubmit} className="bg-slate-50 p-4 rounded-xl space-y-3 text-xs border">
+                <h4 className="font-bold text-slate-800">Add Solar Panel Model</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="text" value={panelMfg} onChange={e=>setPanelMfg(e.target.value)} placeholder="Manufacturer" className="p-2 bg-white border rounded" />
+                  <input type="text" value={panelModel} onChange={e=>setPanelModel(e.target.value)} placeholder="Model" className="p-2 bg-white border rounded" />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <input type="number" value={panelWattage} onChange={e=>setPanelWattage(e.target.value)} placeholder="Wattage W" className="p-2 bg-white border rounded" />
+                  <select value={panelCell} onChange={e=>setPanelCell(e.target.value)} className="p-2 bg-white border rounded">
+                    <option value="Monocrystalline">Monocrystalline</option>
+                    <option value="Bifacial">Bifacial</option>
+                  </select>
+                  <input type="number" value={panelPriceWatt} onChange={e=>setPanelPriceWatt(e.target.value)} placeholder="Rate PKR/W" className="p-2 bg-white border rounded" />
+                </div>
+                <button type="submit" className="w-full py-2 bg-[#b45309] text-white font-bold rounded-lg cursor-pointer">
+                  Save Solar Panel
+                </button>
+              </form>
+            </div>
+
           </div>
         )}
+
+        {/* Bottom Sustainable Infrastructure Management Banner matching Screenshot 2 */}
+        <div className="bg-[#fffbeb] border border-[#fef08a] rounded-2xl p-8 text-center space-y-3">
+          <div className="size-12 rounded-2xl bg-[#fef3c7] text-[#b45309] flex items-center justify-center mx-auto font-bold shadow-sm">
+            <span className="material-symbols-outlined text-2xl">solar_power</span>
+          </div>
+          <h3 className="font-display font-extrabold text-[#854d0e] text-lg">
+            Sustainable Infrastructure Management
+          </h3>
+          <p className="text-xs text-slate-600 max-w-xl mx-auto leading-relaxed">
+            Multi-tenant B2B SaaS architecture for Pakistani solar installers. Manage company subscriptions, manual offline payment verification, and proposal quotas.
+          </p>
+        </div>
 
       </main>
     </PageShell>
