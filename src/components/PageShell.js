@@ -123,7 +123,7 @@ export default function PageShell({ children, headerTitle }) {
         <aside className={`w-full lg:w-64 flex-shrink-0 flex flex-col justify-between p-5 border-b lg:border-b-0 ${
           theme === 'dark'
             ? 'bg-[#181a1d] border-[#2d3137]'
-            : 'bg-white border-[#e2e8f0]'
+            : 'bg-white border-[#cbd5e1]'
         } ${lang === 'ur' ? 'lg:border-l' : 'lg:border-r'}`}>
           
           <div className="space-y-6">
@@ -224,7 +224,7 @@ export default function PageShell({ children, headerTitle }) {
             {/* Sidebar Logout Button */}
             <button 
               onClick={signOut}
-              className="w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 font-display font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-3 rounded-xl bg-rose-600/10 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-500/20 font-display font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-base">logout</span>
               <span>Logout from Portal</span>
@@ -236,16 +236,16 @@ export default function PageShell({ children, headerTitle }) {
         {/* Right Main Content Viewport */}
         <div className="flex-1 flex flex-col min-w-0">
           
-          {/* Top Navigation Header */}
-          <header className={`px-6 py-4 border-b flex items-center justify-between gap-4 ${
-            theme === 'dark' ? 'bg-[#181a1d] border-[#2d3137]' : 'bg-white border-[#e2e8f0]'
+          {/* Top Navigation Header (Consistent Light Grey BG for High Contrast Text Readability) */}
+          <header className={`px-6 py-3 border-b flex items-center justify-between gap-4 transition-colors ${
+            theme === 'dark' ? 'bg-[#181a1d] border-[#2d3137]' : 'bg-[#e2e8f0] border-slate-300'
           }`}>
             
             {/* Left Header Title / Search */}
-            <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-4">
               {pathname === '/agent-hub' ? (
                 <div className="relative max-w-xs w-full">
-                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-sm">search</span>
                   <input 
                     type="text" 
                     value={searchQuery}
@@ -254,78 +254,82 @@ export default function PageShell({ children, headerTitle }) {
                     className={`w-full pl-9 pr-4 py-2 text-xs rounded-xl border focus:outline-none transition-all ${
                       theme === 'dark'
                         ? 'bg-[#0f1113] border-[#3f474f] text-white focus:border-[#b45309]'
-                        : 'bg-[#f8fafc] border-[#cbd5e1] text-slate-800 focus:border-[#b45309]'
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-[#b45309] font-bold'
                     }`}
                   />
                 </div>
               ) : (
-                <h1 className={`font-display text-lg font-extrabold tracking-tight ${
-                  theme === 'dark' ? 'text-white' : 'text-[#0f172a]'
+                <h1 className={`font-display text-base sm:text-lg font-black tracking-tight whitespace-nowrap ${
+                  theme === 'dark' ? 'text-white' : 'text-slate-900'
                 }`}>
                   {getPageTitle()}
                 </h1>
               )}
             </div>
 
+            {/* Middle Header Navigation Pill Bar (High Contrast Light Grey Menu Bar) */}
+            <div className="hidden xl:flex items-center gap-1 bg-slate-300/80 dark:bg-black/40 p-1 rounded-2xl border border-slate-400/40 dark:border-slate-700 shadow-inner">
+              {workspaceMenuItems.map((item) => {
+                const isActive = pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-display text-xs font-extrabold transition-all whitespace-nowrap ${
+                      isActive
+                        ? 'bg-[#b45309] text-white shadow-sm'
+                        : 'text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-base">{item.icon}</span>
+                    <span>{lang === 'ur' ? item.urLabel : item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
             {/* Utility Controls & Distributor Account Selector */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
 
               {/* Distributor Account Switcher Dropdown */}
-              <div className="hidden sm:block">
+              <div className="hidden md:block">
                 <select 
                   value={user?.email || 'bilalfaheem47@gmail.com'}
                   onChange={(e) => {
-                    if (e.target.value === 'superadmin@solaragent.pk') {
-                      signInSuperAdmin(e.target.value, 'demo');
+                    if (e.target.value === 'superadmin@solaragent.pk' || e.target.value === 'bilalfaheem47@gmail.com') {
+                      signInSuperAdmin(e.target.value, 'Megatron_@0047');
                     } else {
                       signInDistributor(e.target.value, 'demo');
                     }
                   }}
-                  className="bg-slate-100 dark:bg-[#282a2d] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white px-3 py-1.5 rounded-xl text-xs font-bold font-mono cursor-pointer"
+                  className="bg-white dark:bg-[#282a2d] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white px-3 py-1.5 rounded-xl text-xs font-bold font-mono cursor-pointer shadow-xs"
                 >
                   <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (Silver Plan)</option>
                   <option value="info@khybergreen.pk">⚡ Khyber Green Energy (Silver Plan)</option>
                   <option value="google.partner@solaragent.pk">⚡ Google Partner Solar EPC (Silver Plan)</option>
                   <option value="info@indussolar.pk">⚡ Indus Solar Systems (Platinum Tier)</option>
                   <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (Gold Plan)</option>
-                  <option value="superadmin@solaragent.pk">👑 Super Admin Governance</option>
+                  <option value="bilalfaheem47@gmail.com">👑 Super Admin Governance</option>
                 </select>
               </div>
 
               {/* Currency Toggle */}
               <button 
                 onClick={toggleCurrency}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
-                  theme === 'dark'
-                    ? 'bg-[#282a2d] border-[#3f474f] text-amber-300 hover:bg-white/10'
-                    : 'bg-[#fefce8] border-[#fef08a] text-[#854d0e] hover:bg-[#fef9c3]'
-                }`}
+                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-amber-300 border border-slate-700 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm font-mono"
                 title="Toggle Currency"
               >
                 <span className="material-symbols-outlined text-sm">currency_exchange</span>
-                <span className="font-mono font-bold text-[11px]">{currency} ⇄ {currency === 'PKR' ? 'USD' : 'PKR'}</span>
-              </button>
-
-              {/* Language Switcher */}
-              <button 
-                onClick={toggleLang}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
-                  theme === 'dark'
-                    ? 'bg-[#282a2d] border-[#3f474f] text-slate-300 hover:bg-white/10'
-                    : 'bg-[#f8fafc] border-[#cbd5e1] text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="material-symbols-outlined text-sm">translate</span>
-                <span>{lang === 'en' ? 'English' : 'اردو'}</span>
+                <span>{currency} ⇄ {currency === 'PKR' ? 'USD' : 'PKR'}</span>
               </button>
 
               {/* Theme Switcher */}
               <button 
                 onClick={toggleTheme}
-                className={`size-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all ${
+                className={`size-8 sm:size-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all ${
                   theme === 'dark'
                     ? 'bg-[#282a2d] border-[#3f474f] text-amber-300'
-                    : 'bg-[#f8fafc] border-[#cbd5e1] text-slate-600'
+                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
                 }`}
                 title="Toggle Theme"
               >
@@ -336,14 +340,14 @@ export default function PageShell({ children, headerTitle }) {
 
               {/* DYNAMIC DISTRIBUTOR NAME, PLAN BADGE & PROFILE PHOTO UPLOADER */}
               {user && (
-                <div className={`flex items-center gap-3 pl-3 pr-2 py-1 rounded-xl border ${
+                <div className={`flex items-center gap-2.5 pl-3 pr-2 py-1 rounded-xl border ${
                   theme === 'dark'
                     ? 'bg-[#282a2d] border-[#3f474f]'
-                    : 'bg-[#f8fafc] border-[#cbd5e1]'
+                    : 'bg-white border-slate-300 shadow-xs'
                 }`}>
                   <div className="text-right hidden sm:block">
                     <div className={`font-display font-extrabold text-xs leading-none ${
-                      theme === 'dark' ? 'text-white' : 'text-[#0f172a]'
+                      theme === 'dark' ? 'text-white' : 'text-slate-900'
                     }`}>
                       {company.name || user.name || user.company_name || 'Distributor'}
                     </div>
@@ -356,7 +360,7 @@ export default function PageShell({ children, headerTitle }) {
                   <div 
                     onClick={handleAvatarClick}
                     title="Click to upload company logo or profile picture"
-                    className="size-9 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm relative group cursor-pointer overflow-hidden ring-2 ring-[#b45309]/30"
+                    className="size-8 sm:size-9 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm relative group cursor-pointer overflow-hidden ring-2 ring-[#b45309]/30"
                   >
                     {(company?.logo_url || user?.logo_url) ? (
                       <img 
@@ -377,11 +381,11 @@ export default function PageShell({ children, headerTitle }) {
                   {/* Prominent Red Logout Button */}
                   <button 
                     onClick={signOut}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-red-500 transition-all ml-1"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-rose-500 transition-all ml-1"
                     title="Log Out from Portal"
                   >
                     <span className="material-symbols-outlined text-sm">logout</span>
-                    <span>Logout</span>
+                    <span className="hidden sm:inline">Logout</span>
                   </button>
                 </div>
               )}
