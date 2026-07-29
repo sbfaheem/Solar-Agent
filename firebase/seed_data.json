@@ -20,15 +20,96 @@
     },
     {
       "id": "inv-3",
-      "brand_name": "Inverex",
-      "model_name": "Inverex 5kW Hybrid",
-      "capacity_kw": 5.0,
+      "brand_name": "Nitrox (Inverex)",
+      "model_name": "Nitrox 12kW 3-Phase Hybrid",
+      "capacity_kw": 12.0,
       "type": "Hybrid",
-      "estimated_base_price_pkr": 240000,
+      "estimated_base_price_pkr": 540000,
       "official_url": "https://inverex.com.pk"
     },
     {
       "id": "inv-4",
+      "brand_name": "Nitrox (Inverex)",
+      "model_name": "Nitrox 15kW 3-Phase Hybrid",
+      "capacity_kw": 15.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 620000,
+      "official_url": "https://inverex.com.pk"
+    },
+    {
+      "id": "inv-5",
+      "brand_name": "Deye",
+      "model_name": "Deye 6kW Single Phase Hybrid",
+      "capacity_kw": 6.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 285000,
+      "official_url": "https://www.deyeinverter.com"
+    },
+    {
+      "id": "inv-6",
+      "brand_name": "Deye",
+      "model_name": "Deye 8kW Single Phase Hybrid",
+      "capacity_kw": 8.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 380000,
+      "official_url": "https://www.deyeinverter.com"
+    },
+    {
+      "id": "inv-7",
+      "brand_name": "Deye",
+      "model_name": "Deye 10kW 3-Phase Hybrid",
+      "capacity_kw": 10.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 470000,
+      "official_url": "https://www.deyeinverter.com"
+    },
+    {
+      "id": "inv-8",
+      "brand_name": "Deye",
+      "model_name": "Deye 12kW 3-Phase Hybrid",
+      "capacity_kw": 12.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 560000,
+      "official_url": "https://www.deyeinverter.com"
+    },
+    {
+      "id": "inv-9",
+      "brand_name": "Deye",
+      "model_name": "Deye 50kW Commercial Hybrid",
+      "capacity_kw": 50.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 1850000,
+      "official_url": "https://www.deyeinverter.com"
+    },
+    {
+      "id": "inv-10",
+      "brand_name": "Growatt",
+      "model_name": "Growatt SPH 5000 Hybrid",
+      "capacity_kw": 5.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 225000,
+      "official_url": "https://www.ginverter.com"
+    },
+    {
+      "id": "inv-11",
+      "brand_name": "Growatt",
+      "model_name": "Growatt MOD 10KTL3-X On-Grid",
+      "capacity_kw": 10.0,
+      "type": "On-Grid",
+      "estimated_base_price_pkr": 290000,
+      "official_url": "https://www.ginverter.com"
+    },
+    {
+      "id": "inv-12",
+      "brand_name": "Growatt",
+      "model_name": "Growatt MID 15KTL3-X On-Grid",
+      "capacity_kw": 15.0,
+      "type": "On-Grid",
+      "estimated_base_price_pkr": 340000,
+      "official_url": "https://www.ginverter.com"
+    },
+    {
+      "id": "inv-13",
       "brand_name": "Solis",
       "model_name": "Solis 5kW On-Grid",
       "capacity_kw": 5.0,
@@ -37,22 +118,157 @@
       "official_url": "https://www.solisinverters.com"
     },
     {
-      "id": "inv-5",
+      "id": "inv-14",
+      "brand_name": "Solis",
+      "model_name": "Solis 10kW 3-Phase On-Grid",
+      "capacity_kw": 10.0,
+      "type": "On-Grid",
+      "estimated_base_price_pkr": 275000,
+      "official_url": "https://www.solisinverters.com"
+    },
+    {
+      "id": "inv-15",
+      "brand_name": "Solis",
+      "model_name": "Solis 15kW 3-Phase On-Grid",
+      "capacity_kw": 15.0,
+      "type": "On-Grid",
+      "estimated_base_price_pkr": 335000,
+      "official_url": "https://www.solisinverters.com"
+    },
+    {
+      "id": "inv-16",
+      "brand_name": "Solis",
+      "model_name": "Solis S6 6kW Hybrid",
+      "capacity_kw": 6.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 260000,
+      "official_url": "https://www.solisinverters.com"
+    },
+    {
+      "id": "inv-17",
       "brand_name": "Huawei",
-      "model_name": "Huawei SUN2000-5KTL-M1",
+      "model_name": "Huawei SUN2000-5KTL-M1 On-Grid",
       "capacity_kw": 5.0,
       "type": "On-Grid",
       "estimated_base_price_pkr": 220000,
       "official_url": "https://solar.huawei.com"
     },
     {
-      "id": "inv-6",
+      "id": "inv-18",
+      "brand_name": "Huawei",
+      "model_name": "Huawei SUN2000-10KTL-M1 On-Grid",
+      "capacity_kw": 10.0,
+      "type": "On-Grid",
+      "estimated_base_price_pkr": 340000,
+      "official_url": "https://solar.huawei.com"
+    },
+    {
+      "id": "inv-19",
+      "brand_name": "Huawei",
+      "model_name": "Huawei SUN2000-20KTL-M2 On-Grid",
+      "capacity_kw": 20.0,
+      "type": "On-Grid",
+      "estimated_base_price_pkr": 510000,
+      "official_url": "https://solar.huawei.com"
+    },
+    {
+      "id": "inv-20",
       "brand_name": "GoodWe",
       "model_name": "GoodWe GW5000-EH Hybrid",
       "capacity_kw": 5.0,
       "type": "Hybrid",
       "estimated_base_price_pkr": 210000,
       "official_url": "https://www.goodwe.com"
+    },
+    {
+      "id": "inv-21",
+      "brand_name": "GoodWe",
+      "model_name": "GoodWe GW10K-ET 10kW Hybrid",
+      "capacity_kw": 10.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 440000,
+      "official_url": "https://www.goodwe.com"
+    },
+    {
+      "id": "inv-22",
+      "brand_name": "Crown Micro",
+      "model_name": "Crown Elego 5kW Off-Grid",
+      "capacity_kw": 5.0,
+      "type": "Off-Grid",
+      "estimated_base_price_pkr": 155000,
+      "official_url": "https://www.crownmicro.com"
+    },
+    {
+      "id": "inv-23",
+      "brand_name": "Crown Micro",
+      "model_name": "Crown Elego 6kW Hybrid",
+      "capacity_kw": 6.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 215000,
+      "official_url": "https://www.crownmicro.com"
+    },
+    {
+      "id": "inv-24",
+      "brand_name": "Fronus",
+      "model_name": "Fronus Infini 5.5kW Off-Grid",
+      "capacity_kw": 5.5,
+      "type": "Off-Grid",
+      "estimated_base_price_pkr": 145000,
+      "official_url": "https://fronus.com.pk"
+    },
+    {
+      "id": "inv-25",
+      "brand_name": "Knox",
+      "model_name": "Knox Crypto 6kW Hybrid",
+      "capacity_kw": 6.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 230000,
+      "official_url": "https://knoxsolar.com"
+    },
+    {
+      "id": "inv-26",
+      "brand_name": "Knox",
+      "model_name": "Knox Krypton 10kW Hybrid",
+      "capacity_kw": 10.0,
+      "type": "Hybrid",
+      "estimated_base_price_pkr": 410000,
+      "official_url": "https://knoxsolar.com"
+    },
+    {
+      "id": "inv-27",
+      "brand_name": "Pylontech",
+      "model_name": "Pylontech US3000C Lithium 3.55kWh",
+      "capacity_kw": 3.55,
+      "type": "Lithium Battery",
+      "estimated_base_price_pkr": 310000,
+      "official_url": "https://www.pylontech.com.cn"
+    },
+    {
+      "id": "inv-28",
+      "brand_name": "Inverex",
+      "model_name": "Inverex PowerWall Lithium 5.12kWh 48V",
+      "capacity_kw": 5.12,
+      "type": "Lithium Battery",
+      "estimated_base_price_pkr": 390000,
+      "official_url": "https://inverexpower.com"
+    },
+    {
+      "id": "inv-29",
+      "brand_name": "Narada",
+      "model_name": "Narada 48V 100Ah Lithium Pack 4.8kWh",
+      "capacity_kw": 4.8,
+      "type": "Lithium Battery",
+      "estimated_base_price_pkr": 365000,
+      "official_url": "https://www.naradabattery.com"
+    },
+    {
+      "id": "inv-30",
+      "brand_name": "Dyness",
+      "model_name": "Dyness B4850 48V LiFePO4 2.4kWh",
+      "capacity_kw": 2.4,
+      "type": "Lithium Battery",
+      "estimated_base_price_pkr": 210000,
+      "official_url": "https://www.dyness-tech.com"
     }
   ],
   "solar_panels": [
@@ -67,30 +283,237 @@
     },
     {
       "id": "pan-2",
+      "manufacturer_name": "Longi",
+      "model_name": "Hi-Mo 7 N-Type Bifacial 600W",
+      "default_wattage": 600,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 40.5,
+      "official_url": "https://www.longi.com"
+    },
+    {
+      "id": "pan-3",
+      "manufacturer_name": "Longi",
+      "model_name": "Hi-Mo X6 Bifacial 620W",
+      "default_wattage": 620,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.0,
+      "official_url": "https://www.longi.com"
+    },
+    {
+      "id": "pan-4",
+      "manufacturer_name": "Longi",
+      "model_name": "Hi-Mo 9 N-Type 700W Ultra",
+      "default_wattage": 700,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 42.0,
+      "official_url": "https://www.longi.com"
+    },
+    {
+      "id": "pan-5",
       "manufacturer_name": "Jinko Solar",
-      "model_name": "Tiger Neo N-Type Bifacial",
+      "model_name": "Tiger Neo N-Type Bifacial 575W",
       "default_wattage": 575,
       "cell_type": "Bifacial",
       "price_per_watt_pkr": 42.5,
       "official_url": "https://www.jinkosolar.com"
     },
     {
-      "id": "pan-3",
+      "id": "pan-6",
+      "manufacturer_name": "Jinko Solar",
+      "model_name": "Tiger Neo N-Type Bifacial 580W",
+      "default_wattage": 580,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.5,
+      "official_url": "https://www.jinkosolar.com"
+    },
+    {
+      "id": "pan-7",
+      "manufacturer_name": "Jinko Solar",
+      "model_name": "Tiger Neo 600W N-Type",
+      "default_wattage": 600,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.0,
+      "official_url": "https://www.jinkosolar.com"
+    },
+    {
+      "id": "pan-8",
+      "manufacturer_name": "Jinko Solar",
+      "model_name": "Tiger Neo 620W Bifacial",
+      "default_wattage": 620,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.5,
+      "official_url": "https://www.jinkosolar.com"
+    },
+    {
+      "id": "pan-9",
+      "manufacturer_name": "Jinko Solar",
+      "model_name": "Tiger Neo N-Type 720W",
+      "default_wattage": 720,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 42.5,
+      "official_url": "https://www.jinkosolar.com"
+    },
+    {
+      "id": "pan-10",
       "manufacturer_name": "Canadian Solar",
-      "model_name": "TOPCon Bifacial Double Glass",
+      "model_name": "TOPCon Bifacial Double Glass 585W",
       "default_wattage": 585,
       "cell_type": "Mono PERC",
       "price_per_watt_pkr": 42.5,
       "official_url": "https://www.canadiansolar.com"
     },
     {
-      "id": "pan-4",
+      "id": "pan-11",
+      "manufacturer_name": "Canadian Solar",
+      "model_name": "BiHiKu7 TOPCon 600W",
+      "default_wattage": 600,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 42.0,
+      "official_url": "https://www.canadiansolar.com"
+    },
+    {
+      "id": "pan-12",
+      "manufacturer_name": "Canadian Solar",
+      "model_name": "BiHiKu7 TOPCon 650W",
+      "default_wattage": 650,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 43.0,
+      "official_url": "https://www.canadiansolar.com"
+    },
+    {
+      "id": "pan-13",
+      "manufacturer_name": "Canadian Solar",
+      "model_name": "HiKu7 N-Type 700W",
+      "default_wattage": 700,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 43.5,
+      "official_url": "https://www.canadiansolar.com"
+    },
+    {
+      "id": "pan-14",
       "manufacturer_name": "JA Solar",
-      "model_name": "DeepBlue 4.0 Pro N-Type",
+      "model_name": "DeepBlue 4.0 Pro N-Type 580W",
       "default_wattage": 580,
       "cell_type": "N-Type TOPCon",
       "price_per_watt_pkr": 41.0,
       "official_url": "https://www.jasolar.com"
+    },
+    {
+      "id": "pan-15",
+      "manufacturer_name": "JA Solar",
+      "model_name": "DeepBlue 4.0 Pro N-Type 600W",
+      "default_wattage": 600,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.0,
+      "official_url": "https://www.jasolar.com"
+    },
+    {
+      "id": "pan-16",
+      "manufacturer_name": "JA Solar",
+      "model_name": "DeepBlue 4.0 Pro 620W",
+      "default_wattage": 620,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.5,
+      "official_url": "https://www.jasolar.com"
+    },
+    {
+      "id": "pan-17",
+      "manufacturer_name": "JA Solar",
+      "model_name": "DeepBlue 4.0 Pro 710W",
+      "default_wattage": 710,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 42.5,
+      "official_url": "https://www.jasolar.com"
+    },
+    {
+      "id": "pan-18",
+      "manufacturer_name": "Trina Solar",
+      "model_name": "Vertex N N-Type 580W",
+      "default_wattage": 580,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.5,
+      "official_url": "https://www.trinasolar.com"
+    },
+    {
+      "id": "pan-19",
+      "manufacturer_name": "Trina Solar",
+      "model_name": "Vertex N 600W",
+      "default_wattage": 600,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.5,
+      "official_url": "https://www.trinasolar.com"
+    },
+    {
+      "id": "pan-20",
+      "manufacturer_name": "Trina Solar",
+      "model_name": "Vertex N 610W Bifacial",
+      "default_wattage": 610,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 42.0,
+      "official_url": "https://www.trinasolar.com"
+    },
+    {
+      "id": "pan-21",
+      "manufacturer_name": "Trina Solar",
+      "model_name": "Vertex N 700W",
+      "default_wattage": 700,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 43.0,
+      "official_url": "https://www.trinasolar.com"
+    },
+    {
+      "id": "pan-22",
+      "manufacturer_name": "Trina Solar",
+      "model_name": "Vertex N 720W Ultra-High Output",
+      "default_wattage": 720,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 43.5,
+      "official_url": "https://www.trinasolar.com"
+    },
+    {
+      "id": "pan-23",
+      "manufacturer_name": "Risen Energy",
+      "model_name": "Risen HJT / N-Type 580W",
+      "default_wattage": 580,
+      "cell_type": "HJT / N-Type",
+      "price_per_watt_pkr": 40.5,
+      "official_url": "https://www.risenenergy.com"
+    },
+    {
+      "id": "pan-24",
+      "manufacturer_name": "Risen Energy",
+      "model_name": "Risen N-Type 650W",
+      "default_wattage": 650,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 41.5,
+      "official_url": "https://www.risenenergy.com"
+    },
+    {
+      "id": "pan-25",
+      "manufacturer_name": "Risen Energy",
+      "model_name": "Risen N-Type 700W",
+      "default_wattage": 700,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 42.5,
+      "official_url": "https://www.risenenergy.com"
+    },
+    {
+      "id": "pan-26",
+      "manufacturer_name": "Astronergy",
+      "model_name": "Astro N5 TOPCon 580W",
+      "default_wattage": 580,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 40.0,
+      "official_url": "https://www.astronergy.com"
+    },
+    {
+      "id": "pan-27",
+      "manufacturer_name": "Astronergy",
+      "model_name": "Astro N5 TOPCon 600W",
+      "default_wattage": 600,
+      "cell_type": "N-Type TOPCon",
+      "price_per_watt_pkr": 40.5,
+      "official_url": "https://www.astronergy.com"
     }
   ],
   "proposals": [

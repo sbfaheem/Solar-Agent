@@ -24,7 +24,11 @@ export default function ConfigurationWizard() {
   const [profileMode, setProfileMode] = useState('ocr'); 
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
-  
+
+  // Hardware Filter Chips
+  const [inverterCategory, setInverterCategory] = useState('All'); // 'All', 'Hybrid', 'On-Grid', 'Off-Grid', 'Lithium Battery'
+  const [panelCategory, setPanelCategory] = useState('All'); // 'All', '575W-585W', '600W-620W', '650W+', 'N-Type TOPCon'
+
   // Local Edit Modal copy
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -87,7 +91,7 @@ export default function ConfigurationWizard() {
         showToast(
           lang === 'ur' 
             ? `⚡ ${data.discoFullName} بل اسکین ہو گیا! (${data.monthlyUnits} یونٹس)`
-            : `⚡ Parsed ${data.discoFullName}! Extracted ${data.monthlyUnits} kWh (PKR ${data.billAmount?.toLocaleString() || ''})`
+            : `⚡ Parsed ${data.discoFullName}! Extracted ${data.monthlyUnits} kWh (${formatPrice(data.billAmount)})`
         );
       } else {
         showToast(data.error || "OCR Parsing failed", "error");
@@ -123,7 +127,7 @@ export default function ConfigurationWizard() {
   // Auto match inverter and panel
   useEffect(() => {
     if (inverters.length > 0 && !calcParams.selectedInverter) {
-      const standardInv = inverters.find(i => i.capacity_kw === 5.0 && i.type === 'Hybrid') || inverters[0];
+      const standardInv = inverters.find(i => i.capacity_kw === 5.0 && (i.type === 'Hybrid' || i.type === 'On-Grid')) || inverters[0];
       setCalcParams(prev => ({ ...prev, selectedInverter: standardInv }));
     }
     if (solarPanels.length > 0 && !calcParams.selectedPanel) {
@@ -140,12 +144,12 @@ export default function ConfigurationWizard() {
   };
 
   const systemSize = calculateSystemSize();
-  const panelCapacityW = calcParams.selectedPanel ? calcParams.selectedPanel.default_wattage : 580;
+  const panelCapacityW = calcParams.selectedPanel ? (calcParams.selectedPanel.default_wattage || calcParams.selectedPanel.wattage) : 580;
   const panelCount = Math.ceil((systemSize * 1000) / panelCapacityW);
 
   const calculateTotalCost = () => {
-    const inverterCost = calcParams.selectedInverter ? calcParams.selectedInverter.estimated_base_price_pkr : 240000;
-    const panelPricePerWatt = calcParams.selectedPanel ? calcParams.selectedPanel.price_per_watt_pkr : 40.0;
+    const inverterCost = calcParams.selectedInverter ? (calcParams.selectedInverter.estimated_base_price_pkr || calcParams.selectedInverter.cost_pkr) : 240000;
+    const panelPricePerWatt = calcParams.selectedPanel ? (calcParams.selectedPanel.price_per_watt_pkr || calcParams.selectedPanel.cost_per_watt) : 40.0;
     const panelsCost = (systemSize * 1000) * panelPricePerWatt;
     const structureAndWiring = systemSize * 15000;
     const installationNet = 40000;
@@ -156,14 +160,35 @@ export default function ConfigurationWizard() {
   const annualSavings = Math.round(systemSize * 120 * 12 * 45); 
   const paybackYears = parseFloat((totalCost / annualSavings).toFixed(1));
 
+  // Filter Inverters & Batteries
+  const filteredInverters = inverters.filter(inv => {
+    if (inverterCategory === 'All') return true;
+    if (inverterCategory === 'Hybrid') return inv.type === 'Hybrid';
+    if (inverterCategory === 'On-Grid') return inv.type === 'On-Grid';
+    if (inverterCategory === 'Off-Grid') return inv.type === 'Off-Grid';
+    if (inverterCategory === 'Lithium Battery') return inv.type === 'Lithium Battery';
+    return true;
+  });
+
+  // Filter Solar Panels
+  const filteredPanels = solarPanels.filter(p => {
+    const w = p.default_wattage || p.wattage || 580;
+    if (panelCategory === 'All') return true;
+    if (panelCategory === '575W-585W') return w >= 575 && w <= 585;
+    if (panelCategory === '600W-620W') return w >= 600 && w <= 620;
+    if (panelCategory === '650W+') return w >= 650;
+    if (panelCategory === 'N-Type TOPCon') return (p.cell_type || '').includes('N-Type');
+    return true;
+  });
+
   // Broadcasting Changes to Live Customer Sync Channel
   useEffect(() => {
     if (calcParams.selectedInverter && calcParams.selectedPanel) {
       saveLivePresentation({
         systemSize,
         panelCount,
-        panelModel: calcParams.selectedPanel.model_name,
-        inverterModel: calcParams.selectedInverter.model_name,
+        panelModel: calcParams.selectedPanel.model_name || calcParams.selectedPanel.model,
+        inverterModel: calcParams.selectedInverter.model_name || calcParams.selectedInverter.model,
         totalCost,
         annualSavings,
         paybackYears,
@@ -209,7 +234,7 @@ export default function ConfigurationWizard() {
   // Translations
   const translations = {
     en: {
-      editBanner: "System Engineering & Customization",
+      editBanner: "Solar System Engineering & Customization",
       noLead: "Configure specs (unlinked lead mode)",
       activeLead: "Editing specs for Customer:",
       step1: "1. Load Profile",
@@ -225,7 +250,7 @@ export default function ConfigurationWizard() {
       requiredPanels: "Required Panel Count",
       netMetering: "Utility Net Metering",
       continueBtn: "Continue to Hardware Selection",
-      inverterTitle: "Step 2.1: Select Inverter Module",
+      inverterTitle: "Step 2.1: Select Inverter / Battery Module",
       panelTitle: "Step 2.2: Select Solar Panel Module",
       currentSelections: "Current Selections",
       totalEstimate: "Total Cost Estimate",
@@ -266,7 +291,7 @@ export default function ConfigurationWizard() {
       requiredPanels: "درکار سولر پینلز کی تعداد",
       netMetering: "نیٹ میٹرنگ کی اہلیت",
       continueBtn: "ہارڈویئر کے انتخاب پر جائیں",
-      inverterTitle: "مرحلہ 2.1: انورٹر ماڈیول منتخب کریں",
+      inverterTitle: "مرحلہ 2.1: انورٹر / بیٹری ماڈیول منتخب کریں",
       panelTitle: "مرحلہ 2.2: سولر پینل ماڈیول منتخب کریں",
       currentSelections: "منتخب کردہ ہارڈویئر",
       totalEstimate: "کل لاگت کا تخمینہ",
@@ -297,7 +322,7 @@ export default function ConfigurationWizard() {
   return (
     <PageShell headerTitle="Solar Proposals Engineering">
       
-      {/* High-Contrast Configuration Header */}
+      {/* Configuration Header */}
       <div className="bg-white dark:bg-[#181a1d] border-b border-[#e2e8f0] dark:border-[#2d3137] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="size-8 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold font-mono text-xs shadow-sm">
@@ -417,7 +442,7 @@ export default function ConfigurationWizard() {
                         <div className="space-y-3 py-4">
                           <span className="material-symbols-outlined text-4xl text-[#b45309] animate-spin">sync</span>
                           <p className="text-sm font-extrabold text-[#0f172a] dark:text-white">Analyzing utility bill via Gemini 3.6 Vision OCR...</p>
-                          <p className="text-xs text-[#64748b] dark:text-slate-400">Extracting DISCO, billed kWh, reference number, and tariff rates</p>
+                          <p className="text-xs text-[#64748b] dark:text-slate-400">Extracting DISCO, billed kWh, consumer name, reference number, and tariff rates</p>
                         </div>
                       ) : (
                         <div className="space-y-3 py-4">
@@ -446,6 +471,13 @@ export default function ConfigurationWizard() {
                           </span>
                         </div>
 
+                        {ocrResult.consumerName && (
+                          <div className="bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 flex justify-between items-center text-xs">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold">Consumer Name</span>
+                            <span className="font-extrabold text-[#0f172a] dark:text-white text-sm">{ocrResult.consumerName}</span>
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono">
                           <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
                             <span className="text-slate-500 text-[10px] uppercase font-bold block">Utility DISCO</span>
@@ -460,7 +492,7 @@ export default function ConfigurationWizard() {
                             <span className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">{formatPrice(ocrResult.billAmount)}</span>
                           </div>
                           <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
-                            <span className="text-slate-500 text-[10px] uppercase font-bold block">Reference Number</span>
+                            <span className="text-slate-500 text-[10px] uppercase font-bold block">Reference / Account #</span>
                             <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">{ocrResult.referenceNumber}</span>
                           </div>
                           <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
@@ -501,7 +533,7 @@ export default function ConfigurationWizard() {
                   </div>
                 )}
 
-                {/* Select Dropdowns with High-Contrast Styling */}
+                {/* Select Dropdowns */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-200 dark:border-slate-800">
                   <div className="space-y-1.5">
                     <label className="text-xs font-extrabold text-[#334155] dark:text-slate-300 uppercase tracking-wide">{t.utilityPhase}</label>
@@ -521,10 +553,13 @@ export default function ConfigurationWizard() {
                       onChange={(e) => setCalcParams(prev => ({ ...prev, utilityProvider: e.target.value }))}
                       className="w-full px-3.5 py-2.5 text-sm font-bold bg-[#f8fafc] dark:bg-[#282a2d] border border-[#cbd5e1] dark:border-[#3f474f] text-[#0f172a] dark:text-white rounded-xl focus:outline-none focus:border-[#b45309] cursor-pointer shadow-xs"
                     >
-                      <option value="IESCO">IESCO (Islamabad)</option>
+                      <option value="KE">K-Electric (Karachi & Hub)</option>
                       <option value="LESCO">LESCO (Lahore)</option>
-                      <option value="KE">K-Electric (Karachi)</option>
+                      <option value="IESCO">IESCO (Islamabad)</option>
                       <option value="FESCO">FESCO (Faisalabad)</option>
+                      <option value="GEPCO">GEPCO (Gujranwala)</option>
+                      <option value="MEPCO">MEPCO (Multan)</option>
+                      <option value="PESCO">PESCO (Peshawar)</option>
                     </select>
                   </div>
                 </div>
@@ -573,71 +608,189 @@ export default function ConfigurationWizard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
               
-              {/* Inverter Picker */}
-              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-4 shadow-sm">
-                <h3 className="font-display font-bold text-[#0f172a] dark:text-white text-lg border-b border-slate-200 dark:border-slate-800 pb-3">
-                  {t.inverterTitle}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {inverters.map((inv) => (
-                    <div 
-                      key={inv.id} 
-                      onClick={() => setCalcParams(prev => ({ ...prev, selectedInverter: inv }))}
-                      className={`border rounded-2xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
-                        calcParams.selectedInverter?.id === inv.id
-                          ? 'border-[#b45309] bg-[#fefce8] dark:bg-amber-500/10 shadow-md'
-                          : 'border-slate-200 dark:border-slate-800 bg-[#f8fafc] dark:bg-black/20 hover:border-slate-300'
+              {/* Step 2.1: Inverters & Lithium-Ion Batteries Picker */}
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-5 shadow-sm">
+                
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-lg">
+                      {t.inverterTitle}
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">On-Grid, Off-Grid, Hybrid Inverters & 48V Lithium-Ion Battery Storage</p>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-slate-400">
+                    Showing {filteredInverters.length} of {inverters.length} models
+                  </span>
+                </div>
+
+                {/* Category Filter Chips for Inverters */}
+                <div className="flex flex-wrap gap-1.5 text-xs font-bold font-display">
+                  {['All', 'Hybrid', 'On-Grid', 'Off-Grid', 'Lithium Battery'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setInverterCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        inverterCategory === cat 
+                          ? 'bg-[#b45309] text-white shadow-sm' 
+                          : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                       }`}
                     >
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <span className="text-xs font-mono font-bold text-[#b45309] uppercase">{inv.brand_name || inv.brand}</span>
-                          <span className="text-[10px] bg-slate-200 dark:bg-black/40 px-2 py-0.5 rounded font-mono font-bold text-slate-700 dark:text-slate-300 uppercase">{inv.type}</span>
-                        </div>
-                        <h4 className="font-display font-bold text-[#0f172a] dark:text-white text-sm mt-1">{inv.model_name || inv.model}</h4>
-                      </div>
-                      <div className="flex justify-between items-end mt-4 pt-2 border-t border-slate-200 dark:border-slate-800">
-                        <span className="font-mono text-xs text-slate-500">{inv.capacity_kw} kW Capacity</span>
-                        <span className="font-mono text-sm font-black text-[#b45309]">
-                          {formatPrice(inv.estimated_base_price_pkr || inv.cost_pkr)}
-                        </span>
-                      </div>
-                    </div>
+                      {cat === 'All' ? 'All Equipment' : cat}
+                    </button>
                   ))}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[550px] overflow-y-auto pr-1">
+                  {filteredInverters.map((inv) => {
+                    const isSelected = calcParams.selectedInverter?.id === inv.id;
+                    const brand = inv.brand_name || inv.brand;
+                    const model = inv.model_name || inv.model;
+                    const cap = inv.capacity_kw || inv.capacity;
+                    const price = inv.estimated_base_price_pkr || inv.cost_pkr;
+
+                    return (
+                      <div 
+                        key={inv.id} 
+                        onClick={() => setCalcParams(prev => ({ ...prev, selectedInverter: inv }))}
+                        className={`border rounded-2xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                          isSelected
+                            ? 'border-[#b45309] bg-[#fefce8] dark:bg-amber-500/10 shadow-md ring-2 ring-[#b45309]/30'
+                            : 'border-slate-200 dark:border-slate-800 bg-[#f8fafc] dark:bg-black/20 hover:border-slate-300'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <span className="text-xs font-mono font-bold text-[#b45309] uppercase">{brand}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase ${
+                              inv.type === 'Lithium Battery'
+                                ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                                : inv.type === 'On-Grid'
+                                ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                : 'bg-amber-100 text-amber-800 border border-amber-300'
+                            }`}>
+                              {inv.type}
+                            </span>
+                          </div>
+                          <h4 className="font-display font-extrabold text-[#0f172a] dark:text-white text-sm mt-1">{model}</h4>
+                        </div>
+
+                        <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-mono text-slate-500 font-bold">
+                              {inv.type === 'Lithium Battery' ? `${cap} kWh Capacity` : `${cap} kW Capacity`}
+                            </span>
+                            <span className="font-mono text-sm font-black text-[#b45309]">
+                              {formatPrice(price)}
+                            </span>
+                          </div>
+
+                          {/* Official Website Link */}
+                          {inv.official_url && (
+                            <a 
+                              href={inv.official_url} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline pt-1"
+                            >
+                              <span>🔗 Official Website & Live Prices</span>
+                              <span className="material-symbols-outlined text-xs">open_in_new</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Solar Panel Picker */}
-              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-4 shadow-sm">
-                <h3 className="font-display font-bold text-[#0f172a] dark:text-white text-lg border-b border-slate-200 dark:border-slate-800 pb-3">
-                  {t.panelTitle}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {solarPanels.map((panel) => (
-                    <div 
-                      key={panel.id} 
-                      onClick={() => setCalcParams(prev => ({ ...prev, selectedPanel: panel }))}
-                      className={`border rounded-2xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
-                        calcParams.selectedPanel?.id === panel.id
-                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 shadow-md'
-                          : 'border-slate-200 dark:border-slate-800 bg-[#f8fafc] dark:bg-black/20 hover:border-slate-300'
+              {/* Step 2.2: Solar Panels Picker */}
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-5 shadow-sm">
+                
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-lg">
+                      {t.panelTitle}
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">Longi, Jinko, Canadian, JA, Trina (575W, 580W, 600W, 620W, 650W, 700W, 720W)</p>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-slate-400">
+                    Showing {filteredPanels.length} of {solarPanels.length} models
+                  </span>
+                </div>
+
+                {/* Wattage & Tech Filter Chips */}
+                <div className="flex flex-wrap gap-1.5 text-xs font-bold font-display">
+                  {['All', '575W-585W', '600W-620W', '650W+', 'N-Type TOPCon'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setPanelCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                        panelCategory === cat 
+                          ? 'bg-emerald-600 text-white shadow-sm' 
+                          : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                       }`}
                     >
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase">{panel.manufacturer_name || panel.mfg}</span>
-                          <span className="text-[10px] bg-slate-200 dark:bg-black/40 px-2 py-0.5 rounded font-mono font-bold text-slate-700 dark:text-slate-300 uppercase">{panel.cell_type}</span>
-                        </div>
-                        <h4 className="font-display font-bold text-[#0f172a] dark:text-white text-sm mt-1">{panel.model_name || panel.model}</h4>
-                      </div>
-                      <div className="flex justify-between items-end mt-4 pt-2 border-t border-slate-200 dark:border-slate-800">
-                        <span className="font-mono text-xs text-slate-500">{panel.default_wattage || panel.wattage} W Output</span>
-                        <span className="font-mono text-sm font-black text-emerald-700 dark:text-emerald-400">
-                          {panel.price_per_watt_pkr || panel.cost_per_watt} PKR/W
-                        </span>
-                      </div>
-                    </div>
+                      {cat === 'All' ? 'All Wattages' : cat}
+                    </button>
                   ))}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[550px] overflow-y-auto pr-1">
+                  {filteredPanels.map((panel) => {
+                    const isSelected = calcParams.selectedPanel?.id === panel.id;
+                    const mfg = panel.manufacturer_name || panel.mfg;
+                    const model = panel.model_name || panel.model;
+                    const watt = panel.default_wattage || panel.wattage;
+                    const rateW = panel.price_per_watt_pkr || panel.cost_per_watt;
+                    const panelPrice = Math.round(watt * rateW);
+
+                    return (
+                      <div 
+                        key={panel.id} 
+                        onClick={() => setCalcParams(prev => ({ ...prev, selectedPanel: panel }))}
+                        className={`border rounded-2xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                          isSelected
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 shadow-md ring-2 ring-emerald-500/30'
+                            : 'border-slate-200 dark:border-slate-800 bg-[#f8fafc] dark:bg-black/20 hover:border-slate-300'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase">{mfg}</span>
+                            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded font-mono font-bold uppercase border border-emerald-300">
+                              {panel.cell_type}
+                            </span>
+                          </div>
+                          <h4 className="font-display font-extrabold text-[#0f172a] dark:text-white text-sm mt-1">{model}</h4>
+                        </div>
+
+                        <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-mono text-slate-500 font-bold">{watt} W Output</span>
+                            <div className="text-right">
+                              <span className="font-mono text-sm font-black text-emerald-700 dark:text-emerald-400 block">{rateW} PKR/W</span>
+                              <span className="text-[10px] text-slate-400 font-mono font-semibold">({formatPrice(panelPrice)} / panel)</span>
+                            </div>
+                          </div>
+
+                          {/* Official Website Link */}
+                          {panel.official_url && (
+                            <a 
+                              href={panel.official_url} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline pt-1"
+                            >
+                              <span>🔗 Brand Website & Specifications</span>
+                              <span className="material-symbols-outlined text-xs">open_in_new</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -652,7 +805,7 @@ export default function ConfigurationWizard() {
                 
                 <div className="space-y-3 text-xs">
                   <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Selected Inverter</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Selected Inverter / Storage</span>
                     <div className="font-bold text-slate-900 dark:text-white text-sm">
                       {calcParams.selectedInverter ? (calcParams.selectedInverter.model_name || calcParams.selectedInverter.model) : 'None'}
                     </div>
