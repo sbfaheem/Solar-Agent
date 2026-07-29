@@ -58,12 +58,43 @@ export const AppProvider = ({ children }) => {
   const [company, setCompany] = useState({
     id: "comp-1",
     name: "Solar Solutions Ltd",
-    plan: "Platinum", 
-    proposals_generated: 28,
+    plan: "Silver", 
+    proposals_generated: 35, // At 35/35 limit for Silver Plan testing
     billing_status: "Active",
     receipt_uploaded: null,
     override_quota: 0
   });
+
+  // Official Editable Bank Wire Details
+  const [bankDetails, setBankDetails] = useState({
+    bankName: "Meezan Bank",
+    accountTitle: "Solar Agent PVT LTD",
+    iban: "PK64MEZN001234567890",
+    accountNumber: "010203040506"
+  });
+
+  const updateBankDetails = (newDetails) => {
+    setBankDetails(prev => ({ ...prev, ...newDetails }));
+    showToast("🏦 Bank wire details updated in CMS!");
+  };
+
+  // Pending Distributor Plan Upgrade Requests
+  const [pendingUpgradeRequests, setPendingUpgradeRequests] = useState([
+    {
+      id: "UPG-99120",
+      company_id: "comp-2",
+      company_name: "KPK Volt Tech",
+      contact_email: "kpkvolt@solaragent.pk",
+      current_plan: "Silver",
+      target_plan: "Gold",
+      amount_pkr: 55000,
+      payment_channel: "Bank Wire Transfer",
+      reference_id: "MEZN-982173461",
+      receipt_preview: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80",
+      date: "2026-07-29 15:20",
+      status: "Pending Verification"
+    }
+  ]);
 
   const [overrideRequests, setOverrideRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +123,7 @@ export const AppProvider = ({ children }) => {
       channel_type: "Mobile Wallet",
       account_identifier: "0300-8472910",
       reference_id: "JC-882194012",
-      amount_pkr: 50000,
+      amount_pkr: 55000,
       status: "Completed",
       date: "2026-07-27 11:15",
       collector_agent: "Mobilink Gateway"
@@ -105,51 +136,74 @@ export const AppProvider = ({ children }) => {
       channel_type: "Debit Card",
       account_identifier: "**** **** **** 4912",
       reference_id: "PAYPAK-3D-7718",
-      amount_pkr: 30000,
+      amount_pkr: 35000,
       status: "Completed",
       date: "2026-07-26 16:45",
       collector_agent: "1LINK / PayPak"
-    },
-    {
-      id: "PK-TXN-98418",
-      company_name: "Sindh Kar Solar",
-      plan: "Gold",
-      channel: "Raast",
-      channel_type: "SBP Instant Raast Pay",
-      account_identifier: "PK64MEZN001234567890",
-      reference_id: "RAAST-99120481",
-      amount_pkr: 50000,
-      status: "Completed",
-      date: "2026-07-25 09:20",
-      collector_agent: "SBP Raast System"
-    },
-    {
-      id: "PK-TXN-98417",
-      company_name: "Balochistan Green Power",
-      plan: "Silver",
-      channel: "Cash",
-      channel_type: "Over-the-Counter",
-      account_identifier: "Voucher #PK-OTC-092",
-      reference_id: "CASH-REC-0012",
-      amount_pkr: 30000,
-      status: "Completed",
-      date: "2026-07-24 18:00",
-      collector_agent: "Field Agent Tariq (Quetta)"
-    },
-    {
-      id: "PK-TXN-98416",
-      company_name: "Capital Solar Engineering",
-      plan: "Platinum",
-      channel: "SadaPay / NayaPay",
-      channel_type: "Digital Wallet Handle",
-      account_identifier: "@capitalsolar",
-      reference_id: "SADA-9081245",
-      amount_pkr: 75000,
-      status: "Completed",
-      date: "2026-07-23 13:10",
-      collector_agent: "SadaPay Business API"
     }
   ]);
+
+  // Submit Upgrade Request with Payment Receipt
+  const submitUpgradeRequest = async (reqData) => {
+    const newReq = {
+      id: `UPG-${Math.floor(10000 + Math.random() * 90000)}`,
+      date: new Date().toISOString().replace('T', ' ').slice(0, 16),
+      status: "Pending Verification",
+      ...reqData
+    };
+    setPendingUpgradeRequests(prev => [newReq, ...prev]);
+    return true;
+  };
+
+  // Super Admin Accept & Auto-Upgrade Handler
+  const approveUpgradeRequestAndAutoUpgrade = async (requestId) => {
+    const req = pendingUpgradeRequests.find(r => r.id === requestId);
+    if (!req) return false;
+
+    // Upgrades company plan & expands quota
+    if (company.name === req.company_name || req.company_id === company.id) {
+      const updatedComp = {
+        ...company,
+        plan: req.target_plan,
+        billing_status: "Active",
+        override_quota: (company.override_quota || 0) + (req.target_plan === 'Gold' ? 25 : 65)
+      };
+      setCompany(updatedComp);
+      await updateCompanyState(updatedComp);
+    }
+
+    // Add completed transaction to ledger
+    const newTxn = {
+      id: `PK-TXN-${Math.floor(10000 + Math.random() * 90000)}`,
+      company_name: req.company_name,
+      plan: req.target_plan,
+      channel: req.payment_channel || "Bank Wire Transfer",
+      channel_type: "Wire Transfer / Verification",
+      account_identifier: req.contact_email,
+      reference_id: req.reference_id,
+      amount_pkr: req.amount_pkr,
+      status: "Completed",
+      date: new Date().toISOString().replace('T', ' ').slice(0, 16),
+      collector_agent: "Super Admin Verification Engine"
+    };
+
+    setTransactions(prev => [newTxn, ...prev]);
+    setPendingUpgradeRequests(prev => prev.filter(r => r.id !== requestId));
+    showToast(`⚡ Approved & Auto-Upgraded ${req.company_name} to ${req.target_plan}!`);
+    return true;
+  };
+
+  const recordPayment = async (paymentData) => {
+    const newTxn = {
+      id: `PK-TXN-${Math.floor(10000 + Math.random() * 90000)}`,
+      status: "Completed",
+      date: new Date().toISOString().replace('T', ' ').slice(0, 16),
+      ...paymentData
+    };
+    setTransactions(prev => [newTxn, ...prev]);
+    showToast(`⚡ Payment recorded via ${paymentData.channel}! (${formatPrice(paymentData.amount_pkr)})`);
+    return true;
+  };
 
   const [calcParams, setCalcParams] = useState({
     connectionType: 'On-Grid',
@@ -243,16 +297,28 @@ export const AppProvider = ({ children }) => {
     router.push('/login');
   };
 
+  // Calculate active proposal limit based on plan
+  const getActiveLimit = () => {
+    const baseLimit = company.plan === 'Silver' ? 35 : (company.plan === 'Gold' ? 60 : 100);
+    return baseLimit + (company.override_quota || 0);
+  };
+
+  // Proposals CRUD handlers
   const addLead = async (leadData) => {
+    const currentLimit = getActiveLimit();
+    if (company.proposals_generated >= currentLimit) {
+      showToast(`⚠️ Monthly proposal limit reached (${company.proposals_generated}/${currentLimit}). Upgrade required!`, "error");
+      return null;
+    }
+
     try {
       const created = await apiCreateProposal(leadData);
       setProposals(prev => [created, ...prev]);
-      
-      const newGen = company.proposals_generated + 1;
-      await updateCompanyState({ proposals_generated: newGen });
-      setCompany(prev => ({ ...prev, proposals_generated: newGen }));
-      
-      showToast("✅ Solar proposal lead created!");
+      setCompany(prev => ({
+        ...prev,
+        proposals_generated: (prev.proposals_generated || 0) + 1
+      }));
+      showToast("⚡ Lead created successfully!");
       return created;
     } catch (err) {
       showToast("❌ Failed to create proposal", "error");
@@ -263,9 +329,11 @@ export const AppProvider = ({ children }) => {
   const updateLead = async (id, updateData) => {
     try {
       const updated = await apiUpdateProposal(id, updateData);
-      setProposals(prev => prev.map(p => p.id === id ? updated : p));
-      showToast("✨ Client proposal specifications updated!");
-      return updated;
+      if (updated) {
+        setProposals(prev => prev.map(p => p.id === id ? updated : p));
+        showToast("💾 Lead updated successfully!");
+        return updated;
+      }
     } catch (err) {
       showToast("❌ Failed to update proposal", "error");
       return null;
@@ -276,7 +344,7 @@ export const AppProvider = ({ children }) => {
     try {
       await apiDeleteProposal(id);
       setProposals(prev => prev.filter(p => p.id !== id));
-      showToast("🗑️ Proposal lead removed!");
+      showToast("🗑️ Proposal deleted!");
       return true;
     } catch (err) {
       showToast("❌ Failed to delete proposal", "error");
@@ -284,125 +352,61 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const getActiveLimit = () => {
-    const baseLimits = {
-      Silver: 30,
-      Gold: 50,
-      Platinum: 75
-    };
-    return (baseLimits[company.plan] || 30) + (company.override_quota || 0);
-  };
-
-  const requestOverrideQuota = async () => {
+  // Override quota request handler
+  const requestOverrideQuota = async (requestDetails) => {
     try {
-      const req = await createOverrideRequest({
-        company_name: company.name,
-        current_limit: getActiveLimit(),
-        current_usage: company.proposals_generated
-      });
-      setOverrideRequests(prev => [req, ...prev]);
-      showToast("📨 Quota override extension request submitted to Super Admin!");
+      const created = await createOverrideRequest(requestDetails);
+      setOverrideRequests(prev => [created, ...prev]);
+      showToast("📩 Quota extension request sent to Super Admin!");
       return true;
     } catch (err) {
-      showToast("❌ Failed to submit request", "error");
+      showToast("❌ Failed to send request", "error");
       return false;
     }
   };
 
-  const approveOverride = async (reqId) => {
+  // Super admin approve override
+  const approveOverride = async (requestId) => {
     try {
-      await approveOverrideRequest(reqId);
-      setOverrideRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: 'Approved' } : r));
-      
-      const newOverride = (company.override_quota || 0) + 10;
-      const updatedComp = await updateCompanyState({ override_quota: newOverride });
-      setCompany(updatedComp);
-      showToast("✅ Quota override approved! +10 proposals granted.");
-      return true;
-    } catch (err) {
-      showToast("❌ Failed to approve override", "error");
-      return false;
-    }
-  };
-
-  const submitOfflinePayment = async (plan, checkoutMethod, slipName = null) => {
-    try {
-      const updateData = {
-        plan: plan,
-        billing_status: "Pending Verification",
-        receipt_uploaded: slipName || (checkoutMethod === 'bank' ? "Bank_Slip_Reference.png" : "Cash Collection requested")
-      };
-      const updated = await updateCompanyState(updateData);
-      setCompany(updated);
-      showToast("⏳ Receipt uploaded! Subscription is pending admin verification.");
-      return true;
-    } catch (err) {
-      showToast("❌ Checkout upload failed", "error");
-      return false;
-    }
-  };
-
-  // Record Multi-Channel Pakistani Payment Transaction
-  const recordPayment = async (paymentData) => {
-    try {
-      const newTxn = {
-        id: `PK-TXN-${Math.floor(10000 + Math.random() * 90000)}`,
-        company_name: paymentData.company_name || company.name,
-        plan: paymentData.plan || company.plan,
-        channel: paymentData.channel,
-        channel_type: paymentData.channel_type || "Digital Payment",
-        account_identifier: paymentData.account_identifier || "N/A",
-        reference_id: paymentData.reference_id || `REF-${Date.now().toString().slice(-8)}`,
-        amount_pkr: paymentData.amount_pkr || 50000,
-        status: "Completed",
-        date: new Date().toISOString().replace('T', ' ').slice(0, 16),
-        collector_agent: paymentData.collector_agent || "Automated Gateway"
-      };
-
-      setTransactions(prev => [newTxn, ...prev]);
-
-      // Automatically clear pending state for current company if applicable
-      if (paymentData.company_name === company.name || !paymentData.company_name) {
-        const updateData = {
-          plan: newTxn.plan,
-          billing_status: "Active",
-          proposals_generated: 0,
-          receipt_uploaded: null,
-          override_quota: 0
-        };
-        const updated = await updateCompanyState(updateData);
-        setCompany(updated);
+      const success = await approveOverrideRequest(requestId);
+      if (success) {
+        setOverrideRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'Approved' } : r));
+        setCompany(prev => ({
+          ...prev,
+          override_quota: (prev.override_quota || 0) + 10
+        }));
+        showToast("⚡ Request Approved! +10 proposals added to quota.");
+        return true;
       }
-
-      showToast(`⚡ Payment of ${formatPrice(newTxn.amount_pkr)} verified via ${newTxn.channel}!`);
-      return newTxn;
     } catch (err) {
-      showToast("❌ Failed to process payment record", "error");
-      return null;
+      showToast("❌ Approval failed", "error");
+      return false;
     }
+  };
+
+  // Submits offline receipt proof
+  const submitOfflinePayment = async (file) => {
+    const updated = await updateCompanyState({
+      receipt_uploaded: file ? file.name : 'receipt.pdf',
+      billing_status: 'Pending Verification'
+    });
+    setCompany(updated);
+    showToast("📄 Payment receipt submitted! Awaiting Super Admin approval.");
   };
 
   const clearPendingSubscription = async () => {
-    try {
-      const updateData = {
-        billing_status: "Active",
-        proposals_generated: 0,
-        receipt_uploaded: null,
-        override_quota: 0
-      };
-      const updated = await updateCompanyState(updateData);
-      setCompany(updated);
-      showToast("🚀 Subscription approved! Proposal usage counter reset to 0.");
-      return true;
-    } catch (err) {
-      showToast("❌ Clearance verification failed", "error");
-      return false;
-    }
+    const updated = await updateCompanyState({
+      billing_status: 'Active',
+      receipt_uploaded: null
+    });
+    setCompany(updated);
+    showToast("✅ Subscription verified by Super Admin!");
   };
 
-  const addInverter = async (invData) => {
+  // Hardware CMS Handlers
+  const addInverter = async (inverterData) => {
     try {
-      const created = await apiCreateInverter(invData);
+      const created = await apiCreateInverter(inverterData);
       setInverters(prev => [...prev, created]);
       showToast("💾 Inverter added to catalog!");
       return created;
@@ -458,6 +462,11 @@ export const AppProvider = ({ children }) => {
       inverters,
       solarPanels,
       company,
+      bankDetails,
+      updateBankDetails,
+      pendingUpgradeRequests,
+      submitUpgradeRequest,
+      approveUpgradeRequestAndAutoUpgrade,
       overrideRequests,
       transactions,
       recordPayment,
