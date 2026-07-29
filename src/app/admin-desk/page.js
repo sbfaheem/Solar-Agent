@@ -36,10 +36,9 @@ export default function AdminDesk() {
   // Role-Based Auth Protection Guard
   useEffect(() => {
     if (!user || user.role !== 'super_admin') {
-      showToast("🔒 Restricted Area: Super Admin Authorization Required", "error");
       router.push('/login');
     }
-  }, [user, router, showToast]);
+  }, [user, router]);
 
   const [activeTab, setActiveTab] = useState('verification'); // 'verification', 'distributors', 'ledger', 'bank', 'catalog'
   const [channelFilter, setChannelFilter] = useState('All');
