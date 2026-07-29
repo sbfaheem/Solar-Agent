@@ -2,7 +2,7 @@ import './globals.css';
 import { AppProvider } from '../context/AppContext';
 
 export const metadata = {
-  title: 'Stitch Solar Agent | B2B Solar SaaS Platform',
+  title: 'Solar Agent | B2B Solar SaaS Platform',
   description: 'Enterprise energy engineering and lead management system.',
 };
 
