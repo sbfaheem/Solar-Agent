@@ -220,6 +220,11 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     loadAllData();
+    if (typeof window !== 'undefined') {
+      const root = window.document.documentElement;
+      root.classList.remove('dark');
+      root.classList.add('light');
+    }
   }, []);
 
   // Auth Handlers
