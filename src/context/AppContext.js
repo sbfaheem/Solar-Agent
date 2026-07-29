@@ -46,18 +46,10 @@ export const AppProvider = ({ children }) => {
   const [inverters, setInverters] = useState([]);
   const [solarPanels, setSolarPanels] = useState([]);
   
-  const [viewMode, setViewMode] = useState('workspace'); // 'workspace' or 'admin'
+  const [viewMode, setViewMode] = useState('workspace'); 
 
-  // User State with Role-Based Access Control (RBAC)
-  const [user, setUser] = useState({
-    id: 'user-admin',
-    name: 'Super Admin',
-    email: 'superadmin@solaragent.pk',
-    initials: 'SA',
-    role: 'super_admin', // 'super_admin' or 'distributor'
-    company_id: 'comp-admin',
-    company_name: 'Solar Agent Corporate'
-  });
+  // User State: Unauthenticated (null) by default so login loads on app launch
+  const [user, setUser] = useState(null);
 
   // Active Company State
   const [company, setCompany] = useState({
@@ -278,7 +270,6 @@ export const AppProvider = ({ children }) => {
     const req = pendingUpgradeRequests.find(r => r.id === requestId);
     if (!req) return false;
 
-    // Upgrades distributor in state
     setDistributors(prev => prev.map(d => d.name === req.company_name ? {
       ...d,
       plan: req.target_plan,
@@ -297,7 +288,6 @@ export const AppProvider = ({ children }) => {
       await updateCompanyState(updatedComp);
     }
 
-    // Add completed transaction to ledger
     const newTxn = {
       id: `PK-TXN-${Math.floor(10000 + Math.random() * 90000)}`,
       company_name: req.company_name,
@@ -413,7 +403,6 @@ export const AppProvider = ({ children }) => {
     return baseLimit + (company.override_quota || 0);
   };
 
-  // Multi-Tenant Proposals: Strict Data Isolation by Distributor
   const filteredProposals = user?.role === 'super_admin' 
     ? proposals 
     : proposals.filter(p => !p.company_id || p.company_id === user?.company_id || p.company_name === user?.company_name);

@@ -15,7 +15,7 @@ export default function Login() {
   } = useApp();
 
   const [portalMode, setPortalMode] = useState('distributor'); // 'distributor' or 'admin'
-  const [selectedDistributorAccount, setSelectedDistributorAccount] = useState('REGISTER_NEW'); // 'REGISTER_NEW', 'kpkvolt@solaragent.pk', etc.
+  const [selectedDistributorAccount, setSelectedDistributorAccount] = useState('REGISTER_NEW'); 
 
   // Sign In Form State
   const [email, setEmail] = useState('kpkvolt@solaragent.pk');
@@ -68,28 +68,28 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-[#e2e2e6] flex flex-col justify-between p-4 sm:p-6" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] flex flex-col justify-between p-4 sm:p-6 font-sans" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
       
       {/* Top Header & Portal Selector */}
       <header className="flex flex-col sm:flex-row justify-between items-center max-w-7xl mx-auto w-full gap-4">
         <div className="flex items-center gap-3">
-          <span className="size-9 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold text-lg shadow-md">
+          <span className="size-10 rounded-2xl bg-[#b45309] text-white flex items-center justify-center font-bold text-xl shadow-md">
             <span className="material-symbols-outlined">solar_power</span>
           </span>
           <div>
-            <span className="font-display font-extrabold text-white text-lg block">Solar Agent</span>
-            <span className="text-[10px] text-slate-400 font-mono">B2B Solar SaaS & Engineering Platform</span>
+            <span className="font-display font-extrabold text-slate-900 text-xl block">Solar Agent</span>
+            <span className="text-xs text-slate-500 font-medium">B2B Solar SaaS & Engineering Platform</span>
           </div>
         </div>
 
         {/* Portal Switcher Buttons */}
-        <div className="flex items-center gap-2">
-          <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-xl gap-1 text-xs font-bold font-display">
+        <div className="flex items-center gap-3">
+          <div className="flex bg-slate-200/80 p-1 rounded-xl gap-1 text-xs font-bold font-display border border-slate-300/60 shadow-xs">
             <button 
               type="button"
               onClick={() => { setPortalMode('distributor'); setSelectedDistributorAccount('REGISTER_NEW'); }}
-              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all flex items-center gap-1.5 ${
-                portalMode === 'distributor' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
+                portalMode === 'distributor' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span className="material-symbols-outlined text-sm">domain</span>
@@ -99,8 +99,8 @@ export default function Login() {
             <button 
               type="button"
               onClick={() => { setPortalMode('admin'); setEmail('superadmin@solaragent.pk'); }}
-              className={`px-3.5 py-1.5 rounded-lg cursor-pointer transition-all flex items-center gap-1.5 ${
-                portalMode === 'admin' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
+                portalMode === 'admin' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span className="material-symbols-outlined text-sm">shield_person</span>
@@ -110,31 +110,31 @@ export default function Login() {
 
           <button 
             onClick={toggleLang}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-white cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:text-slate-900 cursor-pointer shadow-xs"
           >
             {lang === 'en' ? 'اردو' : 'English'}
           </button>
         </div>
       </header>
 
-      {/* Main Card */}
-      <main className="my-auto max-w-lg mx-auto w-full bg-[#161920] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+      {/* Main Light Mode Card */}
+      <main className="my-auto max-w-xl mx-auto w-full bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xl space-y-6">
         
         {/* DISTRIBUTOR PORTAL AUTHENTICATION & DYNAMIC REGISTRATION */}
         {portalMode === 'distributor' ? (
           <div className="space-y-6">
             
             {/* Header */}
-            <div className="border-b border-slate-800 pb-4 space-y-1">
-              <h2 className="font-display font-extrabold text-white text-xl">Distributor Partner Authorization</h2>
-              <p className="text-slate-400 text-xs">Select an authorized distributor account or register a new EPC firm</p>
+            <div className="border-b border-slate-200 pb-4 space-y-1">
+              <h2 className="font-display font-extrabold text-slate-900 text-2xl">Distributor Partner Authorization</h2>
+              <p className="text-slate-500 text-xs font-medium">Select an authorized distributor account or register a new EPC firm</p>
             </div>
 
             {/* Google Sign-In Option */}
             <button 
               type="button"
               onClick={() => signInWithGoogle('distributor')}
-              className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-display font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2.5 border border-slate-200"
+              className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-display font-extrabold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2.5 border border-slate-300"
             >
               <svg className="size-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
@@ -146,22 +146,22 @@ export default function Login() {
             </button>
 
             <div className="flex items-center gap-3 my-2">
-              <div className="h-px bg-slate-800 flex-1"></div>
-              <span className="text-[10px] text-slate-500 font-mono uppercase font-bold">or select distributor account</span>
-              <div className="h-px bg-slate-800 flex-1"></div>
+              <div className="h-px bg-slate-200 flex-1"></div>
+              <span className="text-[10px] text-slate-400 font-mono uppercase font-bold">or select distributor account</span>
+              <div className="h-px bg-slate-200 flex-1"></div>
             </div>
 
-            <form onSubmit={handleSubmitDistributor} className="space-y-4">
+            <form onSubmit={handleSubmitDistributor} className="space-y-5">
               
               {/* DISTRIBUTOR SELECT DROPDOWN (WITH ➕ REGISTER NEW DISTRIBUTOR AT TOP) */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block font-sans">
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-[#b45309] uppercase tracking-wide block">
                   Select Authorized Distributor Account
                 </label>
                 <select 
                   value={selectedDistributorAccount}
                   onChange={(e) => handleDropdownSelect(e.target.value)}
-                  className="w-full px-3.5 py-3 text-xs bg-black/60 border border-[#b45309] rounded-xl text-amber-200 font-mono font-bold focus:outline-none cursor-pointer"
+                  className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/20 cursor-pointer shadow-xs"
                 >
                   <option value="REGISTER_NEW">➕ Register New Distributor...</option>
                   <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (kpkvolt@solaragent.pk - Silver Tier)</option>
@@ -172,14 +172,15 @@ export default function Login() {
 
               {/* DYNAMIC REGISTRATION FIELDS (REVEALED WHEN REGISTER NEW DISTRIBUTOR IS SELECTED) */}
               {selectedDistributorAccount === 'REGISTER_NEW' ? (
-                <div className="space-y-4 bg-[#0f1115] p-4 rounded-2xl border border-slate-800 animate-fadeIn text-xs font-mono">
-                  <div className="text-xs font-extrabold text-amber-400 font-sans uppercase border-b border-slate-800 pb-2">
-                    Distributor Provisioning & Account Details
+                <div className="space-y-4 bg-[#fffbeb] p-5 rounded-2xl border border-[#fef08a] animate-fadeIn text-xs">
+                  <div className="text-xs font-extrabold text-[#854d0e] font-display uppercase border-b border-[#fef08a] pb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">badge</span>
+                    <span>Distributor Provisioning & Account Details</span>
                   </div>
 
                   {/* Company Name */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-sans">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
                       Company Name (e.g. Khyber Green Energy)
                     </label>
                     <input 
@@ -188,13 +189,13 @@ export default function Login() {
                       placeholder="e.g. Khyber Green Energy"
                       value={regCompany}
                       onChange={e => setRegCompany(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-black/45 border border-slate-800 focus:border-[#b45309] rounded-xl text-white font-mono focus:outline-none text-xs font-bold"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none text-xs font-bold shadow-xs"
                     />
                   </div>
 
                   {/* Work Email ID */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-sans">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
                       Work Email ID (e.g. info@khybergreen.pk)
                     </label>
                     <input 
@@ -203,14 +204,14 @@ export default function Login() {
                       placeholder="e.g. info@khybergreen.pk"
                       value={regEmail}
                       onChange={e => setRegEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-black/45 border border-slate-800 focus:border-[#b45309] rounded-xl text-white font-mono focus:outline-none text-xs"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none text-xs shadow-xs"
                     />
                   </div>
 
                   {/* Contact Number & City */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-sans">
+                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
                         Contact Number
                       </label>
                       <input 
@@ -218,12 +219,12 @@ export default function Login() {
                         placeholder="+92 300 9876543"
                         value={regContact}
                         onChange={e => setRegContact(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-black/45 border border-slate-800 focus:border-[#b45309] rounded-xl text-white font-mono focus:outline-none text-xs"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none text-xs shadow-xs"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-sans">
+                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
                         Location / City
                       </label>
                       <input 
@@ -231,20 +232,20 @@ export default function Login() {
                         placeholder="Peshawar / Karachi"
                         value={regCity}
                         onChange={e => setRegCity(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-black/45 border border-slate-800 focus:border-[#b45309] rounded-xl text-white font-mono focus:outline-none text-xs"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none text-xs shadow-xs"
                       />
                     </div>
                   </div>
 
                   {/* Subscription Tier Plan Selector */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-sans">
+                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
                       Subscription Tier Plan
                     </label>
                     <select 
                       value={regPlan}
                       onChange={e => setRegPlan(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-black/45 border border-slate-800 focus:border-[#b45309] rounded-xl text-amber-300 font-mono font-bold focus:outline-none text-xs cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-[#b45309] font-mono font-bold focus:outline-none text-xs cursor-pointer shadow-xs"
                     >
                       <option value="Silver">Silver Plan (35 Proposals/mo - 35,000 PKR)</option>
                       <option value="Gold">Gold Tier Plan (60 Proposals/mo - 55,000 PKR)</option>
@@ -257,27 +258,27 @@ export default function Login() {
                 /* EXISTING DISTRIBUTOR LOGIN FIELDS */
                 <div className="space-y-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
                       Distributor Work Email
                     </label>
                     <input 
                       type="email" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs bg-black/45 border border-slate-800 focus:border-[#b45309] rounded-xl text-white font-mono focus:outline-none"
+                      className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
                       required
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
                       Account Password
                     </label>
                     <input 
                       type="password" 
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs bg-black/45 border border-slate-800 focus:border-[#b45309] rounded-xl text-white font-mono focus:outline-none"
+                      className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
                       required
                     />
                   </div>
@@ -287,7 +288,7 @@ export default function Login() {
               {/* Submit Action */}
               <button 
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold transition-all cursor-pointer shadow-md text-xs text-center flex items-center justify-center gap-2 mt-2"
+                className="w-full py-4 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold transition-all cursor-pointer shadow-md text-xs text-center flex items-center justify-center gap-2 mt-2"
               >
                 <span className="material-symbols-outlined text-sm">
                   {selectedDistributorAccount === 'REGISTER_NEW' ? 'how_to_reg' : 'lock_open'}
@@ -304,47 +305,47 @@ export default function Login() {
         ) : (
           /* SUPER ADMIN GOVERNANCE PORTAL */
           <div className="space-y-6">
-            <div className="border-b border-amber-800/40 pb-4 text-center space-y-1">
-              <span className="size-10 rounded-2xl bg-amber-500 text-slate-900 flex items-center justify-center font-bold mx-auto shadow-md">
-                <span className="material-symbols-outlined text-xl">shield_person</span>
+            <div className="border-b border-amber-200 pb-4 text-center space-y-2">
+              <span className="size-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold mx-auto shadow-md">
+                <span className="material-symbols-outlined text-2xl">shield_person</span>
               </span>
-              <h2 className="font-display font-extrabold text-amber-300 text-xl">Super Admin Governance Desk</h2>
-              <p className="text-slate-400 text-xs">Full system oversight, distributor approval & ledger management</p>
+              <h2 className="font-display font-extrabold text-slate-900 text-2xl">Super Admin Governance Desk</h2>
+              <p className="text-slate-500 text-xs font-medium">Full system oversight, distributor approval & ledger management</p>
             </div>
 
             <form onSubmit={handleAdminSignIn} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Super Admin Email</label>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Super Admin Email</label>
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-black/60 border border-amber-700/60 focus:border-amber-400 rounded-xl text-amber-200 font-mono font-bold focus:outline-none"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono font-bold focus:outline-none shadow-xs"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Governance Password</label>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Governance Password</label>
                 <input 
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-black/60 border border-amber-700/60 focus:border-amber-400 rounded-xl text-amber-200 font-mono font-bold focus:outline-none"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
                   required
                 />
               </div>
 
               <button 
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-900 font-display font-extrabold transition-all cursor-pointer shadow-lg text-xs text-center flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-display font-extrabold transition-all cursor-pointer shadow-lg text-xs text-center flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-sm">verified_user</span>
                 <span>Unlock Super Admin Governance Desk</span>
               </button>
             </form>
 
-            <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded-xl text-[11px] text-amber-300 text-center font-mono">
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 text-center font-medium">
               👑 Super Admin has global rights to view all registered distributors, verify receipts, and manage catalog settings.
             </div>
           </div>
@@ -353,7 +354,7 @@ export default function Login() {
       </main>
 
       {/* Footer */}
-      <footer className="text-center text-[10px] text-slate-600 font-mono max-w-7xl mx-auto w-full pt-4">
+      <footer className="text-center text-xs text-slate-500 font-mono max-w-7xl mx-auto w-full pt-4">
         © 2026 Solar Agent | B2B Solar SaaS Platform. Multi-Tenant Role Security Active.
       </footer>
 
