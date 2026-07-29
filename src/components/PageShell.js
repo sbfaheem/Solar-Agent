@@ -128,13 +128,15 @@ export default function PageShell({ children, headerTitle }) {
             <span className="size-9 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
               <span className="material-symbols-outlined">solar_power</span>
             </span>
-            <div className="hidden sm:block">
-              <span className={`font-display font-extrabold text-base tracking-tight block leading-tight ${
-                theme === 'dark' ? 'text-white' : 'text-slate-900'
+            <div>
+              <span className={`font-display font-black text-base tracking-tight block leading-tight ${
+                theme === 'dark' ? 'text-white' : 'text-slate-950'
               }`}>
                 Solar Agent
               </span>
-              <span className="text-[10px] text-slate-600 font-mono block leading-none font-semibold">
+              <span className={`text-[10px] font-mono block leading-none font-extrabold ${
+                theme === 'dark' ? 'text-slate-300' : 'text-slate-800'
+              }`}>
                 B2B SaaS Energy Platform
               </span>
             </div>
