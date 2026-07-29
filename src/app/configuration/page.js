@@ -16,6 +16,7 @@ export default function ConfigurationWizard() {
     updateLead, 
     addLead,
     lang,
+    formatPrice,
     showToast 
   } = useApp();
 
@@ -246,7 +247,7 @@ export default function ConfigurationWizard() {
       pkr: "PKR",
       pkrSymbol: "Rs.",
       years: "Years",
-      pills: "Modules"
+      pills: "Panels"
     },
     ur: {
       editBanner: "سولر سسٹم انجینئرنگ اور کسٹمائزیشن",
@@ -283,7 +284,7 @@ export default function ConfigurationWizard() {
       backToHardware: "ہارڈویئر میچر پر واپس جائیں",
       clientModal: "صارف کی معلومات تبدیل کریں",
       ocrPlaceholder: "بجلی کا بل یہاں ڈراپ کریں یا فائل منتخب کرنے کے لیے کلک کریں",
-      ocrSub: "پی ڈی ایف، پی این جی، جے پی جی۔ لسٹ سے 12 ماہ کا اوسط لوڈ خودکار طریقے سے حاصل ہو جائے گا۔",
+      ocrSub: "پی ڈی ایف، پی این جی، جے پی جی۔ 12 ماہ کا اوسط لوڈ خودکار طریقے سے حاصل ہو جائے گا۔",
       pkr: "روپے",
       pkrSymbol: "روپے",
       years: "سال",
@@ -294,20 +295,19 @@ export default function ConfigurationWizard() {
   const t = translations[lang];
 
   return (
-    <PageShell>
-      {/* Configuration Header with Edit Trigger */}
-      <div className={`bg-surface-base border-b border-border-base px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
-        lang === 'ur' ? 'flex-row-reverse' : ''
-      }`} dir={lang === 'ur' ? 'rtl' : 'ltr'}>
+    <PageShell headerTitle="Solar Proposals Engineering">
+      
+      {/* High-Contrast Configuration Header */}
+      <div className="bg-white dark:bg-[#181a1d] border-b border-[#e2e8f0] dark:border-[#2d3137] px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary font-mono text-sm">
+          <div className="size-8 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold font-mono text-xs shadow-sm">
             {activeStep}
           </div>
-          <div className={lang === 'ur' ? 'text-right' : 'text-left'}>
-            <h3 className="font-display font-bold text-white text-base">
+          <div>
+            <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">
               {t.editBanner}
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#64748b] dark:text-[#94a3b8] font-semibold mt-0.5">
               {currentLead 
                 ? `${t.activeLead} ${currentLead.customer_name}` 
                 : t.noLead}
@@ -316,7 +316,7 @@ export default function ConfigurationWizard() {
           {currentLead && (
             <button 
               onClick={openEditModal}
-              className="size-7 rounded-lg bg-surface-container hover:bg-primary hover:text-black flex items-center justify-center border border-border-base/50 text-slate-400 cursor-pointer"
+              className="size-7 rounded-lg bg-slate-100 hover:bg-[#b45309] hover:text-white border border-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition-colors"
               title="Edit Client Info"
             >
               <span className="material-symbols-outlined text-sm">edit</span>
@@ -324,25 +324,25 @@ export default function ConfigurationWizard() {
           )}
         </div>
 
-        {/* Wizard segmented bar */}
+        {/* Wizard Segmented Buttons */}
         <div className="flex gap-2">
           {[
             { step: 1, label: t.step1 },
-            { step: 2, label: s => t.step2 },
-            { step: 3, label: s => t.step3 }
+            { step: 2, label: t.step2 },
+            { step: 3, label: t.step3 }
           ].map((s) => (
             <button
               key={s.step}
               onClick={() => setActiveStep(s.step)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold font-display cursor-pointer transition-all border ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold font-display cursor-pointer transition-all border ${
                 activeStep === s.step
-                  ? 'bg-primary text-black border-primary'
+                  ? 'bg-[#b45309] text-white border-[#b45309] shadow-sm'
                   : activeStep > s.step
-                  ? 'bg-emerald-950/20 text-accent-emerald border-emerald-500/20'
-                  : 'bg-surface-container border-border-base text-slate-400'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700'
+                  : 'bg-white dark:bg-[#282a2d] border-[#cbd5e1] dark:border-[#3f474f] text-[#334155] dark:text-[#cbd5e1] hover:bg-slate-50'
               }`}
             >
-              {s.step === 1 ? t.step1 : s.step === 2 ? t.step2 : t.step3}
+              {s.label}
             </button>
           ))}
         </div>
@@ -354,27 +354,25 @@ export default function ConfigurationWizard() {
         {activeStep === 1 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-surface-base border border-border-base rounded-xl p-6 space-y-6">
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-6 shadow-sm">
                 
-                <div className={`flex justify-between items-center border-b border-border-base pb-4 ${
-                  lang === 'ur' ? 'flex-row-reverse' : ''
-                }`}>
-                  <h3 className="font-display font-bold text-white text-lg">{t.profileTitle}</h3>
+                <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
+                  <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-lg">{t.profileTitle}</h3>
                   
-                  {/* Profiling Toggles */}
-                  <div className="flex bg-black/20 p-0.5 rounded-lg border border-border-base">
+                  {/* Mode Toggles */}
+                  <div className="flex bg-slate-100 dark:bg-[#282a2d] p-1 rounded-xl border border-slate-200 dark:border-slate-700">
                     <button 
                       onClick={() => setProfileMode('ocr')}
-                      className={`px-3 py-1 rounded-md text-xs font-bold font-display cursor-pointer transition-all ${
-                        profileMode === 'ocr' ? 'bg-primary text-black' : 'text-slate-400 hover:text-white'
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-display cursor-pointer transition-all ${
+                        profileMode === 'ocr' ? 'bg-[#b45309] text-white shadow-sm' : 'text-[#64748b] dark:text-slate-400 hover:text-[#0f172a]'
                       }`}
                     >
                       {t.ocrMode}
                     </button>
                     <button 
                       onClick={() => setProfileMode('flexible')}
-                      className={`px-3 py-1 rounded-md text-xs font-bold font-display cursor-pointer transition-all ${
-                        profileMode === 'flexible' ? 'bg-primary text-black' : 'text-slate-400 hover:text-white'
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-display cursor-pointer transition-all ${
+                        profileMode === 'flexible' ? 'bg-[#b45309] text-white shadow-sm' : 'text-[#64748b] dark:text-slate-400 hover:text-[#0f172a]'
                       }`}
                     >
                       {t.flexMode}
@@ -386,7 +384,7 @@ export default function ConfigurationWizard() {
                 {profileMode === 'ocr' && (
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase">{t.averageLabel}</label>
+                      <label className="text-xs font-bold text-[#334155] dark:text-slate-300 uppercase tracking-wide">{t.averageLabel}</label>
                       <div className="flex items-center gap-4">
                         <input 
                           type="range" 
@@ -395,10 +393,10 @@ export default function ConfigurationWizard() {
                           step="50"
                           value={calcParams.monthlyUnits}
                           onChange={(e) => setCalcParams(prev => ({ ...prev, monthlyUnits: parseInt(e.target.value) }))}
-                          className="flex-1 accent-primary h-2 bg-black/40 rounded-lg cursor-pointer"
+                          className="flex-1 accent-[#b45309] h-2 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer"
                         />
-                        <span className="font-mono font-bold text-white text-lg bg-black/30 border border-border-base px-3 py-1 rounded-lg min-w-[90px] text-center">
-                          {calcParams.monthlyUnits} <span className="text-xs text-slate-500">kWh</span>
+                        <span className="font-mono font-extrabold text-[#0f172a] dark:text-white text-lg bg-[#f8fafc] dark:bg-[#282a2d] border border-[#cbd5e1] dark:border-[#3f474f] px-3.5 py-1.5 rounded-xl min-w-[100px] text-center shadow-xs">
+                          {calcParams.monthlyUnits} <span className="text-xs text-[#64748b] dark:text-slate-400">kWh</span>
                         </span>
                       </div>
                     </div>
@@ -407,7 +405,7 @@ export default function ConfigurationWizard() {
                     <div 
                       onDrop={handleDrop}
                       onDragOver={handleDragOver}
-                      className="border-2 border-dashed border-border-base/50 rounded-xl p-8 text-center bg-black/10 hover:bg-black/20 hover:border-primary/50 transition-all relative cursor-pointer"
+                      className="border-2 border-dashed border-[#cbd5e1] dark:border-slate-700 hover:border-[#b45309] rounded-2xl p-8 text-center bg-[#f8fafc] dark:bg-slate-900/40 hover:bg-[#fefce8]/40 transition-all relative cursor-pointer"
                     >
                       <input 
                         type="file" 
@@ -417,16 +415,18 @@ export default function ConfigurationWizard() {
                       />
                       {ocrLoading ? (
                         <div className="space-y-3 py-4">
-                          <span className="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
-                          <p className="text-sm font-semibold text-white">Analyzing utility bill via Gemini 3.6 Vision OCR...</p>
-                          <p className="text-xs text-slate-400">Extracting DISCO, billed kWh, reference number, and tariff rates</p>
+                          <span className="material-symbols-outlined text-4xl text-[#b45309] animate-spin">sync</span>
+                          <p className="text-sm font-extrabold text-[#0f172a] dark:text-white">Analyzing utility bill via Gemini 3.6 Vision OCR...</p>
+                          <p className="text-xs text-[#64748b] dark:text-slate-400">Extracting DISCO, billed kWh, reference number, and tariff rates</p>
                         </div>
                       ) : (
                         <div className="space-y-3 py-4">
-                          <span className="material-symbols-outlined text-4xl text-primary/80">upload_file</span>
-                          <p className="text-sm font-semibold text-white">{t.ocrPlaceholder}</p>
-                          <p className="text-xs text-slate-400">{t.ocrSub}</p>
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[11px] text-primary-container font-mono">
+                          <div className="size-12 rounded-2xl bg-[#fef3c7] dark:bg-amber-950/40 text-[#b45309] flex items-center justify-center mx-auto shadow-xs">
+                            <span className="material-symbols-outlined text-2xl">file_upload</span>
+                          </div>
+                          <p className="text-sm font-extrabold text-[#0f172a] dark:text-white">{t.ocrPlaceholder}</p>
+                          <p className="text-xs text-[#475569] dark:text-slate-400">{t.ocrSub}</p>
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fefce8] dark:bg-amber-500/10 border border-[#fef08a] dark:border-amber-500/20 text-xs font-mono font-bold text-[#854d0e] dark:text-amber-300">
                             <span>✨ Powered by Gemini Vision OCR</span>
                           </div>
                         </div>
@@ -435,49 +435,43 @@ export default function ConfigurationWizard() {
 
                     {/* Extracted Bill Details Card */}
                     {ocrResult && (
-                      <div className="bg-surface-container/80 border border-emerald-500/30 rounded-xl p-5 space-y-4 animate-fadeIn">
-                        <div className="flex justify-between items-center border-b border-border-base/50 pb-3">
+                      <div className="bg-[#f0fdf4] dark:bg-emerald-950/20 border border-[#bbf7d0] dark:border-emerald-800 rounded-2xl p-5 space-y-4 animate-fadeIn">
+                        <div className="flex justify-between items-center border-b border-emerald-200 dark:border-emerald-800 pb-3">
                           <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-accent-emerald text-base">verified</span>
-                            <h4 className="font-display font-bold text-white text-sm">Extracted Bill Parameters</h4>
+                            <span className="material-symbols-outlined text-emerald-700 text-base">verified</span>
+                            <h4 className="font-display font-extrabold text-emerald-900 dark:text-emerald-300 text-sm">Extracted Bill Parameters</h4>
                           </div>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-accent-emerald border border-emerald-500/20">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
                             Engine: {ocrResult.ocrEngine || 'Gemini Vision'}
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-mono">
-                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
-                            <span className="text-slate-400 text-[10px] uppercase block">Utility DISCO</span>
-                            <span className="font-bold text-primary text-sm">{ocrResult.discoFullName || ocrResult.disco}</span>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono">
+                          <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold block">Utility DISCO</span>
+                            <span className="font-extrabold text-[#b45309] text-sm">{ocrResult.discoFullName || ocrResult.disco}</span>
                           </div>
-                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
-                            <span className="text-slate-400 text-[10px] uppercase block">Monthly Consumption</span>
-                            <span className="font-bold text-white text-sm">{ocrResult.monthlyUnits} kWh</span>
+                          <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold block">Monthly Consumption</span>
+                            <span className="font-extrabold text-[#0f172a] dark:text-white text-sm">{ocrResult.monthlyUnits} kWh</span>
                           </div>
-                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
-                            <span className="text-slate-400 text-[10px] uppercase block">Bill Amount</span>
-                            <span className="font-bold text-accent-emerald text-sm">PKR {ocrResult.billAmount?.toLocaleString()}</span>
+                          <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold block">Bill Amount</span>
+                            <span className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">{formatPrice(ocrResult.billAmount)}</span>
                           </div>
-                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
-                            <span className="text-slate-400 text-[10px] uppercase block">Reference Number</span>
-                            <span className="font-bold text-slate-200 text-xs">{ocrResult.referenceNumber}</span>
+                          <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold block">Reference Number</span>
+                            <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">{ocrResult.referenceNumber}</span>
                           </div>
-                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
-                            <span className="text-slate-400 text-[10px] uppercase block">Billing Cycle</span>
-                            <span className="font-bold text-slate-200 text-xs">{ocrResult.billingMonth}</span>
+                          <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold block">Billing Cycle</span>
+                            <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">{ocrResult.billingMonth}</span>
                           </div>
-                          <div className="space-y-1 bg-black/20 p-2.5 rounded-lg border border-border-base/40">
-                            <span className="text-slate-400 text-[10px] uppercase block">Inferred Tariff</span>
-                            <span className="font-bold text-slate-200 text-xs">{ocrResult.tariffRate} PKR/kWh</span>
+                          <div className="space-y-1 bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-xs">
+                            <span className="text-slate-500 text-[10px] uppercase font-bold block">Inferred Tariff</span>
+                            <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">{ocrResult.tariffRate} PKR/kWh</span>
                           </div>
                         </div>
-
-                        {ocrResult.summary && (
-                          <p className="text-xs text-slate-300 bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-lg leading-relaxed">
-                            💡 {ocrResult.summary}
-                          </p>
-                        )}
                       </div>
                     )}
                   </div>
@@ -486,11 +480,11 @@ export default function ConfigurationWizard() {
                 {/* FLEXIBLE MODE */}
                 {profileMode === 'flexible' && (
                   <div className="space-y-4">
-                    <p className="text-xs text-slate-400">Input your unit consumption history for each billing month:</p>
+                    <p className="text-xs text-[#475569] dark:text-slate-300 font-medium">Input your unit consumption history for each billing month:</p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                       {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
                         <div key={month} className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase">{month} (kWh)</label>
+                          <label className="text-[10px] font-extrabold text-[#64748b] uppercase">{month} (kWh)</label>
                           <input 
                             type="number" 
                             value={calcParams.customUnits[idx]}
@@ -499,7 +493,7 @@ export default function ConfigurationWizard() {
                               nextUnits[idx] = parseInt(e.target.value) || 0;
                               setCalcParams(prev => ({ ...prev, customUnits: nextUnits }));
                             }}
-                            className="w-full px-2.5 py-1.5 text-xs bg-black/40 border border-border-base rounded-lg text-white font-mono text-center focus:outline-none focus:border-primary"
+                            className="w-full px-2.5 py-1.5 text-xs bg-[#f8fafc] dark:bg-black/40 border border-[#cbd5e1] dark:border-[#3f474f] rounded-lg text-[#0f172a] dark:text-white font-mono font-bold text-center focus:outline-none focus:border-[#b45309]"
                           />
                         </div>
                       ))}
@@ -507,25 +501,25 @@ export default function ConfigurationWizard() {
                   </div>
                 )}
 
-                {/* Shared controls */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-border-base/50">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase">{t.utilityPhase}</label>
+                {/* Select Dropdowns with High-Contrast Styling */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-extrabold text-[#334155] dark:text-slate-300 uppercase tracking-wide">{t.utilityPhase}</label>
                     <select 
                       value={calcParams.connectionType === 'On-Grid' ? 'Three' : 'Single'}
                       onChange={(e) => setCalcParams(prev => ({ ...prev, connectionType: e.target.value === 'Three' ? 'On-Grid' : 'Hybrid' }))}
-                      className="w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary cursor-pointer"
+                      className="w-full px-3.5 py-2.5 text-sm font-bold bg-[#f8fafc] dark:bg-[#282a2d] border border-[#cbd5e1] dark:border-[#3f474f] text-[#0f172a] dark:text-white rounded-xl focus:outline-none focus:border-[#b45309] cursor-pointer shadow-xs"
                     >
                       <option value="Three">Three Phase Connection</option>
                       <option value="Single">Single Phase Connection</option>
                     </select>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase">{t.utilityComp}</label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-extrabold text-[#334155] dark:text-slate-300 uppercase tracking-wide">{t.utilityComp}</label>
                     <select 
                       value={calcParams.utilityProvider}
                       onChange={(e) => setCalcParams(prev => ({ ...prev, utilityProvider: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary cursor-pointer"
+                      className="w-full px-3.5 py-2.5 text-sm font-bold bg-[#f8fafc] dark:bg-[#282a2d] border border-[#cbd5e1] dark:border-[#3f474f] text-[#0f172a] dark:text-white rounded-xl focus:outline-none focus:border-[#b45309] cursor-pointer shadow-xs"
                     >
                       <option value="IESCO">IESCO (Islamabad)</option>
                       <option value="LESCO">LESCO (Lahore)</option>
@@ -540,22 +534,23 @@ export default function ConfigurationWizard() {
 
             {/* Calculations Quick Preview Sidebar */}
             <div className="space-y-6">
-              <div className="bg-surface-base border border-border-base rounded-xl p-6 space-y-6">
-                <h3 className="font-display font-bold text-white text-base border-b border-border-base pb-3">
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-6 shadow-sm">
+                <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base border-b border-slate-200 dark:border-slate-800 pb-3">
                   {lang === 'ur' ? 'انجینئرنگ کے تخمینے' : 'Engineering Estimates'}
                 </h3>
-                <div className="space-y-4 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-xs text-slate-400 font-semibold">{t.recommendedSize}</span>
-                    <span className="font-mono text-sm font-bold text-white">{systemSize} kWp</span>
+                
+                <div className="space-y-4 text-sm font-medium">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-[#475569] dark:text-slate-400 font-bold">{t.recommendedSize}</span>
+                    <span className="font-mono text-base font-black text-[#0f172a] dark:text-white">{systemSize} kWp</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-xs text-slate-400 font-semibold">{t.requiredPanels}</span>
-                    <span className="font-mono text-sm font-bold text-white">{panelCount} {t.pills}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-[#475569] dark:text-slate-400 font-bold">{t.requiredPanels}</span>
+                    <span className="font-mono text-base font-black text-[#0f172a] dark:text-white">{panelCount} {t.pills}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-xs text-slate-400 font-semibold">{t.netMetering}</span>
-                    <span className="font-mono text-sm font-bold text-primary-container">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-[#475569] dark:text-slate-400 font-bold">{t.netMetering}</span>
+                    <span className="font-mono text-xs font-extrabold text-[#b45309] dark:text-amber-300">
                       {calcParams.connectionType === 'On-Grid' ? 'Eligible (Three-Phase)' : 'Hybrid Inverter system'}
                     </span>
                   </div>
@@ -563,7 +558,7 @@ export default function ConfigurationWizard() {
                 
                 <button 
                   onClick={() => setActiveStep(2)}
-                  className="w-full py-2.5 rounded-lg bg-primary hover:bg-white text-black font-display font-semibold transition-all cursor-pointer shadow-md text-sm text-center"
+                  className="w-full py-3.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs shadow-md transition-all cursor-pointer text-center"
                 >
                   {t.continueBtn}
                 </button>
@@ -579,8 +574,8 @@ export default function ConfigurationWizard() {
             <div className="lg:col-span-2 space-y-6">
               
               {/* Inverter Picker */}
-              <div className="bg-surface-base border border-border-base rounded-xl p-6 space-y-4">
-                <h3 className="font-display font-bold text-white text-lg border-b border-border-base pb-3">
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-4 shadow-sm">
+                <h3 className="font-display font-bold text-[#0f172a] dark:text-white text-lg border-b border-slate-200 dark:border-slate-800 pb-3">
                   {t.inverterTitle}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -588,23 +583,23 @@ export default function ConfigurationWizard() {
                     <div 
                       key={inv.id} 
                       onClick={() => setCalcParams(prev => ({ ...prev, selectedInverter: inv }))}
-                      className={`border rounded-xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                      className={`border rounded-2xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
                         calcParams.selectedInverter?.id === inv.id
-                          ? 'border-primary bg-primary/5 shadow-md'
-                          : 'border-border-base/40 bg-black/20 hover:border-border-base'
+                          ? 'border-[#b45309] bg-[#fefce8] dark:bg-amber-500/10 shadow-md'
+                          : 'border-slate-200 dark:border-slate-800 bg-[#f8fafc] dark:bg-black/20 hover:border-slate-300'
                       }`}
                     >
                       <div>
                         <div className="flex justify-between items-start">
-                          <span className="text-xs text-slate-500 font-mono uppercase">{inv.brand_name}</span>
-                          <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded border border-border-base text-slate-300 font-mono uppercase">{inv.type}</span>
+                          <span className="text-xs font-mono font-bold text-[#b45309] uppercase">{inv.brand_name || inv.brand}</span>
+                          <span className="text-[10px] bg-slate-200 dark:bg-black/40 px-2 py-0.5 rounded font-mono font-bold text-slate-700 dark:text-slate-300 uppercase">{inv.type}</span>
                         </div>
-                        <h4 className="font-display font-bold text-white text-sm mt-1">{inv.model_name}</h4>
+                        <h4 className="font-display font-bold text-[#0f172a] dark:text-white text-sm mt-1">{inv.model_name || inv.model}</h4>
                       </div>
-                      <div className="flex justify-between items-end mt-4 pt-2 border-t border-border-base/30">
-                        <span className="font-mono text-xs text-slate-400">{inv.capacity_kw} kW Capacity</span>
-                        <span className="font-mono text-sm font-bold text-primary-container">
-                          {lang === 'ur' ? `${inv.estimated_base_price_pkr?.toLocaleString()} روپے` : `${inv.estimated_base_price_pkr?.toLocaleString()} PKR`}
+                      <div className="flex justify-between items-end mt-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <span className="font-mono text-xs text-slate-500">{inv.capacity_kw} kW Capacity</span>
+                        <span className="font-mono text-sm font-black text-[#b45309]">
+                          {formatPrice(inv.estimated_base_price_pkr || inv.cost_pkr)}
                         </span>
                       </div>
                     </div>
@@ -613,8 +608,8 @@ export default function ConfigurationWizard() {
               </div>
 
               {/* Solar Panel Picker */}
-              <div className="bg-surface-base border border-border-base rounded-xl p-6 space-y-4">
-                <h3 className="font-display font-bold text-white text-lg border-b border-border-base pb-3">
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-4 shadow-sm">
+                <h3 className="font-display font-bold text-[#0f172a] dark:text-white text-lg border-b border-slate-200 dark:border-slate-800 pb-3">
                   {t.panelTitle}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -622,23 +617,23 @@ export default function ConfigurationWizard() {
                     <div 
                       key={panel.id} 
                       onClick={() => setCalcParams(prev => ({ ...prev, selectedPanel: panel }))}
-                      className={`border rounded-xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                      className={`border rounded-2xl p-4 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
                         calcParams.selectedPanel?.id === panel.id
-                          ? 'border-accent-emerald bg-accent-emerald/5 shadow-md'
-                          : 'border-border-base/40 bg-black/20 hover:border-border-base'
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 shadow-md'
+                          : 'border-slate-200 dark:border-slate-800 bg-[#f8fafc] dark:bg-black/20 hover:border-slate-300'
                       }`}
                     >
                       <div>
                         <div className="flex justify-between items-start">
-                          <span className="text-xs text-slate-500 font-mono uppercase">{panel.manufacturer_name}</span>
-                          <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded border border-border-base text-slate-300 font-mono uppercase">{panel.cell_type}</span>
+                          <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase">{panel.manufacturer_name || panel.mfg}</span>
+                          <span className="text-[10px] bg-slate-200 dark:bg-black/40 px-2 py-0.5 rounded font-mono font-bold text-slate-700 dark:text-slate-300 uppercase">{panel.cell_type}</span>
                         </div>
-                        <h4 className="font-display font-bold text-white text-sm mt-1">{panel.model_name}</h4>
+                        <h4 className="font-display font-bold text-[#0f172a] dark:text-white text-sm mt-1">{panel.model_name || panel.model}</h4>
                       </div>
-                      <div className="flex justify-between items-end mt-4 pt-2 border-t border-border-base/30">
-                        <span className="font-mono text-xs text-slate-400">{panel.default_wattage} W Output</span>
-                        <span className="font-mono text-sm font-bold text-accent-emerald">
-                          {lang === 'ur' ? `${panel.price_per_watt_pkr} روپے/واٹ` : `${panel.price_per_watt_pkr} PKR/W`}
+                      <div className="flex justify-between items-end mt-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <span className="font-mono text-xs text-slate-500">{panel.default_wattage || panel.wattage} W Output</span>
+                        <span className="font-mono text-sm font-black text-emerald-700 dark:text-emerald-400">
+                          {panel.price_per_watt_pkr || panel.cost_per_watt} PKR/W
                         </span>
                       </div>
                     </div>
@@ -648,224 +643,75 @@ export default function ConfigurationWizard() {
 
             </div>
 
-            {/* Calculations Preview */}
+            {/* Hardware Selections Sidebar */}
             <div className="space-y-6">
-              <div className="bg-surface-base border border-border-base rounded-xl p-6 space-y-6">
-                <h3 className="font-display font-bold text-white text-base border-b border-border-base pb-3">
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 space-y-6 shadow-sm text-slate-800 dark:text-white">
+                <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base border-b border-slate-200 dark:border-slate-800 pb-3">
                   {t.currentSelections}
                 </h3>
                 
-                <div className="space-y-4 text-sm">
-                  <div className="space-y-1">
-                    <div className="text-xs text-slate-500 font-semibold uppercase">Inverter Selected</div>
-                    <div className="font-bold text-white">{calcParams.selectedInverter?.model_name || 'None'}</div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs text-slate-500 font-semibold uppercase">Solar Panels Selected</div>
-                    <div className="font-bold text-white">{calcParams.selectedPanel?.model_name || 'None'}</div>
-                  </div>
-                  <div className="flex justify-between border-t border-border-base/50 pt-4">
-                    <span className="text-xs text-slate-400 font-semibold">{t.totalEstimate}</span>
-                    <span className="font-mono text-base font-extrabold text-primary-container">
-                      {lang === 'ur' ? `${totalCost.toLocaleString()} روپے` : `${totalCost.toLocaleString()} PKR`}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setActiveStep(1)}
-                    className="flex-1 py-2.5 rounded-lg bg-surface-container border border-border-base text-white font-display font-semibold transition-all cursor-pointer text-xs"
-                  >
-                    {t.backBtn}
-                  </button>
-                  <button 
-                    onClick={() => setActiveStep(3)}
-                    className="flex-1 py-2.5 rounded-lg bg-primary hover:bg-white text-black font-display font-semibold transition-all cursor-pointer shadow-md text-xs text-center"
-                  >
-                    {t.reviewBtn}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: PROPOSAL PRESENTATION SLIDE SHOW */}
-        {activeStep === 3 && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Proposal slide */}
-              <div className="bg-surface-base border border-border-base rounded-xl overflow-hidden shadow-xl">
-                
-                {/* Proposal Top Banner */}
-                <div className="bg-gradient-to-r from-primary/10 to-transparent px-8 py-6 border-b border-border-base flex justify-between items-center">
-                  <div>
-                    <span className="text-[10px] font-bold text-primary font-mono uppercase tracking-wider">{t.proposalTitle}</span>
-                    <h2 className="font-display font-extrabold text-white text-xl mt-1">Solar System Proposal Estimate</h2>
-                  </div>
-                </div>
-
-                {/* Slides content */}
-                <div className="p-8 space-y-8">
-                  {/* System Overview */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div className="bg-black/20 p-5 border border-border-base/50 rounded-xl space-y-2">
-                      <div className="text-xs text-slate-500 font-semibold uppercase">{t.recommendedSize}</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">{systemSize} kWp</div>
-                    </div>
-                    <div className="bg-black/20 p-5 border border-border-base/50 rounded-xl space-y-2">
-                      <div className="text-xs text-slate-500 font-semibold uppercase">{t.requiredPanels}</div>
-                      <div className="font-mono text-2xl font-extrabold text-white">{panelCount} {t.pills}</div>
-                    </div>
-                    <div className="bg-black/20 p-5 border border-border-base/50 rounded-xl space-y-2">
-                      <div className="text-xs text-slate-500 font-semibold uppercase">Inverter Selected</div>
-                      <div className="font-display text-sm font-bold text-white max-w-[150px] truncate">{calcParams.selectedInverter?.model_name}</div>
+                <div className="space-y-3 text-xs">
+                  <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Selected Inverter</span>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">
+                      {calcParams.selectedInverter ? (calcParams.selectedInverter.model_name || calcParams.selectedInverter.model) : 'None'}
                     </div>
                   </div>
-
-                  {/* Financial projections */}
-                  <div className="bg-black/10 border border-border-base/40 rounded-xl p-6 space-y-6">
-                    <h4 className="font-display font-bold text-white text-sm uppercase tracking-wider border-b border-border-base/30 pb-2">{t.financialProjections}</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                      <div className="space-y-1">
-                        <div className="text-xs text-slate-500 font-semibold">{t.totalInvestment}</div>
-                        <div className="font-mono text-lg font-bold text-primary-container">
-                          {lang === 'ur' ? `${totalCost.toLocaleString()} روپے` : `${totalCost.toLocaleString()} PKR`}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-xs text-slate-500 font-semibold">{t.annualSavings}</div>
-                        <div className="font-mono text-lg font-bold text-accent-emerald">
-                          {lang === 'ur' ? `${annualSavings.toLocaleString()} روپے` : `${annualSavings.toLocaleString()} PKR`}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-xs text-slate-500 font-semibold">{t.paybackPeriod}</div>
-                        <div className="font-mono text-lg font-bold text-white">{paybackYears} {t.years}</div>
-                      </div>
+                  <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Selected Panel</span>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">
+                      {calcParams.selectedPanel ? (calcParams.selectedPanel.model_name || calcParams.selectedPanel.model) : 'None'}
                     </div>
                   </div>
-
-                  {/* Environmental projection */}
-                  <div className="bg-emerald-950/10 border border-emerald-500/20 rounded-xl p-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h4 className="font-display font-bold text-emerald-400 text-sm uppercase">{t.greenImpact}</h4>
-                      <p className="text-xs text-slate-400">Estimated environmental offsets over 25-year system lifecycle.</p>
-                    </div>
-                    <div className="flex gap-6 font-mono text-sm">
-                      <div className="text-center">
-                        <div className="font-bold text-white">{(systemSize * 1.2).toFixed(1)} tons</div>
-                        <div className="text-[10px] text-slate-500">{t.co2}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-bold text-white">{Math.round(systemSize * 18)} trees</div>
-                        <div className="text-[10px] text-slate-500">{t.trees}</div>
-                      </div>
+                  <div className="pt-2">
+                    <span className="text-xs text-slate-500 font-bold block">{t.totalEstimate}</span>
+                    <div className="font-display text-2xl font-black text-[#b45309] mt-0.5">
+                      {formatPrice(totalCost)}
                     </div>
                   </div>
                 </div>
 
-              </div>
-            </div>
-
-            {/* Sidebar actions */}
-            <div className="space-y-6">
-              <div className="bg-surface-base border border-border-base rounded-xl p-6 space-y-6">
-                <h3 className="font-display font-bold text-white text-base border-b border-border-base pb-3">
-                  Proposal Actions
-                </h3>
-                
-                <div className="space-y-3">
-                  <button 
-                    onClick={handleSaveProposal}
-                    className="w-full py-2.5 rounded-lg bg-primary hover:bg-white text-black font-display font-semibold transition-all cursor-pointer shadow-md text-xs text-center flex items-center justify-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-sm">save</span>
-                    {t.saveProposal}
-                  </button>
-                  <button 
-                    onClick={() => setActiveStep(2)}
-                    className="w-full py-2.5 rounded-lg bg-surface-container border border-border-base text-white font-display font-semibold transition-all cursor-pointer text-xs"
-                  >
-                    {t.backToHardware}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Lead Edit Modal */}
-        {editModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-surface-container-high border border-border-base rounded-xl w-full max-w-lg shadow-2xl overflow-hidden animate-fadeIn" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
-              <div className={`px-6 py-4 border-b border-border-base flex justify-between items-center ${
-                lang === 'ur' ? 'flex-row-reverse' : ''
-              }`}>
-                <h3 className="font-display font-bold text-white text-lg">{t.clientModal}</h3>
-                <button onClick={() => setEditModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
-                  <span className="material-symbols-outlined">close</span>
+                <button 
+                  onClick={() => setActiveStep(3)}
+                  className="w-full py-3.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs shadow-md transition-all cursor-pointer text-center"
+                >
+                  {t.reviewBtn}
                 </button>
               </div>
+            </div>
 
-              <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Customer Name</label>
-                  <input 
-                    type="text" 
-                    value={editFormData.customer_name}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, customer_name: e.target.value }))}
-                    className={`w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary ${
-                      lang === 'ur' ? 'text-right' : 'text-left'
-                    }`}
-                    required
-                  />
-                </div>
+          </div>
+        )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Contact Number</label>
-                  <input 
-                    type="text" 
-                    value={editFormData.contact_number}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, contact_number: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary font-mono text-center"
-                    required
-                  />
-                </div>
+        {/* STEP 3: PROPOSAL SUMMARY */}
+        {activeStep === 3 && (
+          <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 sm:p-8 space-y-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+              <div>
+                <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-xl">{t.proposalTitle}</h3>
+                <p className="text-xs text-slate-500 mt-1">Complete commercial quote ready for client present mode</p>
+              </div>
+              <button 
+                onClick={handleSaveProposal}
+                className="px-6 py-3 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs shadow-md cursor-pointer transition-all"
+              >
+                {t.saveProposal}
+              </button>
+            </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-400 uppercase">Installation Address</label>
-                  <textarea 
-                    value={editFormData.installation_address}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, installation_address: e.target.value }))}
-                    className={`w-full px-3 py-2 text-sm bg-black/40 border border-border-base rounded-lg text-white focus:outline-none focus:border-primary ${
-                      lang === 'ur' ? 'text-right' : 'text-left'
-                    }`}
-                    rows="3"
-                    required
-                  ></textarea>
-                </div>
-
-                <div className={`pt-4 border-t border-border-base flex justify-end gap-3 ${
-                  lang === 'ur' ? 'flex-row-reverse' : ''
-                }`}>
-                  <button 
-                    type="button" 
-                    onClick={() => setEditModalOpen(false)}
-                    className="px-4 py-2 rounded-lg bg-surface-container border border-border-base text-white text-xs font-bold font-display cursor-pointer hover:border-white/20"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    className="px-4 py-2 rounded-lg bg-primary hover:bg-white text-black text-xs font-bold font-display cursor-pointer shadow-md"
-                  >
-                    Update Details ✓
-                  </button>
-                </div>
-              </form>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <span className="text-xs font-bold text-slate-500 uppercase">{t.totalInvestment}</span>
+                <div className="font-display text-2xl font-black text-[#b45309]">{formatPrice(totalCost)}</div>
+              </div>
+              <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <span className="text-xs font-bold text-slate-500 uppercase">{t.annualSavings}</span>
+                <div className="font-display text-2xl font-black text-emerald-700 dark:text-emerald-400">{formatPrice(annualSavings)}</div>
+              </div>
+              <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <span className="text-xs font-bold text-slate-500 uppercase">{t.paybackPeriod}</span>
+                <div className="font-display text-2xl font-black text-[#0f172a] dark:text-white">{paybackYears} {t.years}</div>
+              </div>
             </div>
           </div>
         )}
