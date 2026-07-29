@@ -68,7 +68,8 @@ export const AppProvider = ({ children }) => {
     { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 450, limit: 500, status: 'Verified', date: '2026-05-10', city: 'Karachi', contact: '+92 301 4455667' },
     { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 120, limit: 250, status: 'Active', date: '2026-06-01', city: 'Lahore', contact: '+92 302 7788990' },
     { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 35, status: 'Pending Verification', date: '2026-07-28', city: 'Peshawar', contact: '+92 303 9900112' },
-    { id: 'comp-5', name: 'Khyber Green Energy', email: 'info@khybergreen.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-29', city: 'Peshawar', contact: '+92 300 9876543' }
+    { id: 'comp-5', name: 'Khyber Green Energy', email: 'info@khybergreen.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-29', city: 'Peshawar', contact: '+92 300 9876543' },
+    { id: 'comp-6', name: 'Google Partner Solar EPC', email: 'google.partner@solaragent.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-30', city: 'Lahore', contact: '+92 300 1234567' }
   ]);
 
   // Official Editable Bank Wire Details
@@ -86,6 +87,7 @@ export const AppProvider = ({ children }) => {
 
   // System Notifications Log for Super Admin
   const [adminLogs, setAdminLogs] = useState([
+    "🔔 [GOOGLE REGISTRATION REQUEST] Google Partner Solar EPC (google.partner@solaragent.pk) registered via Google Sign-In.",
     "🔔 [NEW REGISTRATION] Khyber Green Energy (info@khybergreen.pk) submitted Silver Plan request.",
     "📄 [UPGRADE REQUEST] KPK Volt Tech submitted Meezan Bank payment receipt for Gold Plan."
   ]);
@@ -211,13 +213,50 @@ export const AppProvider = ({ children }) => {
     return { success: true };
   };
 
-  // Sign In with Google Simulation
+  // Sign In with Google Simulation (Requires Super Admin Approval & Payment Verification)
   const signInWithGoogle = (targetRole = 'distributor') => {
     if (targetRole === 'super_admin') {
-      signInSuperAdmin('superadmin@solaragent.pk', 'google-auth');
-    } else {
-      signInDistributor('indussolar@solaragent.pk', 'google-auth');
+      return signInSuperAdmin('superadmin@solaragent.pk', 'google-auth');
     }
+
+    const googleEmail = 'google.partner@solaragent.pk';
+    const googleCompName = 'Google Partner Solar EPC';
+    
+    let googleDist = distributors.find(d => d.email.toLowerCase() === googleEmail.toLowerCase());
+
+    if (!googleDist) {
+      googleDist = {
+        id: `comp-google-${Math.floor(1000 + Math.random() * 9000)}`,
+        name: googleCompName,
+        email: googleEmail,
+        plan: 'Silver',
+        used: 0,
+        limit: 35,
+        status: 'Pending Verification',
+        date: new Date().toISOString().split('T')[0],
+        city: 'Lahore',
+        contact: '+92 300 1234567'
+      };
+
+      setDistributors(prev => [googleDist, ...prev]);
+
+      setAdminLogs(prev => [
+        `🔔 [GOOGLE REGISTRATION REQUEST] ${googleCompName} (${googleEmail}) registered via Google Sign-In. Awaiting payment verification.`,
+        ...prev
+      ]);
+    }
+
+    if (googleDist.status === 'Pending Verification' || googleDist.status === 'Pending') {
+      showToast("📄 Google Sign-In submitted! Awaiting Super Admin Approval & Payment Verification.");
+      return { 
+        status: 'pending', 
+        distributor: googleDist,
+        error: 'pending', 
+        message: "⚠️ Google Account Pending Super Admin Approval & Payment Verification. Access will be unlocked once approved." 
+      };
+    }
+
+    return signInDistributor(googleEmail, 'google-auth');
   };
 
   // Create an Account for Distributor Registration (APPROVAL-BASED PENDING WORKFLOW)
@@ -236,10 +275,8 @@ export const AppProvider = ({ children }) => {
       contact: contact || '+92 300 9876543'
     };
 
-    // Store in distributors list as Pending Verification
     setDistributors(prev => [newDistributor, ...prev]);
 
-    // Dispatch log to Super Admin
     setAdminLogs(prev => [
       `🔔 [NEW REGISTRATION REQUEST] ${companyName} (${email}) registered for ${plan} Plan. Awaiting payment verification.`,
       ...prev
@@ -257,7 +294,6 @@ export const AppProvider = ({ children }) => {
 
     setDistributors(prev => prev.map(d => d.id === distributorId ? { ...d, status: 'Verified' } : d));
 
-    // Automated Email Dispatch Simulation
     const emailMessage = `📧 [AUTOMATED EMAIL SENT TO ${target.email}]: "Your Account Has Been Successfully Created You Should Login Now"`;
     
     setAdminLogs(prev => [
@@ -322,7 +358,6 @@ export const AppProvider = ({ children }) => {
     setTransactions(prev => [newTxn, ...prev]);
     setPendingUpgradeRequests(prev => prev.filter(r => r.id !== requestId));
 
-    // Automated Email Dispatch Log
     const emailMsg = `📧 [AUTOMATED EMAIL SENT TO ${req.contact_email}]: "Your Account Has Been Successfully Created You Should Login Now"`;
     setAdminLogs(prev => [emailMsg, ...prev]);
 

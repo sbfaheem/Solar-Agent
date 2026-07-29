@@ -120,6 +120,18 @@ export default function Login() {
     }
   };
 
+  const handleGoogleClick = () => {
+    setPendingError(null);
+    const res = signInWithGoogle('distributor');
+    if (res && res.status === 'pending') {
+      setRegModalData(res.distributor);
+      setRegModalOpen(true);
+      if (res.message) {
+        setPendingError(res.message);
+      }
+    }
+  };
+
   const handleSubmitDistributor = (e) => {
     e.preventDefault();
     setPendingError(null);
@@ -243,10 +255,10 @@ export default function Login() {
               </div>
             )}
 
-            {/* Google Sign-In Option */}
+            {/* Google Sign-In Option (Follows Super Admin Approval & Payment Verification Flow) */}
             <button 
               type="button"
-              onClick={() => signInWithGoogle('distributor')}
+              onClick={handleGoogleClick}
               className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-display font-extrabold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2.5 border border-slate-300"
             >
               <svg className="size-4" viewBox="0 0 24 24">
@@ -277,6 +289,7 @@ export default function Login() {
                   className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/20 cursor-pointer shadow-xs"
                 >
                   <option value="REGISTER_NEW">{t.registerNewOption}</option>
+                  <option value="google.partner@solaragent.pk">⚡ Google Partner Solar EPC (google.partner@solaragent.pk - Pending Verification)</option>
                   <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (kpkvolt@solaragent.pk - Pending Verification)</option>
                   <option value="info@khybergreen.pk">⚡ Khyber Green Energy (info@khybergreen.pk - Pending Verification)</option>
                   <option value="info@indussolar.pk">⚡ Indus Solar Systems (info@indussolar.pk - Platinum Tier Verified)</option>
