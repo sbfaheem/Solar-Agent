@@ -117,6 +117,157 @@ export default function PageShell({ children, headerTitle }) {
         </div>
       )}
 
+      {/* TOP FULL-WIDTH LIGHT GREY HEADER BAR */}
+      <header className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-4 transition-colors z-30 ${
+        theme === 'dark' ? 'bg-[#181a1d] border-[#2d3137]' : 'bg-[#e2e8f0] border-slate-300'
+      }`}>
+        
+        {/* Left Logo & Brand Subtitle */}
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 group">
+            <span className="size-9 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
+              <span className="material-symbols-outlined">solar_power</span>
+            </span>
+            <div className="hidden sm:block">
+              <span className={`font-display font-extrabold text-base tracking-tight block leading-tight ${
+                theme === 'dark' ? 'text-white' : 'text-slate-900'
+              }`}>
+                Solar Agent
+              </span>
+              <span className="text-[10px] text-slate-600 font-mono block leading-none font-semibold">
+                B2B SaaS Energy Platform
+              </span>
+            </div>
+          </Link>
+        </div>
+
+        {/* Middle Horizontal Navigation Menu Pill */}
+        <div className="hidden lg:flex items-center gap-1 bg-white/90 dark:bg-black/40 p-1 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-xs">
+          {activeMenuItems.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-display text-xs font-extrabold transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'bg-[#b45309] text-white shadow-sm'
+                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">{item.icon}</span>
+                <span>{lang === 'ur' ? item.urLabel : item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Right Controls: Distributor Switcher, Currency, Theme, Avatar, Logout */}
+        <div className="flex items-center gap-2 sm:gap-3">
+
+          {/* Distributor Account Switcher Dropdown */}
+          <div className="hidden md:block">
+            <select 
+              value={user?.email || 'bilalfaheem47@gmail.com'}
+              onChange={(e) => {
+                if (e.target.value === 'superadmin@solaragent.pk' || e.target.value === 'bilalfaheem47@gmail.com') {
+                  signInSuperAdmin(e.target.value, 'Megatron_@0047');
+                } else {
+                  signInDistributor(e.target.value, 'demo');
+                }
+              }}
+              className="bg-white dark:bg-[#282a2d] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white px-3 py-1.5 rounded-xl text-xs font-bold font-mono cursor-pointer shadow-xs"
+            >
+              <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (Silver Plan)</option>
+              <option value="info@khybergreen.pk">⚡ Khyber Green Energy (Silver Plan)</option>
+              <option value="google.partner@solaragent.pk">⚡ Google Partner Solar EPC (Silver Plan)</option>
+              <option value="info@indussolar.pk">⚡ Indus Solar Systems (Platinum Tier)</option>
+              <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (Gold Plan)</option>
+              <option value="bilalfaheem47@gmail.com">👑 Super Admin Governance</option>
+            </select>
+          </div>
+
+          {/* Currency Toggle */}
+          <button 
+            onClick={toggleCurrency}
+            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-amber-300 border border-slate-700 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm font-mono"
+            title="Toggle Currency"
+          >
+            <span className="material-symbols-outlined text-sm">currency_exchange</span>
+            <span>{currency} ⇄ {currency === 'PKR' ? 'USD' : 'PKR'}</span>
+          </button>
+
+          {/* Theme Switcher */}
+          <button 
+            onClick={toggleTheme}
+            className={`size-8 sm:size-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all ${
+              theme === 'dark'
+                ? 'bg-[#282a2d] border-[#3f474f] text-amber-300'
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+            }`}
+            title="Toggle Theme"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
+          </button>
+
+          {/* DYNAMIC DISTRIBUTOR NAME, PLAN BADGE & PROFILE PHOTO UPLOADER */}
+          {user && (
+            <div className={`flex items-center gap-2.5 pl-3 pr-2 py-1 rounded-xl border ${
+              theme === 'dark'
+                ? 'bg-[#282a2d] border-[#3f474f]'
+                : 'bg-white border-slate-300 shadow-xs'
+            }`}>
+              <div className="text-right hidden sm:block">
+                <div className={`font-display font-extrabold text-xs leading-none ${
+                  theme === 'dark' ? 'text-white' : 'text-slate-900'
+                }`}>
+                  {company.name || user.name || user.company_name || 'Distributor'}
+                </div>
+                <div className="text-[#b45309] dark:text-amber-400 text-[9px] font-mono font-bold leading-none mt-1 uppercase">
+                  {getTierBadgeText()}
+                </div>
+              </div>
+
+              {/* Clickable Avatar Circle with Hover Camera Overlay */}
+              <div 
+                onClick={handleAvatarClick}
+                title="Click to upload company logo or profile picture"
+                className="size-8 sm:size-9 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm relative group cursor-pointer overflow-hidden ring-2 ring-[#b45309]/30"
+              >
+                {(company?.logo_url || user?.logo_url) ? (
+                  <img 
+                    src={company?.logo_url || user?.logo_url} 
+                    alt="Distributor Logo" 
+                    className="w-full h-full object-cover rounded-full" 
+                  />
+                ) : (
+                  <span>{getInitials(company.name || user.name)}</span>
+                )}
+
+                {/* Camera Upload Overlay */}
+                <div className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+                  <span className="material-symbols-outlined text-xs">photo_camera</span>
+                </div>
+              </div>
+
+              {/* Prominent Red Logout Button */}
+              <button 
+                onClick={signOut}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-rose-500 transition-all ml-1"
+                title="Log Out from Portal"
+              >
+                <span className="material-symbols-outlined text-sm">logout</span>
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
+          )}
+
+        </div>
+      </header>
+
+      {/* BODY CONTENT AREA */}
       <div className="flex flex-col lg:flex-row flex-1 min-h-screen">
         
         {/* Left Sidebar Navigation */}
@@ -127,23 +278,7 @@ export default function PageShell({ children, headerTitle }) {
         } ${lang === 'ur' ? 'lg:border-l' : 'lg:border-r'}`}>
           
           <div className="space-y-6">
-            {/* Top Brand Logo */}
-            <Link href="/" className="flex items-center gap-3 group">
-              <span className="size-9 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined">solar_power</span>
-              </span>
-              <div>
-                <span className={`font-display font-extrabold text-base tracking-tight block ${
-                  theme === 'dark' ? 'text-white' : 'text-[#0f172a]'
-                }`}>
-                  Solar Agent
-                </span>
-                <span className="text-[10px] text-[#94a3b8] font-mono block">
-                  {user?.role === 'super_admin' ? 'Super Admin Portal' : 'Distributor SaaS'}
-                </span>
-              </div>
-            </Link>
-
+            
             {/* Sidebar Dual-Role Toggle */}
             <div className="bg-slate-100 dark:bg-[#0f1113] p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-xs font-bold font-display">
               <button 
@@ -236,162 +371,31 @@ export default function PageShell({ children, headerTitle }) {
         {/* Right Main Content Viewport */}
         <div className="flex-1 flex flex-col min-w-0">
           
-          {/* Top Navigation Header (Consistent Light Grey BG for High Contrast Text Readability) */}
-          <header className={`px-6 py-3 border-b flex items-center justify-between gap-4 transition-colors ${
-            theme === 'dark' ? 'bg-[#181a1d] border-[#2d3137]' : 'bg-[#e2e8f0] border-slate-300'
-          }`}>
-            
-            {/* Left Header Title / Search */}
-            <div className="flex items-center gap-4">
-              {pathname === '/agent-hub' ? (
-                <div className="relative max-w-xs w-full">
-                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-sm">search</span>
-                  <input 
-                    type="text" 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search distributor proposals..." 
-                    className={`w-full pl-9 pr-4 py-2 text-xs rounded-xl border focus:outline-none transition-all ${
-                      theme === 'dark'
-                        ? 'bg-[#0f1113] border-[#3f474f] text-white focus:border-[#b45309]'
-                        : 'bg-white border-slate-300 text-slate-900 focus:border-[#b45309] font-bold'
-                    }`}
-                  />
-                </div>
-              ) : (
-                <h1 className={`font-display text-base sm:text-lg font-black tracking-tight whitespace-nowrap ${
-                  theme === 'dark' ? 'text-white' : 'text-slate-900'
-                }`}>
-                  {getPageTitle()}
-                </h1>
-              )}
-            </div>
-
-            {/* Middle Header Navigation Pill Bar (High Contrast Light Grey Menu Bar) */}
-            <div className="hidden xl:flex items-center gap-1 bg-slate-300/80 dark:bg-black/40 p-1 rounded-2xl border border-slate-400/40 dark:border-slate-700 shadow-inner">
-              {workspaceMenuItems.map((item) => {
-                const isActive = pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-display text-xs font-extrabold transition-all whitespace-nowrap ${
-                      isActive
-                        ? 'bg-[#b45309] text-white shadow-sm'
-                        : 'text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-base">{item.icon}</span>
-                    <span>{lang === 'ur' ? item.urLabel : item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Utility Controls & Distributor Account Selector */}
-            <div className="flex items-center gap-2 sm:gap-3">
-
-              {/* Distributor Account Switcher Dropdown */}
-              <div className="hidden md:block">
-                <select 
-                  value={user?.email || 'bilalfaheem47@gmail.com'}
-                  onChange={(e) => {
-                    if (e.target.value === 'superadmin@solaragent.pk' || e.target.value === 'bilalfaheem47@gmail.com') {
-                      signInSuperAdmin(e.target.value, 'Megatron_@0047');
-                    } else {
-                      signInDistributor(e.target.value, 'demo');
-                    }
-                  }}
-                  className="bg-white dark:bg-[#282a2d] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white px-3 py-1.5 rounded-xl text-xs font-bold font-mono cursor-pointer shadow-xs"
-                >
-                  <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (Silver Plan)</option>
-                  <option value="info@khybergreen.pk">⚡ Khyber Green Energy (Silver Plan)</option>
-                  <option value="google.partner@solaragent.pk">⚡ Google Partner Solar EPC (Silver Plan)</option>
-                  <option value="info@indussolar.pk">⚡ Indus Solar Systems (Platinum Tier)</option>
-                  <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (Gold Plan)</option>
-                  <option value="bilalfaheem47@gmail.com">👑 Super Admin Governance</option>
-                </select>
+          {/* Section Header Page Title / Search */}
+          <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-black/20 flex items-center justify-between">
+            {pathname === '/agent-hub' ? (
+              <div className="relative max-w-xs w-full">
+                <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+                <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search distributor proposals..." 
+                  className={`w-full pl-9 pr-4 py-2 text-xs rounded-xl border focus:outline-none transition-all ${
+                    theme === 'dark'
+                      ? 'bg-[#0f1113] border-[#3f474f] text-white focus:border-[#b45309]'
+                      : 'bg-white border-slate-300 text-slate-900 focus:border-[#b45309] font-bold'
+                  }`}
+                />
               </div>
-
-              {/* Currency Toggle */}
-              <button 
-                onClick={toggleCurrency}
-                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-amber-300 border border-slate-700 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm font-mono"
-                title="Toggle Currency"
-              >
-                <span className="material-symbols-outlined text-sm">currency_exchange</span>
-                <span>{currency} ⇄ {currency === 'PKR' ? 'USD' : 'PKR'}</span>
-              </button>
-
-              {/* Theme Switcher */}
-              <button 
-                onClick={toggleTheme}
-                className={`size-8 sm:size-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all ${
-                  theme === 'dark'
-                    ? 'bg-[#282a2d] border-[#3f474f] text-amber-300'
-                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-                }`}
-                title="Toggle Theme"
-              >
-                <span className="material-symbols-outlined text-sm">
-                  {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-                </span>
-              </button>
-
-              {/* DYNAMIC DISTRIBUTOR NAME, PLAN BADGE & PROFILE PHOTO UPLOADER */}
-              {user && (
-                <div className={`flex items-center gap-2.5 pl-3 pr-2 py-1 rounded-xl border ${
-                  theme === 'dark'
-                    ? 'bg-[#282a2d] border-[#3f474f]'
-                    : 'bg-white border-slate-300 shadow-xs'
-                }`}>
-                  <div className="text-right hidden sm:block">
-                    <div className={`font-display font-extrabold text-xs leading-none ${
-                      theme === 'dark' ? 'text-white' : 'text-slate-900'
-                    }`}>
-                      {company.name || user.name || user.company_name || 'Distributor'}
-                    </div>
-                    <div className="text-[#b45309] dark:text-amber-400 text-[9px] font-mono font-bold leading-none mt-1 uppercase">
-                      {getTierBadgeText()}
-                    </div>
-                  </div>
-
-                  {/* Clickable Avatar Circle with Hover Camera Overlay */}
-                  <div 
-                    onClick={handleAvatarClick}
-                    title="Click to upload company logo or profile picture"
-                    className="size-8 sm:size-9 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm relative group cursor-pointer overflow-hidden ring-2 ring-[#b45309]/30"
-                  >
-                    {(company?.logo_url || user?.logo_url) ? (
-                      <img 
-                        src={company?.logo_url || user?.logo_url} 
-                        alt="Distributor Logo" 
-                        className="w-full h-full object-cover rounded-full" 
-                      />
-                    ) : (
-                      <span>{getInitials(company.name || user.name)}</span>
-                    )}
-
-                    {/* Camera Upload Overlay */}
-                    <div className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
-                      <span className="material-symbols-outlined text-xs">photo_camera</span>
-                    </div>
-                  </div>
-
-                  {/* Prominent Red Logout Button */}
-                  <button 
-                    onClick={signOut}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-rose-500 transition-all ml-1"
-                    title="Log Out from Portal"
-                  >
-                    <span className="material-symbols-outlined text-sm">logout</span>
-                    <span className="hidden sm:inline">Logout</span>
-                  </button>
-                </div>
-              )}
-
-            </div>
-          </header>
+            ) : (
+              <h1 className={`font-display text-sm sm:text-base font-extrabold tracking-tight ${
+                theme === 'dark' ? 'text-white' : 'text-slate-900'
+              }`}>
+                {getPageTitle()}
+              </h1>
+            )}
+          </div>
 
           {/* Main Viewport */}
           <main className="flex-1 overflow-y-auto">
