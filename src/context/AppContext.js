@@ -62,7 +62,7 @@ export const AppProvider = ({ children }) => {
     override_quota: 0
   });
 
-  // Registered Distributors List with Statuses (Active vs Pending Verification)
+  // Registered Distributors List with Statuses (Active/Verified vs Pending Verification)
   const [distributors, setDistributors] = useState([
     { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 35, status: 'Active', date: '2026-06-12', city: 'Islamabad', contact: '+92 300 1122334' },
     { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 450, limit: 500, status: 'Verified', date: '2026-05-10', city: 'Karachi', contact: '+92 301 4455667' },
@@ -160,7 +160,7 @@ export const AppProvider = ({ children }) => {
     router.push('/admin-desk');
   };
 
-  // Authenticate Distributor (Sign In with Pending Status Access Guard)
+  // Authenticate Distributor (Sign In with Approval Guard)
   const signInDistributor = (email, password) => {
     const isSuper = email.toLowerCase().includes('admin');
     if (isSuper) {
@@ -170,6 +170,7 @@ export const AppProvider = ({ children }) => {
 
     const matchedComp = distributors.find(d => d.email.toLowerCase() === email.toLowerCase());
 
+    // Block ONLY if status is Pending Verification
     if (matchedComp && (matchedComp.status === 'Pending Verification' || matchedComp.status === 'Pending')) {
       showToast("⚠️ Account Pending Super Admin Approval & Payment Verification.", "error");
       return { 
@@ -213,7 +214,7 @@ export const AppProvider = ({ children }) => {
     return { success: true };
   };
 
-  // Sign In with Google Simulation (Requires Super Admin Approval & Payment Verification)
+  // Sign In with Google Simulation (Requires Super Admin Approval & Payment Verification ONCE)
   const signInWithGoogle = (targetRole = 'distributor') => {
     if (targetRole === 'super_admin') {
       return signInSuperAdmin('superadmin@solaragent.pk', 'google-auth');
@@ -246,8 +247,9 @@ export const AppProvider = ({ children }) => {
       ]);
     }
 
+    // Block ONLY if pending verification
     if (googleDist.status === 'Pending Verification' || googleDist.status === 'Pending') {
-      showToast("📄 Google Sign-In submitted! Awaiting Super Admin Approval & Payment Verification.");
+      showToast("📄 Google Account Pending Super Admin Approval & Payment Verification.");
       return { 
         status: 'pending', 
         distributor: googleDist,
@@ -256,10 +258,11 @@ export const AppProvider = ({ children }) => {
       };
     }
 
+    // Once Verified, log straight in!
     return signInDistributor(googleEmail, 'google-auth');
   };
 
-  // Create an Account for Distributor Registration (APPROVAL-BASED PENDING WORKFLOW)
+  // Create an Account for Distributor Registration
   const signUpDistributor = ({ companyName, name, email, password, plan = 'Silver', contact = '', city = 'Peshawar' }) => {
     const newCompId = `comp-${Math.floor(1000 + Math.random() * 9000)}`;
     const newDistributor = {
@@ -289,15 +292,20 @@ export const AppProvider = ({ children }) => {
 
   // Super Admin Approval of Pending Distributor & Email Dispatch Simulation
   const approveDistributorRegistration = (distributorId) => {
-    const target = distributors.find(d => d.id === distributorId);
+    const target = distributors.find(d => d.id === distributorId || d.email === distributorId);
     if (!target) return false;
 
-    setDistributors(prev => prev.map(d => d.id === distributorId ? { ...d, status: 'Verified' } : d));
+    // Set status to Verified (Active)
+    setDistributors(prev => prev.map(d => (d.id === distributorId || d.email === distributorId) ? { 
+      ...d, 
+      status: 'Verified',
+      billing_status: 'Active'
+    } : d));
 
     const emailMessage = `📧 [AUTOMATED EMAIL SENT TO ${target.email}]: "Your Account Has Been Successfully Created You Should Login Now"`;
     
     setAdminLogs(prev => [
-      `✅ Approved distributor ${target.name} (${target.email}).`,
+      `✅ Approved distributor ${target.name} (${target.email}). Account status set to Verified.`,
       emailMessage,
       ...prev
     ]);
@@ -323,7 +331,7 @@ export const AppProvider = ({ children }) => {
     const req = pendingUpgradeRequests.find(r => r.id === requestId);
     if (!req) return false;
 
-    setDistributors(prev => prev.map(d => d.name === req.company_name ? {
+    setDistributors(prev => prev.map(d => (d.name === req.company_name || d.email === req.contact_email) ? {
       ...d,
       plan: req.target_plan,
       limit: req.target_plan === 'Gold' ? 60 : 100,

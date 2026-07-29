@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext';
 
 export default function Login() {
   const { 
+    distributors,
     signInDistributor, 
     signInSuperAdmin, 
     signInWithGoogle, 
@@ -255,7 +256,7 @@ export default function Login() {
               </div>
             )}
 
-            {/* Google Sign-In Option (Follows Super Admin Approval & Payment Verification Flow) */}
+            {/* Google Sign-In Option */}
             <button 
               type="button"
               onClick={handleGoogleClick}
@@ -278,7 +279,7 @@ export default function Login() {
 
             <form onSubmit={handleSubmitDistributor} className="space-y-5">
               
-              {/* DISTRIBUTOR SELECT DROPDOWN (WITH ➕ REGISTER NEW DISTRIBUTOR AT TOP) */}
+              {/* DISTRIBUTOR SELECT DROPDOWN (DYNAMICALLY RENDERED FROM DISTRIBUTORS STATE) */}
               <div className="space-y-1.5">
                 <label className="text-xs font-extrabold text-[#b45309] uppercase tracking-wide block">
                   {t.selectDistributorLabel}
@@ -289,11 +290,14 @@ export default function Login() {
                   className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/20 cursor-pointer shadow-xs"
                 >
                   <option value="REGISTER_NEW">{t.registerNewOption}</option>
-                  <option value="google.partner@solaragent.pk">⚡ Google Partner Solar EPC (google.partner@solaragent.pk - Pending Verification)</option>
-                  <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (kpkvolt@solaragent.pk - Pending Verification)</option>
-                  <option value="info@khybergreen.pk">⚡ Khyber Green Energy (info@khybergreen.pk - Pending Verification)</option>
-                  <option value="info@indussolar.pk">⚡ Indus Solar Systems (info@indussolar.pk - Platinum Tier Verified)</option>
-                  <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (sales@punjabenergy.pk - Gold Tier Active)</option>
+                  {distributors.map(d => {
+                    const isVerified = d.status === 'Verified' || d.status === 'Active';
+                    return (
+                      <option key={d.id} value={d.email}>
+                        ⚡ {d.name} ({d.email} - {d.plan} Plan {isVerified ? '✓ Verified' : '⏳ Pending Verification'})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -458,7 +462,7 @@ export default function Login() {
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono font-bold focus:outline-none shadow-xs"
                   required
                 />
               </div>
