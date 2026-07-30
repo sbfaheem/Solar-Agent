@@ -26,7 +26,7 @@ export default function ProposalLimitModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const currentQuota = company.proposals_generated || 35;
-  const maxQuota = company.plan === 'Silver' ? 35 : (company.plan === 'Gold' ? 60 : 100);
+  const maxQuota = company.plan === 'Silver' ? 50 : (company.plan === 'Gold' ? 75 : 100);
 
   const handleCopyIban = () => {
     navigator.clipboard.writeText(bankDetails.iban);
@@ -166,7 +166,7 @@ export default function ProposalLimitModal({ isOpen, onClose }) {
                   <span className="font-mono font-bold text-xs text-[#b45309] uppercase">GOLD TIER</span>
                   <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">POPULAR</span>
                 </div>
-                <div className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">60 Proposals/mo</div>
+                <div className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">75 Proposals/mo</div>
                 <div className="font-mono text-sm font-black text-emerald-700 dark:text-emerald-400">{formatPrice(55000)}</div>
               </div>
 

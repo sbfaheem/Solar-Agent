@@ -65,12 +65,12 @@ export const AppProvider = ({ children }) => {
 
   // Registered Distributors List with Statuses (Active/Verified vs Pending Verification)
   const [distributors, setDistributors] = useState([
-    { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 35, status: 'Active', date: '2026-06-12', city: 'Islamabad', contact: '+92 300 1122334', logo_url: null },
-    { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 450, limit: 500, status: 'Verified', date: '2026-05-10', city: 'Karachi', contact: '+92 301 4455667', logo_url: null },
-    { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 120, limit: 250, status: 'Active', date: '2026-06-01', city: 'Lahore', contact: '+92 302 7788990', logo_url: null },
-    { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 35, status: 'Pending Verification', date: '2026-07-28', city: 'Peshawar', contact: '+92 303 9900112', logo_url: null },
-    { id: 'comp-5', name: 'Khyber Green Energy', email: 'info@khybergreen.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-29', city: 'Peshawar', contact: '+92 300 9876543', logo_url: null },
-    { id: 'comp-6', name: 'Google Partner Solar EPC', email: 'google.partner@solaragent.pk', plan: 'Silver', used: 0, limit: 35, status: 'Pending Verification', date: '2026-07-30', city: 'Lahore', contact: '+92 300 1234567', logo_url: null }
+    { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 50, status: 'Active', date: '2026-06-12', city: 'Islamabad', contact: '+92 300 1122334', logo_url: null },
+    { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 80, limit: 100, status: 'Verified', date: '2026-05-10', city: 'Karachi', contact: '+92 301 4455667', logo_url: null },
+    { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 45, limit: 75, status: 'Active', date: '2026-06-01', city: 'Lahore', contact: '+92 302 7788990', logo_url: null },
+    { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 50, status: 'Pending Verification', date: '2026-07-28', city: 'Peshawar', contact: '+92 303 9900112', logo_url: null },
+    { id: 'comp-5', name: 'Khyber Green Energy', email: 'info@khybergreen.pk', plan: 'Silver', used: 0, limit: 50, status: 'Pending Verification', date: '2026-07-29', city: 'Peshawar', contact: '+92 300 9876543', logo_url: null },
+    { id: 'comp-6', name: 'Google Partner Solar EPC', email: 'google.partner@solaragent.pk', plan: 'Silver', used: 0, limit: 50, status: 'Pending Verification', date: '2026-07-30', city: 'Lahore', contact: '+92 300 1234567', logo_url: null }
   ]);
 
   // Official Editable Bank Wire Details
@@ -292,7 +292,7 @@ export const AppProvider = ({ children }) => {
       email: email,
       plan: plan,
       used: 0,
-      limit: plan === 'Silver' ? 35 : (plan === 'Gold' ? 60 : 100),
+      limit: plan === 'Silver' ? 50 : (plan === 'Gold' ? 75 : 100),
       status: 'Pending Verification',
       date: new Date().toISOString().split('T')[0],
       city: city,
@@ -331,7 +331,7 @@ export const AppProvider = ({ children }) => {
       ...prev
     ]);
 
-    showToast(`📩 Email Dispatched to ${target.email}: "Your Account Has Been Successfully Created You Should Login Now"`);
+    showToast(`📩 Email Dispatched to ${target.email}: "Your Account Has Been Successfully Created You Should Login Now" to ${target.email}`);
     return true;
   };
 
@@ -355,7 +355,7 @@ export const AppProvider = ({ children }) => {
     setDistributors(prev => prev.map(d => (d.name === req.company_name || d.email === req.contact_email) ? {
       ...d,
       plan: req.target_plan,
-      limit: req.target_plan === 'Gold' ? 60 : 100,
+      limit: req.target_plan === 'Silver' ? 50 : (req.target_plan === 'Gold' ? 75 : 100),
       status: 'Verified'
     } : d));
 
@@ -364,7 +364,7 @@ export const AppProvider = ({ children }) => {
         ...company,
         plan: req.target_plan,
         billing_status: "Active",
-        override_quota: (company.override_quota || 0) + (req.target_plan === 'Gold' ? 25 : 65)
+        override_quota: (company.override_quota || 0) + (req.target_plan === 'Gold' ? 25 : 50)
       };
       setCompany(updatedComp);
       await updateCompanyState(updatedComp);
@@ -485,7 +485,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const getActiveLimit = () => {
-    const baseLimit = company.plan === 'Silver' ? 35 : (company.plan === 'Gold' ? 60 : 100);
+    const baseLimit = company.plan === 'Silver' ? 50 : (company.plan === 'Gold' ? 75 : 100);
     return baseLimit + (company.override_quota || 0);
   };
 

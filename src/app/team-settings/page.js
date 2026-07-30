@@ -252,8 +252,8 @@ export default function TeamSettings() {
                 <div className="space-y-3">
                   <span className="text-xs font-extrabold uppercase text-slate-500 tracking-wide block">Choose Target Tier Plan</span>
                   {[
-                    { plan: 'Silver', price: 35000, limit: 35, desc: 'Starter Tier (35 Quotes/mo)' },
-                    { plan: 'Gold', price: 55000, limit: 60, desc: 'Professional Tier (60 Quotes/mo)' },
+                    { plan: 'Silver', price: 35000, limit: 50, desc: 'Starter Tier (50 Quotes/mo)' },
+                    { plan: 'Gold', price: 55000, limit: 75, desc: 'Professional Tier (75 Quotes/mo)' },
                     { plan: 'Platinum', price: 75000, limit: 100, desc: 'Enterprise Unlimited (100 Quotes/mo)' }
                   ].map(p => (
                     <div
