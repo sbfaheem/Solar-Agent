@@ -191,8 +191,36 @@ export default function AIProposalModal({ isOpen, onClose, initialData = {} }) {
           </div>
         </div>
 
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            body * {
+              visibility: hidden !important;
+            }
+            #printable-ai-proposal, #printable-ai-proposal * {
+              visibility: visible !important;
+            }
+            #printable-ai-proposal {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              margin: 0 !important;
+              padding: 20px !important;
+              background: #ffffff !important;
+              color: #000000 !important;
+              box-shadow: none !important;
+              border: none !important;
+              overflow: visible !important;
+            }
+            @page {
+              size: A4 portrait;
+              margin: 8mm;
+            }
+          }
+        ` }} />
+
         {/* PRINTABLE PDF DOCUMENT LAYOUT CANVAS */}
-        <div className="flex-1 p-6 sm:p-10 overflow-y-auto space-y-8 bg-white text-slate-900 print:p-0 print:overflow-visible font-sans">
+        <div id="printable-ai-proposal" className="flex-1 p-6 sm:p-10 overflow-y-auto space-y-8 bg-white text-slate-900 print:p-0 print:overflow-visible font-sans">
           
           {/* Document Header Letterhead */}
           <div className="flex justify-between items-start border-b-2 border-slate-900 pb-6">
