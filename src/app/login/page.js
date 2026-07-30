@@ -49,11 +49,12 @@ export default function Login() {
       distributorPortalBtn: "Distributor Portal",
       adminPortalBtn: "Super Admin Portal",
       distributorTitle: "Distributor Partner Authorization",
-      distributorSub: "Select an authorized distributor account or register a new EPC firm",
+      distributorSub: "Register a new EPC firm or sign in with your authorized work email",
       googleSignIn: "Sign In with Google",
-      orSelectAcc: "OR SELECT DISTRIBUTOR ACCOUNT",
-      selectDistributorLabel: "SELECT AUTHORIZED DISTRIBUTOR ACCOUNT",
+      orSelectAcc: "OR SELECT AUTHORIZATION ACTION",
+      selectDistributorLabel: "SELECT AUTHORIZATION MODE",
       registerNewOption: "➕ Register New Distributor...",
+      signInExistingOption: "🔑 Sign In with Existing Authorized Work Email...",
       provSectionHeader: "DISTRIBUTOR PROVISIONING & ACCOUNT DETAILS",
       companyNameLabel: "COMPANY NAME (E.G. KHYBER GREEN ENERGY)",
       companyNamePlaceholder: "e.g. Khyber Green Energy",
@@ -84,11 +85,12 @@ export default function Login() {
       distributorPortalBtn: "ڈسٹری بیوٹر پورٹل",
       adminPortalBtn: "سپر ایڈمن پورٹل",
       distributorTitle: "ڈسٹری بیوٹر پارٹنر لاگ ان و رجسٹریشن",
-      distributorSub: "مجاز ڈسٹری بیوٹر اکاؤنٹ منتخب کریں یا نئی ای پی سی فرم کا اندراج کریں",
+      distributorSub: "نیا ڈسٹری بیوٹر رجسٹر کریں یا اپنے ورک ای میل کے ذریعے لاگ ان کریں",
       googleSignIn: "گوگل کے ذریعے سائن ان کریں",
-      orSelectAcc: "یا ڈسٹری بیوٹر اکاؤنٹ کا انتخاب کریں",
-      selectDistributorLabel: "مجاز ڈسٹری بیوٹر اکاؤنٹ منتخب کریں",
+      orSelectAcc: "یا پورٹل کا انتخاب کریں",
+      selectDistributorLabel: "اختیار کا انتخاب کریں",
       registerNewOption: "➕ نیا ڈسٹری بیوٹر رجسٹر کریں...",
+      signInExistingOption: "🔑 موجودہ ورک ای میل کے ذریعے لاگ ان کریں...",
       provSectionHeader: "ڈسٹری بیوٹر رجسٹریشن اور اکاؤنٹ کی تفصیلات",
       companyNameLabel: "کمپنی کا نام (مثلاً خیبر گرین انرجی)",
       companyNamePlaceholder: "مثلاً خیبر گرین انرجی",
@@ -121,13 +123,8 @@ export default function Login() {
   const handleDropdownSelect = (val) => {
     setSelectedDistributorAccount(val);
     setPendingError(null);
-    if (val === 'REGISTER_NEW') {
-      setEmail('');
-      setPassword('');
-    } else {
-      setEmail(val);
-      setPassword('');
-    }
+    setEmail('');
+    setPassword('');
   };
 
   const handleGoogleClick = () => {
@@ -300,7 +297,7 @@ export default function Login() {
 
             <form onSubmit={handleSubmitDistributor} className="space-y-5">
               
-              {/* DISTRIBUTOR SELECT DROPDOWN */}
+              {/* DISTRIBUTOR ACTION DROPDOWN (NO PRIVATE CLIENT LISTING) */}
               <div className="space-y-1.5">
                 <label className="text-xs font-extrabold text-[#b45309] uppercase tracking-wide block">
                   {t.selectDistributorLabel}
@@ -311,14 +308,7 @@ export default function Login() {
                   className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/20 cursor-pointer shadow-xs"
                 >
                   <option value="REGISTER_NEW">{t.registerNewOption}</option>
-                  {distributors.map(d => {
-                    const isVerified = d.status === 'Verified' || d.status === 'Active';
-                    return (
-                      <option key={d.id} value={d.email}>
-                        ⚡ {d.name} ({d.email} - {d.plan} Plan {isVerified ? '✓ Verified' : '⏳ Pending Verification'})
-                      </option>
-                    );
-                  })}
+                  <option value="SIGN_IN_EXISTING">{t.signInExistingOption}</option>
                 </select>
               </div>
 
