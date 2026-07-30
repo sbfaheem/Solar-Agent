@@ -184,9 +184,50 @@ export default function Configuration() {
     processBillFile(file);
   };
 
+  // Step Validation & Navigation Handler
+  const handleGoToStep = (targetStep) => {
+    if (targetStep === 2) {
+      if (!calcParams.monthlyUnits || Number(calcParams.monthlyUnits) <= 0) {
+        showToast(
+          lang === 'ur'
+            ? "⚠️ آگے بڑھنے کے لیے پہلے اپنے بل کی تصویر اپلوڈ کریں یا ماہانہ یونٹس درج کریں!"
+            : "⚠️ Please upload an electricity bill or enter monthly units (kWh) to proceed to Step 2!",
+          "error"
+        );
+        return false;
+      }
+    } else if (targetStep === 3) {
+      if (!calcParams.monthlyUnits || Number(calcParams.monthlyUnits) <= 0) {
+        showToast(
+          lang === 'ur'
+            ? "⚠️ آگے بڑھنے کے لیے پہلے اپنے بل کی تصویر اپلوڈ کریں یا ماہانہ یونٹس درج کریں!"
+            : "⚠️ Please upload an electricity bill or enter monthly units (kWh) to proceed!",
+          "error"
+        );
+        setActiveStep(1);
+        return false;
+      }
+      if (!calcParams.selectedInverter || !calcParams.selectedPanel) {
+        showToast(
+          lang === 'ur'
+            ? "⚠️ آگے بڑھنے کے لیے ایک انورٹر اور ایک سولر پینل منتخب کریں!"
+            : "⚠️ Please select both an Inverter and a Solar Panel model from the catalog to proceed to Step 3!",
+          "error"
+        );
+        setActiveStep(2);
+        return false;
+      }
+    }
+
+    setActiveStep(targetStep);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return true;
+  };
+
   // Engineering Calculations
   const calculateSystemSize = () => {
-    const units = calcParams.monthlyUnits || 450;
+    const units = Number(calcParams.monthlyUnits) || 0;
+    if (units <= 0) return 0.0;
     const dailyKwh = units / 30;
     const psh = 5.2; 
     const kw = (dailyKwh / psh) * 1.25; 
@@ -195,11 +236,12 @@ export default function Configuration() {
 
   const systemSize = calculateSystemSize();
   const panelCapacityW = calcParams.selectedPanel ? (calcParams.selectedPanel.default_wattage || calcParams.selectedPanel.wattage) : 580;
-  const panelCount = Math.ceil((systemSize * 1000) / panelCapacityW);
+  const panelCount = systemSize > 0 ? Math.ceil((systemSize * 1000) / panelCapacityW) : 0;
 
   const calculateTotalCost = () => {
-    const inverterCost = calcParams.selectedInverter ? (calcParams.selectedInverter.estimated_base_price_pkr || calcParams.selectedInverter.cost_pkr) : 240000;
-    const panelPricePerWatt = calcParams.selectedPanel ? (calcParams.selectedPanel.price_per_watt_pkr || calcParams.selectedPanel.cost_per_watt) : 40.0;
+    if (systemSize <= 0) return 0;
+    const inverterCost = calcParams.selectedInverter ? (calcParams.selectedInverter.estimated_base_price_pkr || calcParams.selectedInverter.cost_pkr || 240000) : 0;
+    const panelPricePerWatt = calcParams.selectedPanel ? (calcParams.selectedPanel.price_per_watt_pkr || calcParams.selectedPanel.cost_per_watt || 40.0) : 0;
     const panelsCost = (systemSize * 1000) * panelPricePerWatt;
     const structureAndWiring = systemSize * 15000;
     const installationNet = 40000;
@@ -207,8 +249,8 @@ export default function Configuration() {
   };
 
   const totalCost = calculateTotalCost();
-  const annualSavings = Math.round(systemSize * 120 * 12 * 45); 
-  const paybackYears = parseFloat((totalCost / annualSavings).toFixed(1));
+  const annualSavings = systemSize > 0 ? Math.round(systemSize * 120 * 12 * 45) : 0; 
+  const paybackYears = annualSavings > 0 ? parseFloat((totalCost / annualSavings).toFixed(1)) : 0;
 
   // Filter Inverters & Batteries
   const filteredInverters = activeInvertersList.filter(inv => {
@@ -388,20 +430,20 @@ export default function Configuration() {
           <div className="flex items-center gap-3">
             <div className="flex bg-white dark:bg-black/40 p-1 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold font-display">
               <button 
-                onClick={() => setActiveStep(1)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${activeStep === 1 ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                onClick={() => handleGoToStep(1)}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeStep === 1 ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
               >
                 {t.step1}
               </button>
               <button 
-                onClick={() => setActiveStep(2)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${activeStep === 2 ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                onClick={() => handleGoToStep(2)}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeStep === 2 ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
               >
                 {t.step2}
               </button>
               <button 
-                onClick={() => setActiveStep(3)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${activeStep === 3 ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                onClick={() => handleGoToStep(3)}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeStep === 3 ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
               >
                 {t.step3}
               </button>
@@ -467,9 +509,13 @@ export default function Configuration() {
                   <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">{t.monthlyUnitsLabel}</label>
                   <input 
                     type="number" 
-                    value={calcParams.monthlyUnits} 
-                    onChange={e => setCalcParams({ ...calcParams, monthlyUnits: Number(e.target.value) })}
-                    className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white text-sm"
+                    value={calcParams.monthlyUnits ?? ''} 
+                    onChange={e => {
+                      const val = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                      setCalcParams({ ...calcParams, monthlyUnits: val });
+                    }}
+                    placeholder="e.g. 600 (Upload bill or enter units)"
+                    className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white text-sm focus:border-[#b45309] focus:outline-none"
                   />
                 </div>
 
@@ -488,8 +534,13 @@ export default function Configuration() {
               </div>
 
               <button 
-                onClick={() => setActiveStep(2)}
-                className="w-full py-4 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs shadow-md transition-all cursor-pointer text-center"
+                onClick={() => handleGoToStep(2)}
+                disabled={!calcParams.monthlyUnits || Number(calcParams.monthlyUnits) <= 0}
+                className={`w-full py-4 rounded-xl font-display font-bold text-xs shadow-md transition-all cursor-pointer text-center ${
+                  (!calcParams.monthlyUnits || Number(calcParams.monthlyUnits) <= 0)
+                    ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-70'
+                    : 'bg-[#b45309] hover:bg-[#92400e] text-white'
+                }`}
               >
                 {t.nextHardware}
               </button>
@@ -504,12 +555,16 @@ export default function Configuration() {
               <div className="space-y-4 font-mono text-xs">
                 <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
                   <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Recommended System Capacity</span>
-                  <div className="font-display font-black text-2xl text-[#b45309]">{systemSize} kW</div>
+                  <div className="font-display font-black text-2xl text-[#b45309]">
+                    {systemSize > 0 ? `${systemSize} kW` : '0.00 kW'}
+                  </div>
                 </div>
 
                 <div className="bg-[#f8fafc] dark:bg-[#282a2d] p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
                   <span className="text-slate-400 font-sans text-[10px] uppercase font-bold">Estimated Solar Panels Required</span>
-                  <div className="font-display font-black text-xl text-slate-900 dark:text-white">{panelCount} Panels (580W N-Type)</div>
+                  <div className="font-display font-black text-xl text-slate-900 dark:text-white">
+                    {systemSize > 0 ? `${panelCount} Panels (${panelCapacityW}W N-Type)` : '— Upload Bill to Calculate'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -669,11 +724,12 @@ export default function Configuration() {
                   </button>
 
                   <button 
-                    onClick={() => {
-                      setActiveStep(3);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="px-6 py-3.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                    onClick={() => handleGoToStep(3)}
+                    className={`px-6 py-3.5 rounded-xl font-display font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                      (!calcParams.selectedInverter || !calcParams.selectedPanel)
+                        ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                        : 'bg-[#b45309] hover:bg-[#92400e] text-white'
+                    }`}
                   >
                     <span>Next Step: Final Proposal</span>
                     <span className="material-symbols-outlined text-sm">arrow_forward</span>

@@ -408,7 +408,7 @@ export const AppProvider = ({ children }) => {
 
   const [calcParams, setCalcParams] = useState({
     connectionType: 'On-Grid',
-    monthlyUnits: 450,
+    monthlyUnits: '',
     peakUnits: 0,
     offPeakUnits: 0,
     customUnits: [450, 480, 520, 600, 650, 700, 750, 720, 610, 500, 460, 430], 
