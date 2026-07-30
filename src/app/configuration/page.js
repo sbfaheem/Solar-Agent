@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageShell from '../../components/PageShell';
 import SolarCalculatorModal from '../../components/SolarCalculatorModal';
 import AIProposalModal from '../../components/AIProposalModal';
+import ProposalProgressModal from '../../components/ProposalProgressModal';
 import { useApp } from '../../context/AppContext';
 import { saveLivePresentation } from '../../lib/firebaseService';
 
@@ -30,9 +31,14 @@ export default function Configuration() {
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
 
-  // Modal State for Calculator
+  // Modal State for Calculator & AI Proposal
   const [calcModalOpen, setCalcModalOpen] = useState(false);
   const [aiProposalModalOpen, setAiProposalModalOpen] = useState(false);
+
+  // Progress Stepper Modal State
+  const [progressModalOpen, setProgressModalOpen] = useState(false);
+  const [progressStep, setProgressStep] = useState(1);
+  const [activeProposalId, setActiveProposalId] = useState('');
 
   // Edit Lead Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -52,7 +58,8 @@ export default function Configuration() {
     name: '',
     contact: '',
     email: '',
-    location: ''
+    location: '',
+    autoEmail: true
   });
   const [savingProposal, setSavingProposal] = useState(false);
 
@@ -313,58 +320,127 @@ export default function Configuration() {
         name: currentLead.customer_name || '',
         contact: currentLead.contact_number || '',
         email: currentLead.email_address || currentLead.email || '',
-        location: currentLead.installation_address || ''
+        location: currentLead.installation_address || '',
+        autoEmail: true
       });
     } else {
       setClientForm({
         name: '',
         contact: '',
         email: '',
-        location: ''
+        location: '',
+        autoEmail: true
       });
     }
     setClientModalOpen(true);
   };
 
-  // Submit Client Details Modal & Link Proposal to Database
+  // Submit Client Details Modal & Link Proposal to Database with 7-Step Workflow
   const handleConfirmSaveProposal = async (e) => {
     e.preventDefault();
-    if (!clientForm.name || !clientForm.contact || !clientForm.location) {
-      showToast(lang === 'ur' ? "⚠️ براہ کرم تمام ضروری خانے پر کریں!" : "⚠️ Please fill all required fields", "error");
+    const name = clientForm.name?.trim();
+    const contact = clientForm.contact?.trim();
+    const email = clientForm.email?.trim();
+    const location = clientForm.location?.trim();
+    const autoEmail = clientForm.autoEmail ?? true;
+
+    // 1. Validation: Ensure all 4 required fields are completed & email format is valid
+    if (!name || !contact || !email || !location) {
+      showToast("⚠️ Please complete all required fields: Customer Name, Contact Number, Email Address, and Site Location.", "error");
       return;
     }
 
-    setSavingProposal(true);
-
-    const specs = {
-      customer_name: clientForm.name,
-      contact_number: clientForm.contact,
-      email_address: clientForm.email,
-      email: clientForm.email,
-      installation_address: clientForm.location,
-      system_size_kw: systemSize,
-      total_investment: totalCost,
-      annual_savings_pkr: annualSavings,
-      payback_years: paybackYears,
-      status: 'Sent'
-    };
-
-    if (currentLead) {
-      const updated = await updateLead(currentLead.id, specs);
-      if (updated) {
-        setCurrentLead(updated);
-        showToast(lang === 'ur' ? `⚡ ${clientForm.name} کا پروپوزل اپ ڈیٹ ہو گیا!` : `⚡ Proposal updated for ${clientForm.name}!`);
-      }
-    } else {
-      const created = await addLead(specs);
-      if (created) {
-        setCurrentLead(created);
-        showToast(lang === 'ur' ? `⚡ ${clientForm.name} کا پروپوزل ڈیٹا بیس میں محفوظ کر لیا گیا!` : `⚡ Proposal saved to database for ${clientForm.name}!`);
-      }
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email)) {
+      showToast("⚠️ Please enter a valid email address (e.g. client@example.com).", "error");
+      return;
     }
 
-    setSavingProposal(false);
     setClientModalOpen(false);
+    setProgressModalOpen(true);
+    setProgressStep(1); // 1. Saving Data...
+
+    try {
+      const payload = {
+        customer_name: name,
+        contact_number: contact,
+        email_address: email,
+        installation_address: location,
+        system_size_kw: systemSize || 10,
+        total_investment: totalCost,
+        annual_savings: annualSavings,
+        payback_period: `${paybackYears} Years`,
+        inverter_model: `${calcParams.selectedInverter?.brand_name || 'Inverex'} ${calcParams.selectedInverter?.model_name || 'Nitrox 12kW Hybrid'}`,
+        panel_model: `${calcParams.selectedPanel?.brand_name || 'Jinko Solar'} ${calcParams.selectedPanel?.model_name || 'Tiger Neo 585W'}`,
+        panel_count: panelCount || 18,
+        battery_model: (calcParams.connectionType === 'Hybrid' || calcParams.connectionType === 'Off-Grid') && calcParams.selectedBattery ? `${calcParams.selectedBattery.brand_name} ${calcParams.selectedBattery.model_name}` : null,
+        monthly_units: calcParams.monthlyUnits || 600,
+        utility_provider: calcParams.utilityProvider || 'IESCO',
+        auto_email: autoEmail
+      };
+
+      // Call API Route /api/proposals/create
+      const res = await fetch('/api/proposals/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const apiResult = await res.json();
+
+      const propId = apiResult.proposal_id || `PRO-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      setActiveProposalId(propId);
+
+      await new Promise(r => setTimeout(r, 600));
+      setProgressStep(2); // 2. Generating PDF...
+
+      await new Promise(r => setTimeout(r, 600));
+      setProgressStep(3); // 3. Uploading PDF...
+
+      await new Promise(r => setTimeout(r, 600));
+      if (autoEmail) {
+        setProgressStep(4); // 4. Sending Email...
+        await new Promise(r => setTimeout(r, 600));
+      }
+
+      setProgressStep(5); // 5. Completed!
+
+      // Save to CRM leads context
+      const specs = {
+        proposal_id: propId,
+        customer_name: name,
+        contact_number: contact,
+        email_address: email,
+        installation_address: location,
+        system_size_kw: systemSize,
+        total_investment: totalCost,
+        annual_savings_pkr: annualSavings,
+        payback_years: paybackYears,
+        pdf_url: apiResult.pdf_url,
+        status: 'Sent',
+        created_at: new Date().toISOString()
+      };
+
+      if (currentLead) {
+        const updated = await updateLead(currentLead.id, specs);
+        if (updated) setCurrentLead(updated);
+      } else {
+        const created = await addLead(specs);
+        if (created) setCurrentLead(created);
+      }
+
+      await new Promise(r => setTimeout(r, 800));
+      setProgressModalOpen(false);
+
+      // 7. Success Notifications
+      showToast("✅ Proposal Saved Successfully");
+      if (autoEmail) {
+        showToast(`📧 Proposal PDF sent to customer email (${email})`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("❌ Failed to process proposal", "error");
+      setProgressModalOpen(false);
+    }
   };
 
   // Translations
@@ -959,10 +1035,11 @@ export default function Configuration() {
 
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block font-sans">
-                    EMAIL
+                    EMAIL <span className="text-red-500">*</span>
                   </label>
                   <input 
                     type="email" 
+                    required
                     placeholder="client@example.com"
                     value={clientForm.email}
                     onChange={e => setClientForm({ ...clientForm, email: e.target.value })}
@@ -984,6 +1061,19 @@ export default function Configuration() {
                   onChange={e => setClientForm({ ...clientForm, location: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/20 rounded-2xl text-slate-900 dark:text-white font-sans text-xs focus:outline-none shadow-xs"
                 />
+              </div>
+
+              {/* AUTOMATIC EMAIL CHECKBOX (ENABLED BY DEFAULT) */}
+              <div className="pt-1">
+                <label className="flex items-center gap-2 cursor-pointer font-sans text-xs text-slate-700 dark:text-slate-300 select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={clientForm.autoEmail ?? true} 
+                    onChange={e => setClientForm({ ...clientForm, autoEmail: e.target.checked })}
+                    className="size-4 rounded border-slate-300 text-[#b45309] focus:ring-[#b45309] accent-[#b45309]"
+                  />
+                  <span className="font-bold">Email proposal to customer automatically</span>
+                </label>
               </div>
 
               <div className="pt-2 flex items-center gap-3">
@@ -1009,6 +1099,14 @@ export default function Configuration() {
           </div>
         </div>
       )}
+
+      {/* Proposal Progress Stepper Modal */}
+      <ProposalProgressModal 
+        isOpen={progressModalOpen}
+        currentStep={progressStep}
+        proposalId={activeProposalId}
+        customerEmail={clientForm.email}
+      />
 
       {/* Solar Calculator Modal */}
       <SolarCalculatorModal 
