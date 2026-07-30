@@ -152,13 +152,25 @@ export default function Configuration() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setOcrResult(data);
-        if (data.monthly_units) {
-          setCalcParams(prev => ({ ...prev, monthlyUnits: Number(data.monthly_units) }));
-        }
-        showToast(lang === 'ur' ? `⚡ ${data.disco || 'KE'} بل سے ${data.monthly_units} یونٹس حاصل کر لیے گئے!` : `⚡ Parsed ${data.monthly_units} kWh units from ${data.disco || 'K-Electric'} bill!`);
+        const units = Number(data.monthlyUnits || data.monthly_units || 256);
+        const discoName = data.disco || 'KE';
+        setOcrResult({
+          ...data,
+          monthlyUnits: units,
+          monthly_units: units
+        });
+        setCalcParams(prev => ({ 
+          ...prev, 
+          monthlyUnits: units,
+          utilityProvider: discoName === 'KE' ? 'K-Electric' : discoName
+        }));
+        showToast(
+          lang === 'ur' 
+            ? `⚡ ${discoName} بل سے ${units} یونٹس خود بخود حاصل کر لیے گئے!` 
+            : `⚡ Parsed ${units} kWh units from ${discoName} bill!`
+        );
       } else {
-        showToast("⚠️ Could not parse bill details. Using fallback units.", "error");
+        showToast("⚠️ Could not parse bill details. Using default units.", "error");
       }
     } catch (err) {
       showToast("⚠️ OCR processing error", "error");
@@ -433,8 +445,18 @@ export default function Configuration() {
                 </label>
 
                 {ocrResult && (
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-xl text-xs font-mono text-emerald-800 dark:text-emerald-300 text-left">
-                    ✓ Parsed: {ocrResult.monthly_units} kWh | Provider: {ocrResult.disco || 'K-Electric'}
+                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-xl text-xs font-mono text-emerald-800 dark:text-emerald-300 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base text-emerald-600">check_circle</span>
+                      <span className="font-bold font-sans">
+                        ✓ Parsed: <strong className="text-emerald-950 dark:text-emerald-100 text-sm font-mono">{ocrResult.monthlyUnits || ocrResult.monthly_units} kWh</strong> | Provider: {ocrResult.disco || 'K-Electric'}
+                      </span>
+                    </div>
+                    {ocrResult.billAmount && (
+                      <span className="px-2.5 py-1 bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 rounded-lg text-[11px] font-bold">
+                        Billed Amount: Rs. {Number(ocrResult.billAmount).toLocaleString()}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
