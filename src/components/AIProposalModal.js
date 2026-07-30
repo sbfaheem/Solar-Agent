@@ -135,8 +135,8 @@ export default function AIProposalModal({ isOpen, onClose, initialData = {} }) {
           </div>
         </div>
 
-        {/* Interactive Customer Input Controls Bar (Hidden during PDF Printing) */}
-        <div className="p-4 bg-amber-50/70 dark:bg-amber-950/20 border-b border-amber-200 dark:border-amber-900 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono print:hidden">
+        {/* Editable Input Parameters Bar */}
+        <div className="p-4 bg-[#fffbeb] dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900 grid grid-cols-2 md:grid-cols-5 gap-3 font-mono text-xs print:hidden">
           <div>
             <label className="text-[10px] font-bold text-amber-900 dark:text-amber-300 block">CUSTOMER NAME</label>
             <input 
@@ -144,6 +144,17 @@ export default function AIProposalModal({ isOpen, onClose, initialData = {} }) {
               value={customerName} 
               onChange={e => setCustomerName(e.target.value)}
               placeholder="e.g. Habib Textile Mills"
+              className="w-full p-2 bg-white dark:bg-black/40 border border-amber-300 rounded-lg text-slate-900 dark:text-white font-bold text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-amber-900 dark:text-amber-300 block">EMAIL ADDRESS</label>
+            <input 
+              type="email" 
+              value={customerEmail} 
+              onChange={e => setCustomerEmail(e.target.value)}
+              placeholder="e.g. client@example.com"
               className="w-full p-2 bg-white dark:bg-black/40 border border-amber-300 rounded-lg text-slate-900 dark:text-white font-bold text-xs"
             />
           </div>
