@@ -11,6 +11,7 @@ export function calculateProposalMetrics({
   inverterModel = 'Inverex Nitrox 12kW Hybrid',
   batteryModel = null,
   totalInvestmentPkrOverride = null,
+  annualSavingsOverride = null,
   monthlyUnits = 600,
   tariffRatePkr = 45,
   utilityProvider = 'IESCO',
@@ -38,8 +39,10 @@ export function calculateProposalMetrics({
   // Financial Bill Analysis
   const currentMonthlyBillPkr = Math.round(monthlyUnits * tariffRatePkr);
   const estimatedMonthlyOffsetUnits = Math.min(monthlyUnits, monthlyEnergyKwh);
-  const monthlySavingsPkr = Math.round(estimatedMonthlyOffsetUnits * tariffRatePkr);
-  const annualSavingsPkr = Math.round(monthlySavingsPkr * 12);
+  const calculatedMonthlySavingsPkr = Math.round(estimatedMonthlyOffsetUnits * tariffRatePkr);
+  const calculatedAnnualSavingsPkr = Math.round(calculatedMonthlySavingsPkr * 12);
+  const annualSavingsPkr = annualSavingsOverride || calculatedAnnualSavingsPkr;
+  const monthlySavingsPkr = Math.round(annualSavingsPkr / 12);
 
   // Payback & ROI Calculations
   const paybackYearsRaw = totalInvestmentPkr / (annualSavingsPkr || 1);

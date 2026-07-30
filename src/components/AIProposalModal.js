@@ -20,12 +20,31 @@ export default function AIProposalModal({ isOpen, onClose, initialData = {} }) {
   const [monthlyUnits, setMonthlyUnits] = useState(initialData.monthlyUnits || 600);
   const [utilityProvider, setUtilityProvider] = useState(initialData.utilityProvider || 'IESCO');
 
+  React.useEffect(() => {
+    if (initialData) {
+      if (initialData.customerName || initialData.client_name) setCustomerName(initialData.customerName || initialData.client_name);
+      if (initialData.customerContact || initialData.contact) setCustomerContact(initialData.customerContact || initialData.contact);
+      if (initialData.customerEmail || initialData.email) setCustomerEmail(initialData.customerEmail || initialData.email);
+      if (initialData.siteLocation || initialData.location) setSiteLocation(initialData.siteLocation || initialData.location);
+      if (initialData.systemKw || initialData.capacity_kw) setSystemKw(initialData.systemKw || initialData.capacity_kw);
+      if (initialData.panelCount) setPanelCount(initialData.panelCount);
+      if (initialData.panelWattage) setPanelWattage(initialData.panelWattage);
+      if (initialData.panelModel) setPanelModel(initialData.panelModel);
+      if (initialData.inverterModel) setInverterModel(initialData.inverterModel);
+      if (initialData.monthlyUnits) setMonthlyUnits(initialData.monthlyUnits);
+      if (initialData.utilityProvider) setUtilityProvider(initialData.utilityProvider);
+    }
+  }, [initialData]);
+
   const metrics = calculateProposalMetrics({
     systemCapacityKw: Number(systemKw),
     panelModel,
     panelWattage: Number(panelWattage),
     panelCount: Number(panelCount),
     inverterModel,
+    batteryModel: initialData.batteryModel || null,
+    totalInvestmentPkrOverride: initialData.totalInvestmentPkrOverride || null,
+    annualSavingsOverride: initialData.annualSavingsOverride || null,
     monthlyUnits: Number(monthlyUnits),
     tariffRatePkr: 45,
     utilityProvider,

@@ -1021,10 +1021,10 @@ export default function Configuration() {
         isOpen={aiProposalModalOpen}
         onClose={() => setAiProposalModalOpen(false)}
         initialData={{
-          customerName: currentLead?.client_name || clientForm.name || '',
-          customerContact: currentLead?.contact || clientForm.contact || '',
-          customerEmail: currentLead?.email || clientForm.email || '',
-          siteLocation: currentLead?.location || clientForm.location || 'Peshawar, KPK',
+          customerName: currentLead?.customer_name || currentLead?.client_name || clientForm.name || 'Valued Client',
+          customerContact: currentLead?.contact_number || currentLead?.contact || clientForm.contact || '',
+          customerEmail: currentLead?.email_address || currentLead?.email || clientForm.email || '',
+          siteLocation: currentLead?.installation_address || currentLead?.location || clientForm.location || 'Pakistan',
           systemKw: systemSize || 10,
           panelCount: panelCount || 18,
           panelWattage: calcParams.selectedPanel?.default_wattage || calcParams.selectedPanel?.wattage || 585,
@@ -1033,7 +1033,8 @@ export default function Configuration() {
           monthlyUnits: calcParams.monthlyUnits || 600,
           utilityProvider: calcParams.utilityProvider || 'IESCO',
           batteryModel: (calcParams.connectionType === 'Hybrid' || calcParams.connectionType === 'Off-Grid') && calcParams.selectedBattery ? `${calcParams.selectedBattery.brand_name} ${calcParams.selectedBattery.model_name}` : null,
-          totalInvestmentPkrOverride: totalCost
+          totalInvestmentPkrOverride: totalCost,
+          annualSavingsOverride: annualSavings
         }}
       />
     </PageShell>
