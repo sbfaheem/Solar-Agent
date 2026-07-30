@@ -502,6 +502,19 @@ export const AppProvider = ({ children }) => {
 
     try {
       const payload = {
+        customer_name: leadData.customer_name || leadData.client_name || 'Valued Client',
+        contact_number: leadData.contact_number || leadData.contact || '+92 300 1234567',
+        email_address: leadData.email_address || leadData.email || 'client@example.com',
+        installation_address: leadData.installation_address || leadData.location || 'Pakistan',
+        system_size_kw: Number(leadData.system_size_kw || leadData.capacity_kw || 10),
+        total_investment: Number(leadData.total_investment || leadData.system_cost_pkr || 0),
+        monthly_savings: Number(leadData.monthly_savings || leadData.monthly_savings_pkr || 0),
+        inverter_model: leadData.inverter_model || 'Inverter',
+        panel_model: leadData.panel_model || 'Panel',
+        panel_count: Number(leadData.panel_count || 18),
+        battery_model: leadData.battery_model || null,
+        status: leadData.status || 'Sent',
+        created_at: leadData.created_at || new Date().toISOString(),
         ...leadData,
         company_id: user?.company_id || company.id,
         company_name: user?.company_name || company.name
@@ -512,7 +525,7 @@ export const AppProvider = ({ children }) => {
         ...prev,
         proposals_generated: (prev.proposals_generated || 0) + 1
       }));
-      showToast("⚡ Lead created successfully in your distributor workspace!");
+      showToast("⚡ Proposal saved to Project Hub CRM!");
       return created;
     } catch (err) {
       showToast("❌ Failed to create proposal", "error");

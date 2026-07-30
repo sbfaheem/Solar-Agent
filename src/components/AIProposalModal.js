@@ -60,7 +60,29 @@ export default function AIProposalModal({ isOpen, onClose, initialData = {} }) {
 
   if (!isOpen) return null;
 
-  const handlePrintPdf = () => {
+  const saveProposalLead = async () => {
+    const leadData = {
+      customer_name: customerName || 'Valued Client',
+      contact_number: customerContact || '+92 300 1234567',
+      email_address: customerEmail || 'client@example.com',
+      installation_address: siteLocation || 'Pakistan',
+      system_size_kw: Number(systemKw),
+      total_investment: metrics.financials.totalInvestmentPkr,
+      monthly_savings: metrics.financials.monthlySavingsPkr,
+      inverter_model: inverterModel,
+      panel_model: panelModel,
+      panel_count: Number(panelCount),
+      battery_model: initialData.batteryModel || null,
+      monthly_units: Number(monthlyUnits),
+      utility_provider: utilityProvider,
+      status: 'Quoted',
+      created_at: new Date().toISOString()
+    };
+    return await addLead(leadData);
+  };
+
+  const handlePrintPdf = async () => {
+    await saveProposalLead();
     showToast("📄 Preparing PDF Document for Download & Print...");
     setTimeout(() => {
       window.print();
@@ -68,21 +90,7 @@ export default function AIProposalModal({ isOpen, onClose, initialData = {} }) {
   };
 
   const handleSaveToDatabase = async () => {
-    if (!customerName || !customerContact) {
-      showToast("⚠️ Please enter Customer Name and Contact Number", "error");
-      return;
-    }
-    const created = await addLead({
-      client_name: customerName,
-      contact: customerContact,
-      email: customerEmail,
-      location: siteLocation,
-      capacity_kw: Number(systemKw),
-      system_cost_pkr: metrics.financials.totalInvestmentPkr,
-      monthly_savings_pkr: metrics.financials.monthlySavingsPkr,
-      status: 'Quoted',
-      created_at: new Date().toISOString()
-    });
+    const created = await saveProposalLead();
     if (created) {
       onClose();
     }
