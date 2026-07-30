@@ -646,6 +646,41 @@ export default function Configuration() {
                 </div>
               </div>
 
+              {/* Step 2 Bottom Navigation Action Bar */}
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-slate-400 font-extrabold font-mono uppercase tracking-wider block">Selected Hardware Combination</span>
+                  <div className="font-display font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                    <span className="text-[#b45309]">⚡ {calcParams.selectedInverter?.model_name || 'Inverter'}</span>
+                    <span>+</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">☀️ {calcParams.selectedPanel?.model_name || 'Panels'} ({panelCount} Modules)</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <button 
+                    onClick={() => {
+                      setActiveStep(1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-5 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-display font-bold text-xs transition-all cursor-pointer"
+                  >
+                    ← Back: Load Profile
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setActiveStep(3);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-6 py-3.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>Next Step: Final Proposal</span>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         )}
@@ -659,6 +694,15 @@ export default function Configuration() {
                 <p className="text-xs text-slate-500 mt-1">Complete commercial quote ready for client present mode</p>
               </div>
               <div className="flex flex-col sm:flex-row items-center gap-3">
+                <button 
+                  onClick={() => {
+                    setActiveStep(2);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="px-4 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-display font-bold text-xs transition-all cursor-pointer"
+                >
+                  ← Back
+                </button>
                 <button 
                   onClick={() => setAiProposalModalOpen(true)}
                   className="px-5 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
