@@ -9,6 +9,8 @@ export default function ProposalLimitModal({ isOpen, onClose }) {
     bankDetails, 
     submitUpgradeRequest, 
     requestOverrideQuota,
+    getActiveLimit,
+    proposals,
     formatPrice, 
     showToast,
     lang
@@ -25,8 +27,8 @@ export default function ProposalLimitModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const currentQuota = company.proposals_generated || 35;
-  const maxQuota = company.plan === 'Silver' ? 50 : (company.plan === 'Gold' ? 75 : 100);
+  const currentQuota = Math.max(company.proposals_generated || 0, proposals?.length || 0);
+  const maxQuota = getActiveLimit ? getActiveLimit() : (company.plan === 'Silver' ? 50 : (company.plan === 'Gold' ? 75 : 100));
 
   const handleCopyIban = () => {
     navigator.clipboard.writeText(bankDetails.iban);

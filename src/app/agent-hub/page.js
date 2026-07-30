@@ -182,7 +182,8 @@ export default function AgentHub() {
   const totalKw = proposals.reduce((sum, p) => sum + (p.system_size_kw || 0), 0);
   const totalPkr = proposals.reduce((sum, p) => sum + (p.total_investment || 0), 0);
   const activeLimit = getActiveLimit();
-  const usagePercentage = Math.min(100, Math.round((company.proposals_generated / activeLimit) * 100));
+  const proposalsCount = Math.max(company.proposals_generated || 0, proposals.length || 0);
+  const usagePercentage = Math.min(100, Math.round((proposalsCount / activeLimit) * 100));
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -226,7 +227,7 @@ export default function AgentHub() {
               </div>
             </div>
             <div className="font-mono text-sm font-black text-[#0f172a] dark:text-white">
-              {company.proposals_generated} / {activeLimit} <span className="text-xs text-[#64748b] dark:text-slate-400 font-bold">Proposals</span>
+              {proposalsCount} / {activeLimit} <span className="text-xs text-[#64748b] dark:text-slate-400 font-bold">Proposals</span>
             </div>
           </div>
           <div className="w-full h-3 bg-slate-100 dark:bg-black/40 rounded-full overflow-hidden border border-[#cbd5e1] dark:border-slate-800">
