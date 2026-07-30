@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import PageShell from '../../components/PageShell';
 import SolarCalculatorModal from '../../components/SolarCalculatorModal';
+import AIProposalModal from '../../components/AIProposalModal';
 import { useApp } from '../../context/AppContext';
 import { saveLivePresentation } from '../../lib/firebaseService';
 
@@ -31,6 +32,7 @@ export default function Configuration() {
 
   // Modal State for Calculator
   const [calcModalOpen, setCalcModalOpen] = useState(false);
+  const [aiProposalModalOpen, setAiProposalModalOpen] = useState(false);
 
   // Edit Lead Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -634,13 +636,22 @@ export default function Configuration() {
                 <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-xl">{t.proposalTitle}</h3>
                 <p className="text-xs text-slate-500 mt-1">Complete commercial quote ready for client present mode</p>
               </div>
-              <button 
-                onClick={handleSaveProposal}
-                className="px-6 py-3.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs shadow-md cursor-pointer transition-all flex items-center gap-2"
-              >
-                <span className="material-symbols-outlined text-sm">database</span>
-                <span>{t.saveProposal}</span>
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <button 
+                  onClick={() => setAiProposalModalOpen(true)}
+                  className="px-5 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-display font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+                  <span>📄 Generate AI PDF Proposal (30 Sec)</span>
+                </button>
+                <button 
+                  onClick={handleSaveProposal}
+                  className="px-6 py-3.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs shadow-md cursor-pointer transition-all flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">database</span>
+                  <span>{t.saveProposal}</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -776,6 +787,25 @@ export default function Configuration() {
       <SolarCalculatorModal 
         isOpen={calcModalOpen}
         onClose={() => setCalcModalOpen(false)}
+      />
+
+      {/* AI Proposal PDF Generator Modal */}
+      <AIProposalModal 
+        isOpen={aiProposalModalOpen}
+        onClose={() => setAiProposalModalOpen(false)}
+        initialData={{
+          customerName: currentLead?.client_name || clientForm.name || '',
+          customerContact: currentLead?.contact || clientForm.contact || '',
+          customerEmail: currentLead?.email || clientForm.email || '',
+          siteLocation: currentLead?.location || clientForm.location || 'Peshawar, KPK',
+          systemKw: systemSize || 10,
+          panelCount: panelCount || 18,
+          panelWattage: calcParams.selectedPanel?.default_wattage || calcParams.selectedPanel?.wattage || 585,
+          panelModel: `${calcParams.selectedPanel?.manufacturer_name || calcParams.selectedPanel?.brand_name || 'Jinko Solar'} ${calcParams.selectedPanel?.model_name || 'Tiger Neo 585W'}`,
+          inverterModel: `${calcParams.selectedInverter?.brand_name || 'Inverex'} ${calcParams.selectedInverter?.model_name || 'Nitrox 12kW Hybrid'}`,
+          monthlyUnits: calcParams.monthlyUnits || 600,
+          utilityProvider: calcParams.utilityProvider || 'IESCO'
+        }}
       />
     </PageShell>
   );

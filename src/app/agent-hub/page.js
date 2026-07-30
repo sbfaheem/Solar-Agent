@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import PageShell from '../../components/PageShell';
+import AIProposalModal from '../../components/AIProposalModal';
 import { useApp } from '../../context/AppContext';
 
 export default function AgentHub() {
@@ -27,6 +28,8 @@ export default function AgentHub() {
   const [modalMode, setModalMode] = useState('create'); // 'create' or 'edit'
   const [activeLeadId, setActiveLeadId] = useState(null);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [aiProposalModalOpen, setAiProposalModalOpen] = useState(false);
+  const [activePdfProposal, setActivePdfProposal] = useState(null);
   const [formData, setFormData] = useState({
     customer_name: '',
     contact_number: '',
@@ -361,6 +364,16 @@ export default function AgentHub() {
                       </td>
                       <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                         <button 
+                          onClick={() => {
+                            setActivePdfProposal(proposal);
+                            setAiProposalModalOpen(true);
+                          }}
+                          className="size-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-600 hover:text-white flex items-center justify-center border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 transition-all cursor-pointer"
+                          title="Generate AI PDF Proposal"
+                        >
+                          <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                        </button>
+                        <button 
                           onClick={() => handleOpenEditModal(proposal)}
                           className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#b45309] hover:text-white flex items-center justify-center border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
                           title="Edit Customer Info"
@@ -522,6 +535,22 @@ export default function AgentHub() {
           </div>
         )}
 
+        {/* AI Proposal PDF Generator Modal */}
+        <AIProposalModal 
+          isOpen={aiProposalModalOpen}
+          onClose={() => {
+            setAiProposalModalOpen(false);
+            setActivePdfProposal(null);
+          }}
+          initialData={{
+            customerName: activePdfProposal?.customer_name || '',
+            customerContact: activePdfProposal?.contact_number || '',
+            customerEmail: activePdfProposal?.email_address || '',
+            siteLocation: activePdfProposal?.installation_address || '',
+            systemKw: activePdfProposal?.system_size_kw || 10,
+            monthlyUnits: Math.round((activePdfProposal?.system_size_kw || 10) * 120)
+          }}
+        />
       </main>
     </PageShell>
   );

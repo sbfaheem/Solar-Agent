@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import AIProposalModal from '../../components/AIProposalModal';
 import { subscribeLivePresentation } from '../../lib/firebaseService';
 
 export default function CustomerView() {
   const [lang, setLang] = useState('en');
+  const [aiProposalModalOpen, setAiProposalModalOpen] = useState(false);
   const [liveData, setLiveData] = useState({
     systemSize: 5.0,
     panelCount: 9,
@@ -112,7 +114,14 @@ export default function CustomerView() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setAiProposalModalOpen(true)}
+            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold font-display cursor-pointer flex items-center gap-1.5 shadow-sm"
+          >
+            <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+            <span>{lang === 'ur' ? 'پی ڈی ایف ڈاؤن لوڈ کریں' : 'Download PDF'}</span>
+          </button>
           {/* LTR/RTL Mirror Trigger */}
           <button 
             onClick={toggleLang} 
@@ -233,6 +242,20 @@ export default function CustomerView() {
         <div>© 2026 Solar Agent. Powered by Lumina Logic.</div>
       </footer>
 
+      {/* AI Proposal PDF Generator Modal */}
+      <AIProposalModal 
+        isOpen={aiProposalModalOpen}
+        onClose={() => setAiProposalModalOpen(false)}
+        initialData={{
+          customerName: 'Valued Client Presentation',
+          systemKw: liveData.systemSize || 10,
+          panelCount: liveData.panelCount || 18,
+          inverterModel: liveData.inverterModel || 'Inverex Nitrox 12kW Hybrid',
+          panelModel: liveData.panelModel || 'Jinko Tiger Neo 585W',
+          monthlyUnits: Math.round((liveData.systemSize || 10) * 120),
+          utilityProvider: liveData.utilityProvider || 'IESCO'
+        }}
+      />
     </div>
   );
 }
