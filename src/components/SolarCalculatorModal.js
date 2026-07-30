@@ -136,21 +136,25 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
   const totalDailyKwh = appliances.reduce((sum, a) => sum + ((a.qty * a.watts * a.hours) / 1000), 0);
   const applianceMonthlyKwh = Math.round(totalDailyKwh * 30);
 
-  // Active Units based on mode
-  const activeUnits = mode === 'ocr' ? (ocrData ? ocrData.monthlyUnits : 256) : applianceMonthlyKwh;
+  // Active Units based on mode (0 if no bill uploaded yet in OCR mode)
+  const activeUnits = mode === 'ocr' ? (ocrData ? (ocrData.monthlyUnits || 0) : 0) : applianceMonthlyKwh;
 
   const currentCityObj = PAKISTAN_CITIES.find(c => c.city === selectedCity) || PAKISTAN_CITIES[1];
   const currentDiscoObj = DISCO_DATA.find(d => d.code === selectedDisco) || DISCO_DATA[0];
 
   // Solar Engineering System Sizing Calculations
   const psh = currentCityObj.psh;
-  const systemSizeKw = parseFloat((activeUnits / (psh * 30 * 0.85)).toFixed(2));
-  const panelCount = Math.ceil((systemSizeKw * 1000) / 580);
-  const estimatedCost = Math.round((240000 + (systemSizeKw * 1000 * 40.0) + (systemSizeKw * 15000) + 40000));
-  const annualSavings = Math.round(activeUnits * 12 * (currentDiscoObj.tariff || 45.0));
-  const paybackYears = parseFloat((estimatedCost / (annualSavings || 1)).toFixed(1));
+  const systemSizeKw = activeUnits > 0 ? parseFloat((activeUnits / (psh * 30 * 0.85)).toFixed(2)) : 0.0;
+  const panelCount = systemSizeKw > 0 ? Math.ceil((systemSizeKw * 1000) / 580) : 0;
+  const estimatedCost = systemSizeKw > 0 ? Math.round((240000 + (systemSizeKw * 1000 * 40.0) + (systemSizeKw * 15000) + 40000)) : 0;
+  const annualSavings = activeUnits > 0 ? Math.round(activeUnits * 12 * (currentDiscoObj.tariff || 45.0)) : 0;
+  const paybackYears = estimatedCost > 0 && annualSavings > 0 ? parseFloat((estimatedCost / annualSavings).toFixed(1)) : 0;
 
   const handleProceed = () => {
+    if (activeUnits <= 0) {
+      showToast("⚠️ Please upload a bill or configure appliances first!", "error");
+      return;
+    }
     setCalcParams(prev => ({
       ...prev,
       monthlyUnits: activeUnits,
@@ -401,35 +405,43 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
           )}
 
           {/* Synchronized System Sizing Display Banner */}
-          <div className="bg-[#fffbeb] dark:bg-amber-950/40 border border-[#fef08a] dark:border-amber-800 rounded-xl p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <h4 className="font-display font-extrabold text-[#854d0e] dark:text-amber-300 text-xs flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">wb_sunny</span>
-                <span>Synchronized Solar Sizing ({selectedCity} - {psh} Peak Sun Hours)</span>
-              </h4>
-              <span className="text-[10px] font-mono font-bold text-[#854d0e] dark:text-amber-400 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">
-                DISCO: {currentDiscoObj.code} ({currentDiscoObj.tariff} PKR/kWh)
-              </span>
+          {activeUnits > 0 ? (
+            <div className="bg-[#fffbeb] dark:bg-amber-950/40 border border-[#fef08a] dark:border-amber-800 rounded-xl p-4 space-y-3 animate-fadeIn">
+              <div className="flex justify-between items-center">
+                <h4 className="font-display font-extrabold text-[#854d0e] dark:text-amber-300 text-xs flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">wb_sunny</span>
+                  <span>Synchronized Solar Sizing ({selectedCity} - {psh} Peak Sun Hours)</span>
+                </h4>
+                <span className="text-[10px] font-mono font-bold text-[#854d0e] dark:text-amber-400 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">
+                  DISCO: {currentDiscoObj.code} ({currentDiscoObj.tariff} PKR/kWh)
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+                <div>
+                  <span className="text-slate-500 text-[10px] block">Recommended System</span>
+                  <span className="font-extrabold text-[#b45309] text-sm">{systemSizeKw} kWp</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">Panel Count</span>
+                  <span className="font-extrabold text-[#0f172a] dark:text-white text-sm">{panelCount} Panels (580W)</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">Est. System Cost</span>
+                  <span className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">{formatPrice(estimatedCost)}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-[10px] block">ROI Payback</span>
+                  <span className="font-extrabold text-[#b45309] text-sm">{paybackYears} Years</span>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-              <div>
-                <span className="text-slate-500 text-[10px] block">Recommended System</span>
-                <span className="font-extrabold text-[#b45309] text-sm">{systemSizeKw} kWp</span>
-              </div>
-              <div>
-                <span className="text-slate-500 text-[10px] block">Panel Count</span>
-                <span className="font-extrabold text-[#0f172a] dark:text-white text-sm">{panelCount} Panels (580W)</span>
-              </div>
-              <div>
-                <span className="text-slate-500 text-[10px] block">Est. System Cost</span>
-                <span className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">{formatPrice(estimatedCost)}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 text-[10px] block">ROI Payback</span>
-                <span className="font-extrabold text-[#b45309] text-sm">{paybackYears} Years</span>
-              </div>
+          ) : (
+            <div className="bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
+              <p className="text-xs text-slate-500 font-medium">
+                ℹ️ Upload a utility bill or configure appliances above to view recommended system size, panel count, and ROI calculation.
+              </p>
             </div>
-          </div>
+          )}
 
         </div>
 
@@ -443,9 +455,14 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
           </button>
           <button 
             onClick={handleProceed}
-            className="px-5 py-2.5 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs transition-all cursor-pointer shadow-md flex items-center gap-2"
+            disabled={activeUnits <= 0}
+            className={`px-5 py-2.5 rounded-xl font-display font-bold text-xs transition-all flex items-center gap-2 ${
+              activeUnits <= 0
+                ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-70'
+                : 'bg-[#b45309] hover:bg-[#92400e] text-white shadow-md cursor-pointer'
+            }`}
           >
-            <span>Proceed with {systemSizeKw} kW Sizing</span>
+            <span>{activeUnits > 0 ? `Proceed with ${systemSizeKw} kW Sizing` : 'Upload Bill to View Recommendation'}</span>
             <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
         </div>

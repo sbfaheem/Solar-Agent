@@ -225,7 +225,7 @@ export default function AIProposalModal({ isOpen, onClose, initialData = {} }) {
               </span>
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+            <div className={`grid grid-cols-1 ${metrics.engineering.batteryModel ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 text-xs font-mono`}>
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
                 <span className="text-slate-500 text-[10px] uppercase font-sans font-bold">Solar Inverter</span>
                 <div className="font-extrabold text-slate-900 text-sm font-sans">{metrics.engineering.inverterModel}</div>
@@ -237,6 +237,14 @@ export default function AIProposalModal({ isOpen, onClose, initialData = {} }) {
                 <div className="font-extrabold text-slate-900 text-sm font-sans">{metrics.engineering.panelCount}x {metrics.engineering.panelModel}</div>
                 <p className="text-[11px] text-blue-800">Total DC Capacity: {(metrics.engineering.totalDcCapacityW / 1000).toFixed(2)} kWp</p>
               </div>
+
+              {metrics.engineering.batteryModel && (
+                <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-1">
+                  <span className="text-slate-500 text-[10px] uppercase font-sans font-bold">Lithium Energy Storage</span>
+                  <div className="font-extrabold text-slate-900 text-sm font-sans">{metrics.engineering.batteryModel}</div>
+                  <p className="text-[11px] text-purple-800">High-Density LiFePO4 Energy Bank</p>
+                </div>
+              )}
 
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
                 <span className="text-slate-500 text-[10px] uppercase font-sans font-bold">Annual Energy Production</span>

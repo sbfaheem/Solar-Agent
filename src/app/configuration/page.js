@@ -88,6 +88,19 @@ export default function Configuration() {
     { id: 'pnl-9', manufacturer_name: 'Trina Solar', model_name: 'Vertex N 700W+', default_wattage: 700, price_per_watt_pkr: 45.0, cell_type: 'N-Type TOPCon', official_url: 'https://www.trinasolar.com' }
   ];
 
+  // Complete Pakistani Lithium-Ion Batteries Catalog (5kW to 16kW)
+  const defaultBatteriesList = [
+    { id: 'bat-1', brand_name: 'Pylontech', model_name: 'US3000C 3.5kWh Lithium Storage', capacity_kwh: 3.5, type: 'Lithium LiFePO4', estimated_price_pkr: 340000 },
+    { id: 'bat-2', brand_name: 'Inverex', model_name: 'Powerwall 5.12kWh 48V LiFePO4', capacity_kwh: 5.12, type: 'Wall Mount LiFePO4', estimated_price_pkr: 320000 },
+    { id: 'bat-3', brand_name: 'Pylontech', model_name: 'US5000 4.8kWh Lithium Bank', capacity_kwh: 4.8, type: 'Rackmount LiFePO4', estimated_price_pkr: 460000 },
+    { id: 'bat-4', brand_name: 'Huawei', model_name: 'LUNA2000 5.0kWh Lithium Module', capacity_kwh: 5.0, type: 'High Voltage LUNA', estimated_price_pkr: 490000 },
+    { id: 'bat-5', brand_name: 'Felicity Solar', model_name: 'LPBF48175 8.7kWh LiFePO4', capacity_kwh: 8.7, type: 'Deep Cycle LiFePO4', estimated_price_pkr: 620000 },
+    { id: 'bat-6', brand_name: 'Huawei', model_name: 'LUNA2000 10.0kWh High Voltage System', capacity_kwh: 10.0, type: 'High Voltage LUNA', estimated_price_pkr: 890000 },
+    { id: 'bat-7', brand_name: 'Felicity Solar', model_name: 'Lux-E 12.5kWh Powerwall', capacity_kwh: 12.5, type: 'Smart Wall Mount', estimated_price_pkr: 880000 },
+    { id: 'bat-8', brand_name: 'Huawei', model_name: 'LUNA2000 15.0kWh High Voltage System', capacity_kwh: 15.0, type: 'High Voltage LUNA', estimated_price_pkr: 1280000 },
+    { id: 'bat-9', brand_name: 'Crown Micro', model_name: 'IP65 16.0kWh Powerwall System', capacity_kwh: 16.0, type: 'Heavy Duty Powerwall', estimated_price_pkr: 1120000 }
+  ];
+
   const activeInvertersList = (inverters && inverters.length > 0) ? inverters : defaultInvertersList;
   const activePanelsList = (solarPanels && solarPanels.length > 0) ? solarPanels : defaultPanelsList;
 
@@ -242,10 +255,13 @@ export default function Configuration() {
     if (systemSize <= 0) return 0;
     const inverterCost = calcParams.selectedInverter ? (calcParams.selectedInverter.estimated_base_price_pkr || calcParams.selectedInverter.cost_pkr || 240000) : 0;
     const panelPricePerWatt = calcParams.selectedPanel ? (calcParams.selectedPanel.price_per_watt_pkr || calcParams.selectedPanel.cost_per_watt || 40.0) : 0;
+    const batteryCost = (calcParams.connectionType === 'Hybrid' || calcParams.connectionType === 'Off-Grid') && calcParams.selectedBattery 
+      ? (calcParams.selectedBattery.estimated_price_pkr || calcParams.selectedBattery.cost_pkr || 0) 
+      : 0;
     const panelsCost = (systemSize * 1000) * panelPricePerWatt;
     const structureAndWiring = systemSize * 15000;
     const installationNet = 40000;
-    return Math.round(inverterCost + panelsCost + structureAndWiring + installationNet);
+    return Math.round(inverterCost + panelsCost + batteryCost + structureAndWiring + installationNet);
   };
 
   const totalCost = calculateTotalCost();
@@ -701,14 +717,103 @@ export default function Configuration() {
                 </div>
               </div>
 
+              {/* Step 2C: Grid Connection Standard Selector */}
+              <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                  <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-lg">System Grid Connection Standard</h3>
+                  <p className="text-xs text-slate-500 font-medium">Choose between On-Grid Net Metering, Hybrid Solar + Storage, or Independent Off-Grid System</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-display font-bold text-xs">
+                  {[
+                    { type: 'On-Grid', icon: 'grid_on', title: 'On-Grid Net Metering', desc: 'Direct DISCO Grid Export (No battery storage required)' },
+                    { type: 'Hybrid', icon: 'battery_charging_full', title: 'Hybrid System', desc: 'Solar PV + Lithium Storage Bank + Net Metering' },
+                    { type: 'Off-Grid', icon: 'power_off', title: 'Off-Grid Independent', desc: 'Full Lithium Battery Storage (Zero Grid Dependency)' }
+                  ].map(item => (
+                    <div 
+                      key={item.type}
+                      onClick={() => setCalcParams({ ...calcParams, connectionType: item.type })}
+                      className={`p-5 rounded-2xl border cursor-pointer transition-all space-y-2 ${
+                        calcParams.connectionType === item.type 
+                          ? 'border-[#b45309] bg-[#fefce8] dark:bg-amber-950/30 shadow-md ring-2 ring-[#b45309]/30' 
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-black/20 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 text-[#b45309]">
+                        <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                        <span className="font-extrabold text-sm text-slate-900 dark:text-white">{item.title}</span>
+                      </div>
+                      <p className="text-slate-500 text-[11px] font-medium font-sans">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step 2D: Lithium-Ion & Gel Batteries Catalog (Shown ONLY for Hybrid & Off-Grid) */}
+              {(calcParams.connectionType === 'Hybrid' || calcParams.connectionType === 'Off-Grid') && (
+                <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm animate-fadeIn">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                    <div>
+                      <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-lg flex items-center gap-2">
+                        <span className="material-symbols-outlined text-purple-600">battery_5_bar</span>
+                        <span>Available Lithium-Ion & Gel Batteries Catalog (5kW to 16kW)</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium">Select high-density LiFePO4 battery storage bank for Hybrid or Off-Grid backup</p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 text-xs font-mono font-bold">
+                      {defaultBatteriesList.length} Battery Options
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {defaultBatteriesList.map(bat => {
+                      const isSelected = calcParams.selectedBattery?.id === bat.id || calcParams.selectedBattery?.model_name === bat.model_name;
+
+                      return (
+                        <div 
+                          key={bat.id}
+                          onClick={() => setCalcParams({ ...calcParams, selectedBattery: bat })}
+                          className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-3 ${
+                            isSelected 
+                              ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/40 shadow-md ring-2 ring-purple-500/30' 
+                              : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-black/20 hover:border-purple-300'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[10px] font-extrabold uppercase font-mono text-purple-600 dark:text-purple-400">{bat.brand_name}</span>
+                              <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-tight mt-0.5">{bat.model_name}</h4>
+                            </div>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-300">
+                              {bat.capacity_kwh} kWh
+                            </span>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center text-xs">
+                            <span className="font-mono text-slate-500 font-bold">{bat.type || 'LiFePO4'}</span>
+                            <span className="font-mono font-black text-purple-700 dark:text-purple-300 text-sm">{formatPrice(bat.estimated_price_pkr)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Step 2 Bottom Navigation Action Bar */}
               <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <span className="text-[10px] text-slate-400 font-extrabold font-mono uppercase tracking-wider block">Selected Hardware Combination</span>
-                  <div className="font-display font-extrabold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                  <div className="font-display font-extrabold text-slate-900 dark:text-white text-sm flex flex-wrap items-center gap-2">
                     <span className="text-[#b45309]">⚡ {calcParams.selectedInverter?.model_name || 'Inverter'}</span>
                     <span>+</span>
                     <span className="text-emerald-600 dark:text-emerald-400">☀️ {calcParams.selectedPanel?.model_name || 'Panels'} ({panelCount} Modules)</span>
+                    {(calcParams.connectionType === 'Hybrid' || calcParams.connectionType === 'Off-Grid') && (
+                      <>
+                        <span>+</span>
+                        <span className="text-purple-600 dark:text-purple-400">🔋 {calcParams.selectedBattery?.model_name || 'Select Battery'}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -926,7 +1031,9 @@ export default function Configuration() {
           panelModel: `${calcParams.selectedPanel?.manufacturer_name || calcParams.selectedPanel?.brand_name || 'Jinko Solar'} ${calcParams.selectedPanel?.model_name || 'Tiger Neo 585W'}`,
           inverterModel: `${calcParams.selectedInverter?.brand_name || 'Inverex'} ${calcParams.selectedInverter?.model_name || 'Nitrox 12kW Hybrid'}`,
           monthlyUnits: calcParams.monthlyUnits || 600,
-          utilityProvider: calcParams.utilityProvider || 'IESCO'
+          utilityProvider: calcParams.utilityProvider || 'IESCO',
+          batteryModel: (calcParams.connectionType === 'Hybrid' || calcParams.connectionType === 'Off-Grid') && calcParams.selectedBattery ? `${calcParams.selectedBattery.brand_name} ${calcParams.selectedBattery.model_name}` : null,
+          totalInvestmentPkrOverride: totalCost
         }}
       />
     </PageShell>

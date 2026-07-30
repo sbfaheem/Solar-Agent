@@ -9,6 +9,8 @@ export function calculateProposalMetrics({
   panelWattage = 585,
   panelCount = 18,
   inverterModel = 'Inverex Nitrox 12kW Hybrid',
+  batteryModel = null,
+  totalInvestmentPkrOverride = null,
   monthlyUnits = 600,
   tariffRatePkr = 45,
   utilityProvider = 'IESCO',
@@ -26,7 +28,8 @@ export function calculateProposalMetrics({
   const totalDcCapacityW = panelWattage * panelCount || systemCapacityKw * 1000;
   const estimatedEquipmentCost = totalDcCapacityW * pricePerWatt + 180000; // Panel cost + Inverter + Balance of System
   const installationCost = Math.round(estimatedEquipmentCost * 0.15); // 15% BOS & Labor
-  const totalInvestmentPkr = Math.round(estimatedEquipmentCost + installationCost);
+  const calculatedTotalInvestmentPkr = Math.round(estimatedEquipmentCost + installationCost);
+  const totalInvestmentPkr = totalInvestmentPkrOverride || calculatedTotalInvestmentPkr;
 
   // Energy Production Estimates for Pakistan (Avg 4.2 peak sun hours/day)
   const annualEnergyKwh = Math.round(systemCapacityKw * 4.2 * 365);
@@ -94,6 +97,7 @@ export function calculateProposalMetrics({
       panelWattage,
       panelCount,
       inverterModel,
+      batteryModel,
       annualEnergyKwh,
       monthlyEnergyKwh
     },
