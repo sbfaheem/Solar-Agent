@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import PageShell from '../../components/PageShell';
 import ProposalLimitModal from '../../components/ProposalLimitModal';
+import CompanyProfileWizardModal from '../../components/CompanyProfileWizardModal';
 import { useApp } from '../../context/AppContext';
 
 export default function TeamSettings() {
@@ -12,6 +13,7 @@ export default function TeamSettings() {
   const [selectedPlan, setSelectedPlan] = useState(company.plan || 'Gold');
   const [paymentChannel, setPaymentChannel] = useState('easypaisa');
   const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [wizardModalOpen, setWizardModalOpen] = useState(false);
 
   // Field Team Members State
   const [teamMembers, setTeamMembers] = useState([
@@ -175,6 +177,14 @@ export default function TeamSettings() {
             </div>
 
             <button 
+              onClick={() => setWizardModalOpen(true)}
+              className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-display font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-sm">palette</span>
+              <span>🎨 White-Label Setup</span>
+            </button>
+
+            <button 
               onClick={() => setLimitModalOpen(true)}
               className="px-3.5 py-2 bg-[#b45309] hover:bg-[#92400e] text-white font-display font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-1.5"
             >
@@ -193,12 +203,20 @@ export default function TeamSettings() {
               
               {/* Profile Photo & Company Logo Upload Card */}
               <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                  <h3 className="font-display font-extrabold text-base text-[#0f172a] dark:text-white flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#b45309]">photo_camera</span>
-                    <span>Distributor Profile Photo & Logo</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">Upload custom company logo to appear on top header & proposals</p>
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-display font-extrabold text-base text-[#0f172a] dark:text-white flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#b45309]">verified_user</span>
+                      <span>White-Label Distributor Branding</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">Configure company name, logo, brand color, and proposal prefix</p>
+                  </div>
+                  <button 
+                    onClick={() => setWizardModalOpen(true)}
+                    className="px-3 py-1.5 bg-[#b45309] text-white font-bold text-xs rounded-xl hover:bg-[#92400e] transition-all cursor-pointer font-display"
+                  >
+                    Edit Wizard
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -605,6 +623,12 @@ export default function TeamSettings() {
       <ProposalLimitModal 
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
+      />
+
+      {/* White-Label Company Profile Wizard Modal */}
+      <CompanyProfileWizardModal 
+        isOpen={wizardModalOpen}
+        onClose={() => setWizardModalOpen(false)}
       />
     </PageShell>
   );

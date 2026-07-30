@@ -22,7 +22,13 @@ export function calculateProposalMetrics({
   companyName = 'Solar Solutions Ltd',
   companyLogo = null,
   companyEmail = 'info@solarsolutions.pk',
-  companyPhone = '+92 300 9876543'
+  companyPhone = '+92 300 9876543',
+  companyAddress = 'Main Commercial Area, Pakistan',
+  companyWebsite = 'www.solarsolutions.pk',
+  brandColor = '#b45309',
+  tagline = 'Authorized B2B Solar Engineering Partner',
+  footerText = 'Thank you for choosing our solar engineering solutions',
+  proposalPrefix = 'SOL'
 }) {
   // Equipment Pricing Defaults
   const pricePerWatt = 42; // PKR per Watt
@@ -70,9 +76,10 @@ export function calculateProposalMetrics({
   const annualCo2ReductionTons = Number((annualEnergyKwh * 0.0007).toFixed(1)); // 0.7kg CO2 per kWh
   const equivalentTreesPlanted = Math.round(annualCo2ReductionTons * 45);
 
-  // Proposal Metadata
+  // White-Label Proposal Metadata
   const dateObj = new Date();
-  const proposalId = `PROP-${dateObj.getFullYear()}${String(dateObj.getMonth() + 1).padStart(2, '0')}${String(dateObj.getDate()).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const prefix = (proposalPrefix || 'SOL').toUpperCase();
+  const proposalId = `${prefix}-${dateObj.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
   const issueDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   const expiryDate = new Date(dateObj.setDate(dateObj.getDate() + 14)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -91,7 +98,12 @@ export function calculateProposalMetrics({
       name: companyName,
       logo: companyLogo,
       email: companyEmail,
-      phone: companyPhone
+      phone: companyPhone,
+      address: companyAddress,
+      website: companyWebsite,
+      brandColor,
+      tagline,
+      footerText
     },
     engineering: {
       systemCapacityKw,

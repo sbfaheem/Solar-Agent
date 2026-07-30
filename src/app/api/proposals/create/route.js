@@ -17,7 +17,14 @@ export async function POST(request) {
       panel_model,
       panel_count,
       battery_model,
-      auto_email = true
+      auto_email = true,
+      // White-Label Distributor Branding Payload
+      distributor_name = 'SolarTech Pakistan',
+      distributor_email = 'sales@solartech.pk',
+      distributor_phone = '+92 300 1234567',
+      distributor_website = 'www.solartech.pk',
+      distributor_address = 'Shahrah-e-Faisal, Karachi',
+      proposal_prefix = 'STP'
     } = body;
 
     // 1. Validation
@@ -36,40 +43,41 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // 2. Generate unique Proposal ID & PDF URL
+    // 2. Generate unique Proposal ID using Distributor's Prefix
+    const prefix = (proposal_prefix || 'SOL').toUpperCase();
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const proposalId = `PRO-2026-${randomSuffix}`;
+    const proposalId = `${prefix}-2026-${randomSuffix}`;
     const pdfUrl = `https://solar-agent-saas.vercel.app/proposals/${proposalId}.pdf`;
 
-    // 3. Construct Email Payload
-    const emailSubject = `Your Solar Proposal is Ready – ${proposalId}`;
+    // 3. Construct White-Label Email Payload (100% Distributor Branded)
+    const emailSubject = `Your Solar Proposal from ${distributor_name}`;
     const emailBodyText = `Dear ${customer_name},
 
 Thank you for your interest in our solar solutions.
 
-Your customized solar proposal has been successfully generated and is attached to this email.
+Please find attached your customized solar proposal (${proposalId}).
 
 Proposal Summary:
-• System Capacity: ${system_size_kw || 10} kWp
-• Hardware: ${inverter_model} + ${panel_model} (${panel_count} modules)${battery_model ? ` + ${battery_model}` : ''}
 • Total Investment: ${Number(total_investment || 0).toLocaleString()} PKR
-• Annual Energy Savings: ${Number(annual_savings || 0).toLocaleString()} PKR
+• Annual Savings: ${Number(annual_savings || 0).toLocaleString()} PKR
 • Payback Period: ${payback_period || '3 Years'}
 
-Download PDF Proposal: ${pdfUrl}
+Download Proposal PDF: ${pdfUrl}
 
-Please review the attached PDF for complete details.
+If you have any questions, feel free to contact us.
 
-If you have any questions, feel free to contact our team.
+Regards,
+${distributor_name}
 
-Best Regards,
-Solar Agent Team`;
+Phone: ${distributor_phone}
+Email: ${distributor_email}
+Website: ${distributor_website}`;
 
     const emailHtmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #ffffff;">
         <div style="background: #b45309; padding: 24px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 22px; font-weight: bold;">Solar Agent B2B SaaS Platform</h1>
-          <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Customized Solar Engineering & Financial Proposal</p>
+          <h1 style="margin: 0; font-size: 22px; font-weight: bold;">${distributor_name}</h1>
+          <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Customized Commercial Solar Proposal</p>
         </div>
 
         <div style="padding: 24px; color: #0f172a; line-height: 1.6;">
@@ -93,12 +101,14 @@ Solar Agent Team`;
             </a>
           </div>
 
-          <p style="font-size: 13px; color: #64748b;">If you have any questions or require modifications to hardware configurations, feel free to contact our engineering team.</p>
+          <p style="font-size: 13px; color: #64748b;">If you have any questions or require modifications to hardware configurations, feel free to contact us.</p>
           
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-          <p style="font-size: 12px; color: #94a3b8; margin: 0; text-align: center;">
-            Sent by <strong>Solar Agent B2B SaaS Platform</strong> | Official EPC Proposal Generator
-          </p>
+          <div style="font-size: 12px; color: #64748b; margin: 0; text-align: center; line-height: 1.5;">
+            <strong>${distributor_name}</strong><br />
+            Phone: ${distributor_phone} | Email: ${distributor_email}<br />
+            Website: ${distributor_website} | Address: ${distributor_address}
+          </div>
         </div>
       </div>
     `;
@@ -126,7 +136,7 @@ Solar Agent Team`;
             }
           });
         } else {
-          // Use Ethereal test SMTP account to perform real email transmission
+          // Use Ethereal test SMTP account for live email transmission
           const testAccount = await nodemailer.createTestAccount();
           transporter = nodemailer.createTransport({
             host: testAccount.smtp.host,
@@ -140,7 +150,7 @@ Solar Agent Team`;
         }
 
         const info = await transporter.sendMail({
-          from: `"Solar Agent Team" <${smtpUser || 'proposals@solaragent.pk'}>`,
+          from: `"${distributor_name}" <${distributor_email || 'sales@solartech.pk'}>`,
           to: email_address,
           subject: emailSubject,
           text: emailBodyText,
@@ -154,12 +164,9 @@ Solar Agent Team`;
           previewUrl: previewUrl
         };
 
-        console.log(`[EMAIL DISPATCH SUCCESS] Sent to ${email_address}. MessageId: ${info.messageId}`);
-        if (previewUrl) {
-          console.log(`[EMAIL PREVIEW LINK]: ${previewUrl}`);
-        }
+        console.log(`[WHITE-LABEL EMAIL SENT] From: ${distributor_name} (${distributor_email}) To: ${email_address}. MessageId: ${info.messageId}`);
       } catch (sendErr) {
-        console.error(`[EMAIL DISPATCH ERROR]:`, sendErr);
+        console.error(`[WHITE-LABEL EMAIL DISPATCH ERROR]:`, sendErr);
         emailSentSuccessfully = true;
       }
     }
@@ -170,6 +177,7 @@ Solar Agent Team`;
       pdf_url: pdfUrl,
       email_sent: emailSentSuccessfully,
       recipient_email: email_address,
+      distributor_name: distributor_name,
       email_details: emailDetails,
       created_at: new Date().toISOString(),
       email_summary: {
