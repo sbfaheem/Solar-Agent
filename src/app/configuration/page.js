@@ -201,7 +201,10 @@ export default function Configuration() {
 
   const handleFileUpload = (e) => {
     const file = e.target.files && e.target.files[0];
-    processBillFile(file);
+    if (file) {
+      processBillFile(file);
+      e.target.value = '';
+    }
   };
 
   // Step Validation & Navigation Handler
