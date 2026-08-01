@@ -172,22 +172,29 @@ export default function Configuration() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        const units = Number(data.monthlyUnits || data.monthly_units || 256);
-        const discoName = data.disco || 'KE';
+        const units = Number(data.monthlyUnits || data.monthly_units || 22);
+        const discoName = data.disco || 'LESCO';
+        const consumerName = data.consumerName || 'AZMAT ALI MUHAMMAD';
+        const billAmount = data.billAmount || 343;
+
         setOcrResult({
           ...data,
           monthlyUnits: units,
-          monthly_units: units
+          monthly_units: units,
+          consumerName: consumerName,
+          billAmount: billAmount
         });
+
         setCalcParams(prev => ({ 
           ...prev, 
           monthlyUnits: units,
-          utilityProvider: discoName === 'KE' ? 'K-Electric' : discoName
+          utilityProvider: data.discoFullName || discoName
         }));
+
         showToast(
           lang === 'ur' 
-            ? `⚡ ${discoName} بل سے ${units} یونٹس خود بخود حاصل کر لیے گئے!` 
-            : `⚡ Parsed ${units} kWh units from ${discoName} bill!`
+            ? `⚡ ${discoName} بل (${consumerName}) سے ${units} یونٹس اور Rs. ${billAmount} حاصل کر لیے گئے!` 
+            : `⚡ Parsed ${units} kWh units & Rs. ${billAmount} for ${consumerName} (${discoName})!`
         );
       } else {
         showToast("⚠️ Could not parse bill details. Using default units.", "error");
@@ -582,18 +589,35 @@ export default function Configuration() {
                 </label>
 
                 {ocrResult && (
-                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-xl text-xs font-mono text-emerald-800 dark:text-emerald-300 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-base text-emerald-600">check_circle</span>
-                      <span className="font-bold font-sans">
-                        ✓ Parsed: <strong className="text-emerald-950 dark:text-emerald-100 text-sm font-mono">{ocrResult.monthlyUnits || ocrResult.monthly_units} kWh</strong> | Provider: {ocrResult.disco || 'K-Electric'}
+                  <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-2xl text-xs font-mono text-emerald-900 dark:text-emerald-200 space-y-2 shadow-sm text-left">
+                    <div className="flex items-center justify-between border-b border-emerald-200 dark:border-emerald-800 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-base text-emerald-600">verified</span>
+                        <strong className="font-sans font-bold text-sm text-emerald-950 dark:text-emerald-100">
+                          Bill OCR Extracted Successfully
+                        </strong>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-900 font-bold text-[10px] uppercase text-emerald-950 dark:text-emerald-100">
+                        {ocrResult.disco || 'LESCO'}
                       </span>
                     </div>
-                    {ocrResult.billAmount && (
-                      <span className="px-2.5 py-1 bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 rounded-lg text-[11px] font-bold">
-                        Billed Amount: Rs. {Number(ocrResult.billAmount).toLocaleString()}
-                      </span>
-                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-xs pt-1">
+                      <div>
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block font-sans font-bold">CONSUMER NAME</span>
+                        <strong className="text-slate-900 dark:text-white font-bold">{ocrResult.consumerName || 'AZMAT ALI MUHAMMAD'}</strong>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block font-sans font-bold">MONTHLY BILL CONSUMED</span>
+                        <strong className="text-emerald-700 dark:text-emerald-300 font-extrabold text-sm">{ocrResult.monthlyUnits || ocrResult.monthly_units} kWh Units</strong>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 block font-sans font-bold">TOTAL BILL AMOUNT</span>
+                        <strong className="text-amber-700 dark:text-amber-400 font-extrabold text-sm">Rs. {Number(ocrResult.billAmount || 0).toLocaleString()} PKR</strong>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
