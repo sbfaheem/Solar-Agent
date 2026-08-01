@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useApp } from '../../context/AppContext';
 
 export default function Login() {
@@ -20,650 +21,501 @@ export default function Login() {
   } = useApp();
 
   const [portalMode, setPortalMode] = useState('distributor'); // 'distributor' or 'admin'
-  const [selectedDistributorAccount, setSelectedDistributorAccount] = useState('REGISTER_NEW'); 
+  const [authAction, setAuthAction] = useState('login'); // 'login' or 'register'
 
-  // Sign In Form State: Blank defaults for strict security (no pre-filled admin credentials)
+  // Login Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pendingError, setPendingError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Dynamic Distributor Registration Form State
+  // Dynamic Passwordless Registration Form State
   const [regCompany, setRegCompany] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regContact, setRegContact] = useState('');
   const [regCity, setRegCity] = useState('Peshawar');
   const [regPlan, setRegPlan] = useState('Silver');
 
-  // Registration Request & Payment Modal State
+  // Registration Wire Modal State
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [regModalData, setRegModalData] = useState(null);
   const [copiedIban, setCopiedIban] = useState(false);
 
-  // Legal Modals State
-  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
-  const [termsModalOpen, setTermsModalOpen] = useState(false);
-
-  const translations = {
-    en: {
-      brandSub: "B2B Solar SaaS & Engineering Platform",
-      distributorPortalBtn: "Distributor Portal",
-      adminPortalBtn: "Super Admin Portal",
-      distributorTitle: "Distributor Partner Authorization",
-      distributorSub: "Register a new EPC firm or sign in with your authorized work email",
-      googleSignIn: "Sign In with Google",
-      orSelectAcc: "OR SELECT AUTHORIZATION ACTION",
-      selectDistributorLabel: "SELECT AUTHORIZATION MODE",
-      registerNewOption: "➕ Register New Distributor...",
-      signInExistingOption: "🔑 Sign In with Existing Authorized Work Email...",
-      provSectionHeader: "DISTRIBUTOR PROVISIONING & ACCOUNT DETAILS",
-      companyNameLabel: "COMPANY NAME (E.G. KHYBER GREEN ENERGY)",
-      companyNamePlaceholder: "e.g. Khyber Green Energy",
-      workEmailLabel: "WORK EMAIL ID (E.G. INFO@KHYBERGREEN.PK)",
-      workEmailPlaceholder: "e.g. info@khybergreen.pk",
-      contactNumLabel: "CONTACT NUMBER",
-      contactNumPlaceholder: "+92 300 9876543",
-      locationCityLabel: "LOCATION / CITY",
-      locationCityPlaceholder: "Peshawar / Karachi",
-      subTierLabel: "SUBSCRIPTION TIER PLAN",
-      silverPlanOpt: `Silver Plan (50 Proposals/mo - ${formatPrice(35000)})`,
-      goldPlanOpt: `Gold Tier Plan (75 Proposals/mo - ${formatPrice(55000)})`,
-      platPlanOpt: `Platinum Enterprise (100 Proposals/mo - ${formatPrice(75000)})`,
-      distWorkEmailLabel: "DISTRIBUTOR WORK EMAIL",
-      accountPassLabel: "ACCOUNT PASSWORD",
-      provisionBtnText: "Submit Registration & View Wire Transfer Details",
-      unlockWorkspaceBtnText: "Unlock Distributor Workspace",
-      adminTitle: "Super Admin Governance Desk",
-      adminSub: "Full system oversight, distributor approval & ledger management",
-      adminEmailLabel: "SUPER ADMIN EMAIL",
-      adminPassLabel: "GOVERNANCE PASSWORD",
-      adminSubmitBtn: "Unlock Super Admin Governance Desk",
-      adminNote: "👑 Super Admin authentication is required to access governance tools. Enter registered admin credentials.",
-      footerText: "© 2026 Solar Agent | B2B Solar SaaS Platform. Multi-Tenant Role Security Active."
-    },
-    ur: {
-      brandSub: "بی ٹو بی سولر ساس اور انجینئرنگ پلیٹ فارم",
-      distributorPortalBtn: "ڈسٹری بیوٹر پورٹل",
-      adminPortalBtn: "سپر ایڈمن پورٹل",
-      distributorTitle: "ڈسٹری بیوٹر پارٹنر لاگ ان و رجسٹریشن",
-      distributorSub: "نیا ڈسٹری بیوٹر رجسٹر کریں یا اپنے ورک ای میل کے ذریعے لاگ ان کریں",
-      googleSignIn: "گوگل کے ذریعے سائن ان کریں",
-      orSelectAcc: "یا پورٹل کا انتخاب کریں",
-      selectDistributorLabel: "اختیار کا انتخاب کریں",
-      registerNewOption: "➕ نیا ڈسٹری بیوٹر رجسٹر کریں...",
-      signInExistingOption: "🔑 موجودہ ورک ای میل کے ذریعے لاگ ان کریں...",
-      provSectionHeader: "ڈسٹری بیوٹر رجسٹریشن اور اکاؤنٹ کی تفصیلات",
-      companyNameLabel: "کمپنی کا نام (مثلاً خیبر گرین انرجی)",
-      companyNamePlaceholder: "مثلاً خیبر گرین انرجی",
-      workEmailLabel: "کام کا ای میل (مثلاً info@khybergreen.pk)",
-      workEmailPlaceholder: "مثلاً info@khybergreen.pk",
-      contactNumLabel: "رابطہ نمبر",
-      contactNumPlaceholder: "+92 300 9876543",
-      locationCityLabel: "مقام / شہر",
-      locationCityPlaceholder: "پشاور / کراچی",
-      subTierLabel: "سبسکرپشن پلان کا انتخاب",
-      silverPlanOpt: `سلور پلان (50 پروپوزلز ماہانہ - ${formatPrice(35000)})`,
-      goldPlanOpt: `گولڈ ٹیر پلان (75 پروپوزلز ماہانہ - ${formatPrice(55000)})`,
-      platPlanOpt: `پلیٹینم انٹرپرائز (100 پروپوزلز ماہانہ - ${formatPrice(75000)})`,
-      distWorkEmailLabel: "ڈسٹری بیوٹر ورک ای میل",
-      accountPassLabel: "اکاؤنٹ پاس ورڈ",
-      provisionBtnText: "درخواست جمع کریں اور وائر ٹرانسفر کی تفصیلات دیکھیں",
-      unlockWorkspaceBtnText: "ڈسٹری بیوٹر ورک اسپیس کھولیں",
-      adminTitle: "سپر ایڈمن گورننس ڈیسک",
-      adminSub: "مکمل سسٹم کنٹرول، ڈسٹری بیوٹر منظوری اور لیجر مینجمنٹ",
-      adminEmailLabel: "سپر ایڈمن ای میل",
-      adminPassLabel: "گورننس پاس ورڈ",
-      adminSubmitBtn: "سپر ایڈمن گورننس ڈیسک کھولیں",
-      adminNote: "👑 ایڈمن ٹولز تک رسائی کے لیے سپر ایڈمن لاگ ان ضروری ہے۔ اپنے کریڈنشلز درج کریں۔",
-      footerText: "© 2026 سولر ایجنٹ | بی ٹو بی سولر ساس پلیٹ فارم۔ ملٹی ٹیننٹ سیکورٹی فعال ہے۔"
+  const handleGoogleClick = async () => {
+    setPendingError(null);
+    const res = await signInWithGoogle('google.partner@solaragent.pk');
+    if (res && res.error) {
+      setPendingError(res.message);
     }
   };
 
-  const t = translations[lang] || translations.en;
-
-  const handleDropdownSelect = (val) => {
-    setSelectedDistributorAccount(val);
-    setPendingError(null);
-    setEmail('');
-    setPassword('');
-  };
-
-  const handleGoogleClick = () => {
-    setPendingError(null);
-    const res = signInWithGoogle('distributor');
-    if (res && res.status === 'pending') {
-      setRegModalData(res.distributor);
-      setRegModalOpen(true);
-      if (res.message) {
-        setPendingError(res.message);
-      }
-    }
-  };
-
-  const handleSubmitDistributor = (e) => {
+  const handleDistributorLogin = async (e) => {
     e.preventDefault();
     setPendingError(null);
 
-    if (selectedDistributorAccount === 'REGISTER_NEW') {
-      if (!regCompany || !regEmail) {
-        showToast(lang === 'ur' ? "⚠️ براہ کرم کمپنی کا نام اور ای میل درج کریں" : "⚠️ Please enter Company Name and Work Email", "error");
-        return;
-      }
-
-      const res = signUpDistributor({
-        companyName: regCompany,
-        name: regCompany,
-        email: regEmail,
-        password: password || 'pass123',
-        plan: regPlan,
-        contact: regContact,
-        city: regCity
-      });
-
-      if (res && res.status === 'pending') {
-        setRegModalData(res.distributor);
-        setRegModalOpen(true);
-      }
-    } else {
-      if (!email) {
-        showToast(lang === 'ur' ? "⚠️ براہ کرم درست ای میل درج کریں" : "⚠️ Please enter a valid email address", "error");
-        return;
-      }
-      
-      const res = signInDistributor(email, password);
-      if (res && res.error === 'pending') {
-        setPendingError(res.message);
-      }
-    }
-  };
-
-  const handleAdminSignIn = (e) => {
-    e.preventDefault();
     if (!email || !password) {
-      showToast("⚠️ Please enter Super Admin Email and Password", "error");
+      showToast("⚠️ Please enter both work email and password", "error");
       return;
     }
+
+    setLoading(true);
+
+    const res = await signInDistributor(email, password);
+
+    setLoading(false);
+
+    if (!res.success) {
+      setPendingError(res.message);
+    }
+  };
+
+  const handleDistributorRegister = (e) => {
+    e.preventDefault();
+    setPendingError(null);
+
+    if (!regCompany || !regEmail) {
+      showToast("⚠️ Please enter Company Name and Work Email", "error");
+      return;
+    }
+
+    const res = signUpDistributor({
+      companyName: regCompany,
+      email: regEmail,
+      contact: regContact,
+      city: regCity,
+      plan: regPlan
+    });
+
+    if (res.success) {
+      setRegModalData(res.distributor);
+      setRegModalOpen(true);
+      setRegCompany('');
+      setRegEmail('');
+      setRegContact('');
+    } else if (res.error === 'exists') {
+      setPendingError(`⚠️ Account already exists for ${regEmail}. Please log in or contact support.`);
+    }
+  };
+
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    setPendingError(null);
+
+    if (!email || !password) {
+      showToast("⚠️ Please enter Admin Email and Governance Password", "error");
+      return;
+    }
+
     signInSuperAdmin(email, password);
   };
 
   const handleCopyIban = () => {
     navigator.clipboard.writeText(bankDetails.iban);
     setCopiedIban(true);
-    showToast("IBAN copied to clipboard!");
-    setTimeout(() => setCopiedIban(false), 2000);
+    showToast("📋 IBAN copied to clipboard!");
+    setTimeout(() => setCopiedIban(false), 3000);
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0f172a] flex flex-col justify-between p-4 sm:p-6 font-sans" dir={lang === 'ur' ? 'rtl' : 'ltr'}>
-      
-      {/* Top Header & Portal Selector */}
-      <header className="flex flex-col sm:flex-row justify-between items-center max-w-7xl mx-auto w-full gap-4">
+    <div className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between p-4 sm:p-6 font-sans relative overflow-x-hidden selection:bg-emerald-500 selection:text-black">
+      {/* Dynamic Background Lighting Effects */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-to-b from-emerald-500/15 via-blue-600/10 to-transparent rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[400px] bg-amber-500/10 rounded-full blur-[160px] pointer-events-none" />
+
+      {/* Navigation Top Header */}
+      <header className="max-w-6xl w-full mx-auto flex items-center justify-between py-3 px-2 z-10">
         <div className="flex items-center gap-3">
-          <span className="size-10 rounded-2xl bg-[#b45309] text-white flex items-center justify-center font-bold text-xl shadow-md">
-            <span className="material-symbols-outlined">solar_power</span>
-          </span>
+          <div className="size-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-emerald-500/20">
+            <span className="material-symbols-outlined text-2px">solar_power</span>
+          </div>
           <div>
-            <span className="font-display font-extrabold text-slate-900 text-xl block">Solar Agent</span>
-            <span className="text-xs text-slate-500 font-medium">{t.brandSub}</span>
+            <span className="font-display font-extrabold text-lg tracking-wider text-white block leading-tight">
+              SOLAR AGENT
+            </span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block">
+              B2B Solar SaaS Platform
+            </span>
           </div>
         </div>
 
-        {/* Portal Switcher & Controls Buttons */}
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-200/80 p-1 rounded-xl gap-1 text-xs font-bold font-display border border-slate-300/60 shadow-xs">
-            <button 
-              type="button"
-              onClick={() => { setPortalMode('distributor'); setSelectedDistributorAccount('REGISTER_NEW'); setEmail(''); setPassword(''); setPendingError(null); }}
-              className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
-                portalMode === 'distributor' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <span className="material-symbols-outlined text-sm">domain</span>
-              <span>{t.distributorPortalBtn}</span>
-            </button>
-
-            <button 
-              type="button"
-              onClick={() => { setPortalMode('admin'); setEmail(''); setPassword(''); setPendingError(null); }}
-              className={`px-4 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
-                portalMode === 'admin' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <span className="material-symbols-outlined text-sm">shield_person</span>
-              <span>{t.adminPortalBtn}</span>
-            </button>
-          </div>
-
-          <button 
+          <button
             onClick={toggleCurrency}
-            className="px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-amber-800 hover:text-amber-950 cursor-pointer shadow-xs font-mono"
-            title="Toggle Currency"
+            className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 transition-all cursor-pointer flex items-center gap-1.5"
           >
-            {currency} ⇄ {currency === 'PKR' ? 'USD' : 'PKR'}
+            <span className="material-symbols-outlined text-sm text-emerald-400">payments</span>
+            <span>{currency}</span>
           </button>
 
-          <button 
+          <button
             onClick={toggleLang}
-            className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:text-slate-900 cursor-pointer shadow-xs"
+            className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 transition-all cursor-pointer flex items-center gap-1.5"
           >
-            {lang === 'en' ? 'اردو' : 'English'}
+            <span className="material-symbols-outlined text-sm text-teal-400">translate</span>
+            <span>{lang === 'en' ? 'اردو' : 'English'}</span>
           </button>
         </div>
       </header>
 
-      {/* Main Light Mode Card */}
-      <main className="my-auto max-w-xl mx-auto w-full bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xl space-y-6">
+      {/* Main Authentication Card */}
+      <main className="max-w-xl w-full mx-auto my-8 z-10 animate-fadeIn">
         
-        {/* DISTRIBUTOR PORTAL AUTHENTICATION & DYNAMIC REGISTRATION */}
+        {/* Role Selector Tabs (Distributor Portal vs Super Admin) */}
+        <div className="p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center gap-1 mb-6 shadow-xl">
+          <button
+            onClick={() => { setPortalMode('distributor'); setPendingError(null); }}
+            className={`flex-1 py-3 px-4 rounded-xl font-display font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              portalMode === 'distributor' 
+                ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' 
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">storefront</span>
+            <span>Distributor Partner Portal</span>
+          </button>
+
+          <button
+            onClick={() => { setPortalMode('admin'); setPendingError(null); }}
+            className={`flex-1 py-3 px-4 rounded-xl font-display font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              portalMode === 'admin' 
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' 
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">shield_person</span>
+            <span>Super Admin Portal</span>
+          </button>
+        </div>
+
+        {/* Distributor Auth Card */}
         {portalMode === 'distributor' ? (
-          <div className="space-y-6">
+          <div className="bg-[#121827]/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
             
-            {/* Header */}
-            <div className="border-b border-slate-200 pb-4 space-y-1">
-              <h2 className="font-display font-extrabold text-slate-900 text-2xl">{t.distributorTitle}</h2>
-              <p className="text-slate-500 text-xs font-medium">{t.distributorSub}</p>
+            {/* Title & Toggle Action (Login vs Register) */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-5 gap-3">
+              <div>
+                <h2 className="text-xl font-display font-black text-white tracking-wide">
+                  {authAction === 'login' ? 'Distributor Partner Login' : 'Register New Distributor'}
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {authAction === 'login' 
+                    ? 'Enter your work email and password to access your workspace' 
+                    : 'Submit your business profile for Super Admin approval & activation'}
+                </p>
+              </div>
+
+              <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => { setAuthAction('login'); setPendingError(null); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    authAction === 'login' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthAction('register'); setPendingError(null); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    authAction === 'register' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Register
+                </button>
+              </div>
             </div>
 
-            {/* Inline Warning Alert for Pending Distributor Login Block */}
+            {/* Error & Pending Status Alerts */}
             {pendingError && (
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-medium space-y-1 animate-bounce shadow-sm">
-                <div className="font-extrabold font-display flex items-center gap-2 text-amber-800">
-                  <span className="material-symbols-outlined text-base">hourglass_top</span>
-                  <span>Approval Pending Verification</span>
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium space-y-1 animate-fadeIn text-left">
+                <div className="flex items-center gap-2 font-bold text-amber-400">
+                  <span className="material-symbols-outlined text-base">warning</span>
+                  <span>Authentication Status Alert</span>
                 </div>
                 <p>{pendingError}</p>
               </div>
             )}
 
             {/* Google Sign-In Option */}
-            <button 
-              type="button"
-              onClick={handleGoogleClick}
-              className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-display font-extrabold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2.5 border border-slate-300"
-            >
-              <svg className="size-4" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.28v3.15C3.25 21.3 7.31 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.28C.46 8.21 0 10.05 0 12s.46 3.79 1.28 5.42l4-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.28 6.58l4 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-              </svg>
-              <span>{t.googleSignIn}</span>
-            </button>
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={handleGoogleClick}
+                className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-display font-bold text-xs shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer"
+              >
+                <svg className="size-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span>Continue with Google</span>
+              </button>
 
-            <div className="flex items-center gap-3 my-2">
-              <div className="h-px bg-slate-200 flex-1"></div>
-              <span className="text-[10px] text-slate-400 font-mono uppercase font-bold">{t.orSelectAcc}</span>
-              <div className="h-px bg-slate-200 flex-1"></div>
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-slate-800" />
+                <span className="flex-shrink mx-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                  or continue with work email
+                </span>
+                <div className="flex-grow border-t border-slate-800" />
+              </div>
             </div>
 
-            <form onSubmit={handleSubmitDistributor} className="space-y-5">
-              
-              {/* DISTRIBUTOR ACTION DROPDOWN (NO PRIVATE CLIENT LISTING) */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-extrabold text-[#b45309] uppercase tracking-wide block">
-                  {t.selectDistributorLabel}
-                </label>
-                <select 
-                  value={selectedDistributorAccount}
-                  onChange={(e) => handleDropdownSelect(e.target.value)}
-                  className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold focus:outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/20 cursor-pointer shadow-xs"
+            {/* FORM A: LOGIN MODE */}
+            {authAction === 'login' && (
+              <form onSubmit={handleDistributorLogin} className="space-y-4 text-left">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Work Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="e.g. info@khybergreen.pk"
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-emerald-500 text-white text-xs font-mono transition-all outline-none"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Account Password
+                    </label>
+                    <Link href="/forgot-password" className="text-[11px] text-emerald-400 hover:underline font-medium">
+                      Forgot Password?
+                    </Link>
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-emerald-500 text-white text-xs font-mono transition-all outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-slate-950 font-display font-black text-sm tracking-wide shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <option value="REGISTER_NEW">{t.registerNewOption}</option>
-                  <option value="SIGN_IN_EXISTING">{t.signInExistingOption}</option>
-                </select>
-              </div>
+                  <span className="material-symbols-outlined text-base">login</span>
+                  <span>{loading ? 'Authenticating Workspace...' : 'Login to Distributor Workspace'}</span>
+                </button>
+              </form>
+            )}
 
-              {/* DYNAMIC REGISTRATION FIELDS */}
-              {selectedDistributorAccount === 'REGISTER_NEW' ? (
-                <div className="space-y-4 bg-[#fffbeb] p-5 rounded-2xl border border-[#fef08a] animate-fadeIn text-xs">
-                  <div className="text-xs font-extrabold text-[#854d0e] font-display uppercase border-b border-[#fef08a] pb-2 flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-sm">badge</span>
-                      <span>{t.provSectionHeader}</span>
-                    </span>
-                  </div>
-
-                  {/* Explicit Payment Gateway Notice */}
-                  <div className="bg-amber-100/70 p-3 rounded-xl border border-amber-300 text-amber-950 font-medium text-[11px] space-y-1">
-                    <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                      <span className="material-symbols-outlined text-sm">account_balance</span>
-                      <span>B2B Direct Wire Transfer Mode Active</span>
-                    </div>
-                    <p>
-                      Activations are currently verified via Direct Meezan Bank Wire Deposit. Digital card payment gateways are also supported inside Team Settings.
-                    </p>
-                  </div>
-
-                  {/* Company Name */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
-                      {t.companyNameLabel}
-                    </label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder={t.companyNamePlaceholder}
-                      value={regCompany}
-                      onChange={e => setRegCompany(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none text-xs font-bold shadow-xs"
-                    />
-                  </div>
-
-                  {/* Work Email ID */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
-                      {t.workEmailLabel}
-                    </label>
-                    <input 
-                      type="email" 
-                      required
-                      placeholder={t.workEmailPlaceholder}
-                      value={regEmail}
-                      onChange={e => setRegEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none text-xs shadow-xs"
-                    />
-                  </div>
-
-                  {/* Contact Number & City */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
-                        {t.contactNumLabel}
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder={t.contactNumPlaceholder}
-                        value={regContact}
-                        onChange={e => setRegContact(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none text-xs shadow-xs"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
-                        {t.locationCityLabel}
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder={t.locationCityPlaceholder}
-                        value={regCity}
-                        onChange={e => setRegCity(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none text-xs shadow-xs"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Subscription Tier Plan Selector */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block font-sans">
-                      {t.subTierLabel}
-                    </label>
-                    <select 
-                      value={regPlan}
-                      onChange={e => setRegPlan(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-[#b45309] rounded-xl text-[#b45309] font-mono font-bold focus:outline-none text-xs cursor-pointer shadow-xs"
-                    >
-                      <option value="Silver">{t.silverPlanOpt}</option>
-                      <option value="Gold">{t.goldPlanOpt}</option>
-                      <option value="Platinum">{t.platPlanOpt}</option>
-                    </select>
-                  </div>
-
-                  {/* Terms & Privacy Links */}
-                  <div className="pt-2 text-[10px] text-slate-500 font-sans flex items-center justify-center gap-4">
-                    <button 
-                      type="button" 
-                      onClick={() => setPrivacyModalOpen(true)}
-                      className="hover:underline text-[#b45309] font-bold cursor-pointer"
-                    >
-                      🔒 Privacy Policy
-                    </button>
-                    <span>•</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setTermsModalOpen(true)}
-                      className="hover:underline text-[#b45309] font-bold cursor-pointer"
-                    >
-                      📄 Terms of Service
-                    </button>
-                  </div>
-
+            {/* FORM B: REGISTRATION MODE (PASSWORDLESS) */}
+            {authAction === 'register' && (
+              <form onSubmit={handleDistributorRegister} className="space-y-4 text-left">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-[11px] flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">info</span>
+                  <span>No password required now. You will create your password via activation email after Super Admin approval.</span>
                 </div>
-              ) : (
-                /* EXISTING DISTRIBUTOR LOGIN FIELDS */
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                      {t.distWorkEmailLabel}
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Company Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={regCompany}
+                    onChange={(e) => setRegCompany(e.target.value)}
+                    placeholder="e.g. Khyber Green Energy"
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-emerald-500 text-white text-xs transition-all outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Work Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="e.g. info@khybergreen.pk"
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-emerald-500 text-white text-xs font-mono transition-all outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                      Contact Number
                     </label>
-                    <input 
-                      type="email" 
-                      placeholder="e.g. distributor@solaragent.pk"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
-                      required
+                    <input
+                      type="text"
+                      value={regContact}
+                      onChange={(e) => setRegContact(e.target.value)}
+                      placeholder="+92 300 9876543"
+                      className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-emerald-500 text-white text-xs font-mono transition-all outline-none"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                      {t.accountPassLabel}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                      Location / City
                     </label>
-                    <input 
-                      type="password" 
-                      placeholder="Enter account password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-[#b45309] rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
-                      required
+                    <input
+                      type="text"
+                      value={regCity}
+                      onChange={(e) => setRegCity(e.target.value)}
+                      placeholder="Peshawar / Karachi"
+                      className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-emerald-500 text-white text-xs transition-all outline-none"
                     />
                   </div>
                 </div>
-              )}
 
-              {/* Submit Action */}
-              <button 
-                type="submit"
-                className="w-full py-4 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold transition-all cursor-pointer shadow-md text-xs text-center flex items-center justify-center gap-2 mt-2"
-              >
-                <span className="material-symbols-outlined text-sm">
-                  {selectedDistributorAccount === 'REGISTER_NEW' ? 'how_to_reg' : 'lock_open'}
-                </span>
-                <span>
-                  {selectedDistributorAccount === 'REGISTER_NEW' 
-                    ? t.provisionBtnText 
-                    : t.unlockWorkspaceBtnText}
-                </span>
-              </button>
-            </form>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Subscription Tier Plan
+                  </label>
+                  <select
+                    value={regPlan}
+                    onChange={(e) => setRegPlan(e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-emerald-500 text-white text-xs font-mono transition-all outline-none cursor-pointer"
+                  >
+                    <option value="Silver">Silver Plan (50 Proposals/mo - {formatPrice(35000)})</option>
+                    <option value="Gold">Gold Tier Plan (75 Proposals/mo - {formatPrice(55000)})</option>
+                    <option value="Platinum">Platinum Enterprise (100 Proposals/mo - {formatPrice(75000)})</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-slate-950 font-display font-black text-sm tracking-wide shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-base">how_to_reg</span>
+                  <span>Submit Registration & View Wire Details</span>
+                </button>
+              </form>
+            )}
 
           </div>
         ) : (
-          /* SUPER ADMIN GOVERNANCE PORTAL (STRICT EMPTY CREDENTIAL DEFAULTS) */
-          <div className="space-y-6">
-            <div className="border-b border-amber-200 pb-4 text-center space-y-2">
-              <span className="size-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold mx-auto shadow-md">
+          /* SUPER ADMIN PORTAL CARD */
+          <div className="bg-[#121827]/90 backdrop-blur-xl border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-left">
+            <div className="border-b border-slate-800 pb-5">
+              <h2 className="text-xl font-display font-black text-amber-400 tracking-wide flex items-center gap-2">
                 <span className="material-symbols-outlined text-2xl">shield_person</span>
-              </span>
-              <h2 className="font-display font-extrabold text-slate-900 text-2xl">{t.adminTitle}</h2>
-              <p className="text-slate-500 text-xs font-medium">{t.adminSub}</p>
+                <span>Super Admin Governance Desk</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Full system governance, distributor approvals, and transaction audit desk
+              </p>
             </div>
 
-            <form onSubmit={handleAdminSignIn} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">{t.adminEmailLabel}</label>
-                <input 
-                  type="email" 
-                  placeholder="Enter super admin email"
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Super Admin Email
+                </label>
+                <input
+                  type="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono font-bold focus:outline-none shadow-xs"
-                  required
+                  placeholder="bilalfaheem47@gmail.com"
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-amber-500 text-white text-xs font-mono transition-all outline-none"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">{t.adminPassLabel}</label>
-                <input 
-                  type="password" 
-                  placeholder="Enter governance password"
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Governance Password
+                </label>
+                <input
+                  type="password"
+                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-slate-900 font-mono focus:outline-none shadow-xs"
-                  required
+                  placeholder="••••••••••••"
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:border-amber-500 text-white text-xs font-mono transition-all outline-none"
                 />
               </div>
 
-              <button 
+              <button
                 type="submit"
-                className="w-full py-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-display font-extrabold transition-all cursor-pointer shadow-lg text-xs text-center flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-950 font-display font-black text-sm tracking-wide shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <span className="material-symbols-outlined text-sm">verified_user</span>
-                <span>{t.adminSubmitBtn}</span>
+                <span className="material-symbols-outlined text-base">admin_panel_settings</span>
+                <span>Unlock Super Admin Desk</span>
               </button>
             </form>
-
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 text-center font-medium">
-              {t.adminNote}
-            </div>
           </div>
         )}
-
       </main>
 
-      {/* REGISTRATION REQUEST & PAYMENT MODAL */}
+      {/* Wire Transfer Details Modal after Registration */}
       {regModalOpen && regModalData && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl animate-scaleUp text-slate-900">
-            
-            <div className="flex justify-between items-start border-b border-slate-200 pb-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#121827] border border-emerald-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-left space-y-5 shadow-2xl relative animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="flex items-center gap-3">
-                <div className="size-10 rounded-2xl bg-amber-100 text-[#b45309] flex items-center justify-center font-bold">
-                  <span className="material-symbols-outlined text-xl">mark_email_read</span>
+                <div className="size-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-xl">account_balance</span>
                 </div>
                 <div>
-                  <h3 className="font-display font-extrabold text-slate-900 text-lg">Registration Request Submitted</h3>
-                  <p className="text-xs text-slate-500 font-medium">Status: Pending Super Admin Approval & Wire Verification</p>
+                  <h3 className="font-display font-extrabold text-white text-base">
+                    Registration Submitted
+                  </h3>
+                  <span className="text-[11px] text-amber-400 font-semibold">
+                    Status: Pending Super Admin Approval
+                  </span>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setRegModalOpen(false)}
-                className="size-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
+                className="text-slate-400 hover:text-white p-1 rounded-xl hover:bg-slate-800 transition-all cursor-pointer"
               >
-                <span className="material-symbols-outlined text-base">close</span>
+                <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            {/* Notification Policy Statement */}
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl text-xs text-amber-900 space-y-2 font-medium">
-              <div className="font-bold flex items-center gap-2 text-amber-950 font-display">
-                <span className="material-symbols-outlined text-base">notifications_active</span>
-                <span>Automated Email Notification Policy</span>
-              </div>
-              <p className="leading-relaxed">
-                Once Super Admin receives your Meezan Bank wire deposit and accepts the request, an automated email will be sent to your registered work email address (<strong className="font-mono text-slate-900">{regModalData.email}</strong>) stating:
-              </p>
-              <div className="p-3 bg-white border border-amber-300 rounded-xl font-mono text-amber-900 font-bold text-center">
-                "Your Account Has Been Successfully Created You Should Login Now"
-              </div>
+            <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs space-y-2 text-slate-300">
+              <p>Dear <strong>{regModalData.name}</strong>,</p>
+              <p>Your B2B distributor registration for the <strong>{regModalData.plan} Plan</strong> has been logged in Pending status.</p>
+              <p>Once approved, an <strong>Account Activation Email</strong> will be sent to <strong>{regModalData.email}</strong> allowing you to create your password and activate your account.</p>
             </div>
 
-            {/* Meezan Bank Deposit Instructions Card */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 text-xs font-mono">
-              <div className="flex justify-between items-center border-b border-slate-200 pb-2 font-sans font-bold text-slate-900">
-                <span>Meezan Bank Direct Deposit Wire</span>
-                <button 
-                  onClick={handleCopyIban}
-                  className="px-3 py-1 rounded-lg bg-[#b45309] hover:bg-[#92400e] text-white text-[11px] font-mono cursor-pointer shadow-xs"
-                >
-                  {copiedIban ? 'Copied ✓' : 'Copy IBAN'}
-                </button>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl space-y-2 text-xs">
+              <span className="font-bold text-amber-300 block">Bank Wire Instructions:</span>
+              <div className="text-slate-300 space-y-1 font-mono text-[11px]">
+                <div>Bank Name: <strong className="text-white">{bankDetails.bankName}</strong></div>
+                <div>Account Title: <strong className="text-white">{bankDetails.accountTitle}</strong></div>
+                <div>Account #: <strong className="text-white">{bankDetails.accountNumber}</strong></div>
+                <div>IBAN: <strong className="text-emerald-400">{bankDetails.iban}</strong></div>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-[11px]">
-                <div>
-                  <span className="text-slate-400 block text-[9px] uppercase">Bank Name</span>
-                  <span className="font-bold text-slate-800">{bankDetails.bankName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[9px] uppercase">Account Title</span>
-                  <span className="font-bold text-slate-800">{bankDetails.accountTitle}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[9px] uppercase">Account Number</span>
-                  <span className="font-bold text-slate-800">{bankDetails.accountNumber}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[9px] uppercase">IBAN Number</span>
-                  <span className="font-bold text-emerald-600 truncate block">{bankDetails.iban}</span>
-                </div>
-              </div>
+              <button
+                onClick={handleCopyIban}
+                className="mt-2 w-full py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-400 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">{copiedIban ? 'check' : 'content_copy'}</span>
+                <span>{copiedIban ? 'IBAN Copied!' : 'Copy IBAN Code'}</span>
+              </button>
             </div>
 
-            <button 
+            <button
               onClick={() => setRegModalOpen(false)}
-              className="w-full py-3.5 bg-[#b45309] hover:bg-[#92400e] text-white font-display font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all text-center"
+              className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs transition-all cursor-pointer"
             >
-              Understood — Close & Await Verification
-            </button>
-
-          </div>
-        </div>
-      )}
-
-      {/* PRIVACY POLICY MODAL */}
-      {privacyModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-4 shadow-2xl animate-scaleUp text-slate-900 text-xs">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="font-display font-extrabold text-lg">🔒 Solar Agent B2B Privacy Policy</h3>
-              <button onClick={() => setPrivacyModalOpen(false)} className="size-8 rounded-xl bg-slate-100 flex items-center justify-center">
-                <span className="material-symbols-outlined text-base">close</span>
-              </button>
-            </div>
-            <div className="space-y-3 max-h-96 overflow-y-auto leading-relaxed text-slate-600">
-              <p><strong>1. Data Isolation & Confidentiality:</strong> Solar Agent enforces strict multi-tenant data isolation. Client proposals, project hardware specs, and pricing calculations generated by your distributor account are strictly isolated and never shared with other firms.</p>
-              <p><strong>2. Contact & Organization Details:</strong> Information collected during registration (company name, work email, contact numbers) is solely used for account provisioning, payment verification, and automated notification services.</p>
-              <p><strong>3. Security Standards:</strong> We implement encrypted communications and role-based access control (RBAC) to ensure unauthorized visitors cannot access distributor workspaces or administrative governance desks.</p>
-            </div>
-            <button onClick={() => setPrivacyModalOpen(false)} className="w-full py-3 bg-[#b45309] text-white font-extrabold rounded-xl text-xs">
-              Close Privacy Policy
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* TERMS OF SERVICE MODAL */}
-      {termsModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-4 shadow-2xl animate-scaleUp text-slate-900 text-xs">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="font-display font-extrabold text-lg">📄 Solar Agent Terms of Service</h3>
-              <button onClick={() => setTermsModalOpen(false)} className="size-8 rounded-xl bg-slate-100 flex items-center justify-center">
-                <span className="material-symbols-outlined text-base">close</span>
-              </button>
-            </div>
-            <div className="space-y-3 max-h-96 overflow-y-auto leading-relaxed text-slate-600">
-              <p><strong>1. Distributor Subscription Terms:</strong> Distributors subscribe to monthly quota plans (Silver 35 proposals, Gold 60 proposals, Platinum 100 proposals). Account activation is subject to Super Admin wire deposit verification.</p>
-              <p><strong>2. Authorized Usage:</strong> Each distributor account is granted access strictly for commercial solar engineering proposal generation and project lead management.</p>
-              <p><strong>3. Super Admin Governance:</strong> Solar Agent reserves the right to review payment verification receipts and suspend unauthorized profiles violating terms.</p>
-            </div>
-            <button onClick={() => setTermsModalOpen(false)} className="w-full py-3 bg-[#b45309] text-white font-extrabold rounded-xl text-xs">
-              Close Terms of Service
+              Got It, Close Modal
             </button>
           </div>
         </div>
       )}
 
       {/* Footer */}
-      <footer className="text-center text-xs text-slate-500 font-mono max-w-7xl mx-auto w-full pt-4 space-y-2">
-        <div className="flex items-center justify-center gap-4 text-[11px] font-sans">
-          <button onClick={() => setPrivacyModalOpen(true)} className="hover:underline text-slate-600 font-bold">Privacy Policy</button>
-          <span>•</span>
-          <button onClick={() => setTermsModalOpen(true)} className="hover:underline text-slate-600 font-bold">Terms of Service</button>
-        </div>
-        <p>{t.footerText}</p>
+      <footer className="text-center text-xs text-slate-500 py-4 border-t border-slate-900/60 max-w-6xl w-full mx-auto">
+        © 2026 Solar Agent | B2B Solar SaaS Platform. Multi-Tenant Role Security Active.
       </footer>
-
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
@@ -14,11 +14,8 @@ export default function PageShell({ children, headerTitle }) {
     lang, 
     toggleLang, 
     company, 
-    getActiveLimit,
     toast,
     user,
-    signInDistributor,
-    signInSuperAdmin,
     signOut,
     viewMode,
     setViewMode,
@@ -29,6 +26,13 @@ export default function PageShell({ children, headerTitle }) {
 
   const [searchQuery, setSearchQuery] = useState('');
   const avatarInputRef = useRef(null);
+
+  // Route Protection Guard
+  useEffect(() => {
+    if (!user && pathname !== '/login' && pathname !== '/activate-account' && pathname !== '/forgot-password' && pathname !== '/reset-password') {
+      router.push('/login');
+    }
+  }, [user, pathname, router]);
 
   const handleAvatarClick = () => {
     if (avatarInputRef.current) {
@@ -58,355 +62,131 @@ export default function PageShell({ children, headerTitle }) {
 
   const adminMenuItems = [
     { label: 'Governance Desk', urLabel: 'گورننس ڈیسک', path: '/admin-desk', icon: 'shield_person' },
-    { label: 'Distributor Hub', urLabel: 'ڈسٹری بیوٹرز', path: '/agent-hub', icon: 'domain' },
-    { label: 'Payment Ledger', urLabel: 'لیجر', path: '/admin-desk', icon: 'payments' },
-    { label: 'Tier Verification', urLabel: 'ٹیر سیکیورٹی', path: '/admin-desk', icon: 'verified' },
-    { label: 'Workspace View', urLabel: 'ورک اسپیس ویو', path: '/', icon: 'home' }
+    { label: 'Showcase Hub', urLabel: 'شوکیس ہب', path: '/', icon: 'space_dashboard' },
+    { label: 'Hardware Config', urLabel: 'ہارڈویئر کنفیگریشن', path: '/configuration', icon: 'settings_suggest' }
   ];
 
-  const activeMenuItems = (user?.role === 'super_admin' || viewMode === 'admin') ? adminMenuItems : workspaceMenuItems;
-  const activeLimit = getActiveLimit();
-
-  const getTierBadgeText = () => {
-    if (user?.role === 'super_admin' || viewMode === 'admin') return '👑 SUPER ADMIN';
-    return `${company.plan || 'Silver'} Plan`;
-  };
-
-  const getInitials = (name) => {
-    if (!name) return 'DS';
-    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const getPageTitle = () => {
-    if (headerTitle) return headerTitle;
-    if (pathname === '/team-settings') return 'Distributor Subscription Payment & Billing';
-    if (pathname === '/admin-desk') return 'Super Admin Verification & Governance Desk';
-    if (pathname === '/agent-hub') return 'Distributor Client Projects Hub';
-    if (pathname === '/configuration') return 'Solar Proposals Engineering';
-    if (pathname === '/customer-view') return 'Live Presentation View';
-    return 'Distributor Dashboard Workspace';
-  };
+  const menuItems = user?.role === 'super_admin' ? adminMenuItems : workspaceMenuItems;
 
   return (
-    <div className={`min-h-screen font-sans flex flex-col ${
-      theme === 'dark' 
-        ? 'bg-[#0f1113] text-[#e2e2e6]' 
-        : 'bg-[#f8fafc] text-[#1e293b]'
-    }`} dir={lang === 'ur' ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen font-sans ${theme === 'dark' ? 'dark bg-[#0e1013] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       
-      {/* Hidden File Input for Avatar / Company Logo Upload */}
-      <input 
-        type="file" 
-        ref={avatarInputRef} 
-        accept="image/*" 
-        onChange={handleAvatarFileChange} 
-        className="hidden" 
-      />
-
-      {/* Toast Alert Overlay */}
-      {toast && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl border shadow-2xl flex items-center gap-3 animate-bounce font-medium text-xs ${
-          toast.type === 'error' 
-            ? 'bg-red-900/90 border-red-500/50 text-red-100' 
-            : 'bg-[#b45309] border-amber-400/50 text-white'
-        }`}>
-          <span className="material-symbols-outlined text-sm">
-            {toast.type === 'error' ? 'error' : 'check_circle'}
-          </span>
-          <span>{toast.message}</span>
-        </div>
-      )}
-
-      {/* TOP FULL-WIDTH LIGHT GREY HEADER BAR */}
-      <header className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-4 transition-colors z-30 ${
-        theme === 'dark' ? 'bg-[#181a1d] border-[#2d3137]' : 'bg-[#e2e8f0] border-slate-300'
-      }`}>
-        
-        {/* Left Logo & Brand Subtitle */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-3 group">
-            <span className="size-9 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
-              <span className="material-symbols-outlined">solar_power</span>
-            </span>
-            <div>
-              <span className={`font-display font-black text-base tracking-tight block leading-tight ${
-                theme === 'dark' ? 'text-white' : 'text-slate-950'
-              }`}>
-                Solar Agent
-              </span>
-              <span className={`text-[10px] font-mono block leading-none font-extrabold ${
-                theme === 'dark' ? 'text-slate-300' : 'text-slate-800'
-              }`}>
-                B2B SaaS Energy Platform
-              </span>
+      {/* Top Header Navbar */}
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-[#181a1d]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 lg:px-8 py-3 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="size-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-slate-950 flex items-center justify-center font-black shadow-md">
+              <span className="material-symbols-outlined text-xl">solar_power</span>
             </div>
-          </Link>
-        </div>
-
-        {/* Middle Horizontal Navigation Menu Pill */}
-        <div className="hidden lg:flex items-center gap-1 bg-white/90 dark:bg-black/40 p-1 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-xs">
-          {activeMenuItems.map((item) => {
-            const isActive = pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-display text-xs font-extrabold transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'bg-[#b45309] text-white shadow-sm'
-                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900'
-                }`}
-              >
-                <span className="material-symbols-outlined text-base">{item.icon}</span>
-                <span>{lang === 'ur' ? item.urLabel : item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Right Controls: Distributor Switcher, Currency, Theme, Avatar, Logout */}
-        <div className="flex items-center gap-2 sm:gap-3">
-
-          {/* Distributor Account Switcher Dropdown */}
-          <div className="hidden md:block">
-            <select 
-              value={user?.email || 'bilalfaheem47@gmail.com'}
-              onChange={(e) => {
-                if (e.target.value === 'superadmin@solaragent.pk' || e.target.value === 'bilalfaheem47@gmail.com') {
-                  signInSuperAdmin(e.target.value, 'Megatron_@0047');
-                } else {
-                  signInDistributor(e.target.value, 'demo');
-                }
-              }}
-              className="bg-white dark:bg-[#282a2d] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white px-3 py-1.5 rounded-xl text-xs font-bold font-mono cursor-pointer shadow-xs"
-            >
-              <option value="kpkvolt@solaragent.pk">⚡ KPK Volt Tech (Silver Plan)</option>
-              <option value="info@khybergreen.pk">⚡ Khyber Green Energy (Silver Plan)</option>
-              <option value="google.partner@solaragent.pk">⚡ Google Partner Solar EPC (Silver Plan)</option>
-              <option value="info@indussolar.pk">⚡ Indus Solar Systems (Platinum Tier)</option>
-              <option value="sales@punjabenergy.pk">⚡ Punjab Energy EPC (Gold Plan)</option>
-              <option value="bilalfaheem47@gmail.com">👑 Super Admin Governance</option>
-            </select>
-          </div>
-
-          {/* Currency Toggle */}
-          <button 
-            onClick={toggleCurrency}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-amber-300 border border-slate-700 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm font-mono"
-            title="Toggle Currency"
-          >
-            <span className="material-symbols-outlined text-sm">currency_exchange</span>
-            <span>{currency} ⇄ {currency === 'PKR' ? 'USD' : 'PKR'}</span>
-          </button>
-
-          {/* Theme Switcher */}
-          <button 
-            onClick={toggleTheme}
-            className={`size-8 sm:size-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all ${
-              theme === 'dark'
-                ? 'bg-[#282a2d] border-[#3f474f] text-amber-300'
-                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-            }`}
-            title="Toggle Theme"
-          >
-            <span className="material-symbols-outlined text-sm">
-              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            <span className="font-display font-black text-base tracking-wider text-slate-900 dark:text-white">
+              SOLAR AGENT
             </span>
+          </Link>
+
+          <span className="hidden sm:inline text-xs font-mono text-slate-400">|</span>
+
+          <span className="hidden sm:inline font-display font-extrabold text-xs text-slate-600 dark:text-slate-300">
+            {headerTitle || 'B2B Distributor Engineering Platform'}
+          </span>
+        </div>
+
+        {/* Action Controls & Profile Avatar */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleCurrency}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold font-mono transition-all cursor-pointer flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-sm text-emerald-500">payments</span>
+            <span>{currency}</span>
           </button>
 
-          {/* DYNAMIC DISTRIBUTOR NAME, PLAN BADGE & PROFILE PHOTO UPLOADER */}
-          {user && (
-            <div className={`flex items-center gap-2.5 pl-3 pr-2 py-1 rounded-xl border ${
-              theme === 'dark'
-                ? 'bg-[#282a2d] border-[#3f474f]'
-                : 'bg-white border-slate-300 shadow-xs'
-            }`}>
-              <div className="text-right hidden sm:block">
-                <div className={`font-display font-extrabold text-xs leading-none ${
-                  theme === 'dark' ? 'text-white' : 'text-slate-900'
-                }`}>
-                  {company.name || user.name || user.company_name || 'Distributor'}
-                </div>
-                <div className="text-[#b45309] dark:text-amber-400 text-[9px] font-mono font-bold leading-none mt-1 uppercase">
-                  {getTierBadgeText()}
-                </div>
-              </div>
+          <button
+            onClick={toggleLang}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-sm text-teal-500">translate</span>
+            <span>{lang === 'en' ? 'UR' : 'EN'}</span>
+          </button>
 
-              {/* Clickable Avatar Circle with Hover Camera Overlay */}
-              <div 
-                onClick={handleAvatarClick}
-                title="Click to upload company logo or profile picture"
-                className="size-8 sm:size-9 rounded-full bg-[#b45309] text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm relative group cursor-pointer overflow-hidden ring-2 ring-[#b45309]/30"
-              >
-                {(company?.logo_url || user?.logo_url) ? (
-                  <img 
-                    src={company?.logo_url || user?.logo_url} 
-                    alt="Distributor Logo" 
-                    className="w-full h-full object-cover rounded-full" 
-                  />
+          {user ? (
+            <div className="flex items-center gap-3 pl-2 border-l border-slate-200 dark:border-slate-800">
+              <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+                {company.logo_url || user.logo_url ? (
+                  <img src={company.logo_url || user.logo_url} alt="Logo" className="size-9 rounded-full object-cover border-2 border-emerald-500 shadow-sm" />
                 ) : (
-                  <span>{getInitials(company.name || user.name)}</span>
+                  <div className="size-9 rounded-full bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center border border-slate-700">
+                    {user.initials || 'SO'}
+                  </div>
                 )}
-
-                {/* Camera Upload Overlay */}
-                <div className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
-                  <span className="material-symbols-outlined text-xs">photo_camera</span>
-                </div>
+                <input type="file" ref={avatarInputRef} onChange={handleAvatarFileChange} accept="image/*" className="hidden" />
               </div>
 
-              {/* Prominent Red Logout Button */}
-              <button 
+              <div className="hidden md:block text-left text-xs font-mono">
+                <strong className="block text-slate-900 dark:text-white font-extrabold font-sans text-xs truncate max-w-[140px]">{user.company_name || user.name}</strong>
+                <span className="text-[10px] text-slate-500 block truncate">{user.email}</span>
+              </div>
+
+              <button
                 onClick={signOut}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-display font-extrabold text-xs shadow-sm cursor-pointer border border-rose-500 transition-all ml-1"
-                title="Log Out from Portal"
+                title="Sign Out"
+                className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-all cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm">logout</span>
-                <span className="hidden sm:inline">Logout</span>
+                <span className="material-symbols-outlined text-lg">logout</span>
               </button>
             </div>
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all cursor-pointer"
+            >
+              Sign In
+            </Link>
           )}
-
         </div>
       </header>
 
-      {/* BODY CONTENT AREA */}
-      <div className="flex flex-col lg:flex-row flex-1 min-h-screen">
+      {/* Main Body Layout */}
+      <div className="flex min-h-[calc(100vh-57px)]">
         
-        {/* Left Sidebar Navigation */}
-        <aside className={`w-full lg:w-64 flex-shrink-0 flex flex-col justify-between p-5 border-b lg:border-b-0 ${
-          theme === 'dark'
-            ? 'bg-[#181a1d] border-[#2d3137]'
-            : 'bg-white border-[#cbd5e1]'
-        } ${lang === 'ur' ? 'lg:border-l' : 'lg:border-r'}`}>
+        {/* Left Navigation Sidebar */}
+        <aside className="hidden md:block w-64 bg-white dark:bg-[#141619] border-r border-slate-200 dark:border-slate-800 p-4 space-y-6 flex-shrink-0">
           
-          <div className="space-y-6">
-            
-            {/* Sidebar Dual-Role Toggle */}
-            <div className="bg-slate-100 dark:bg-[#0f1113] p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-1 text-xs font-bold font-display">
-              <button 
-                type="button"
-                onClick={() => { setViewMode('workspace'); router.push('/'); }}
-                className={`w-full py-1.5 px-3 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
-                  viewMode === 'workspace' ? 'bg-[#b45309] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
-                }`}
-              >
-                <span className="material-symbols-outlined text-sm">domain</span>
-                <span>Distributor Portal</span>
-              </button>
-              <button 
-                type="button"
-                onClick={() => { setViewMode('admin'); router.push('/admin-desk'); }}
-                className={`w-full py-1.5 px-3 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
-                  viewMode === 'admin' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
-                }`}
-              >
-                <span className="material-symbols-outlined text-sm">shield_person</span>
-                <span>Super Admin Desk</span>
-              </button>
-            </div>
-
-            {/* Navigation Menu Links */}
-            <nav className="space-y-1">
-              {activeMenuItems.map((item) => {
-                const isActive = pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-display text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-[#b45309] text-white shadow-sm'
-                        : theme === 'dark'
-                          ? 'text-[#94a3b8] hover:text-white hover:bg-white/5'
-                          : 'text-[#64748b] hover:text-[#0f172a] hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-lg">{item.icon}</span>
-                    <span>{lang === 'ur' ? item.urLabel : item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Quota Progress & Logout Footer */}
-          <div className="pt-6 space-y-4 border-t border-slate-200 dark:border-slate-800">
-            
-            {/* Distributor Quota Status Card */}
-            <div className={`p-3.5 rounded-xl border space-y-2 ${
-              theme === 'dark' ? 'bg-[#0f1113] border-[#2d3137]' : 'bg-slate-50 border-slate-200'
-            }`}>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-[#94a3b8] font-medium text-[10px] uppercase font-mono">Monthly Quota</span>
-                <span className="font-mono font-bold text-[#b45309] text-[11px]">
-                  {company.proposals_generated || 0} / {activeLimit}
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all ${
-                    (company.proposals_generated || 0) >= activeLimit ? 'bg-red-500' : 'bg-[#b45309]'
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-widest px-3 block mb-2">
+              Workspace Navigation
+            </span>
+            {menuItems.map(item => {
+              const active = pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-display font-extrabold text-xs transition-all ${
+                    active 
+                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' 
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                   }`}
-                  style={{ width: `${Math.min(100, ((company.proposals_generated || 0) / activeLimit) * 100)}%` }}
-                ></div>
-              </div>
-              <Link 
-                href="/team-settings" 
-                className="text-[10px] font-bold text-[#b45309] hover:underline block text-center mt-1"
-              >
-                + Upgrade Distributor Quota
-              </Link>
-            </div>
-
-            {/* Sidebar Logout Button */}
-            <button 
-              onClick={signOut}
-              className="w-full py-2.5 px-3 rounded-xl bg-rose-600/10 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-500/20 font-display font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-base">logout</span>
-              <span>Logout from Portal</span>
-            </button>
+                >
+                  <span className="material-symbols-outlined text-lg">{item.icon}</span>
+                  <span>{lang === 'ur' ? item.urLabel : item.label}</span>
+                </Link>
+              );
+            })}
           </div>
 
+          {user?.role === 'super_admin' && (
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs font-mono space-y-1 text-amber-300">
+              <span className="font-bold font-sans block">👑 Super Admin Governance</span>
+              <span className="text-[11px] text-amber-400/80 block">Logged in with full governance override privileges</span>
+            </div>
+          )}
         </aside>
 
-        {/* Right Main Content Viewport */}
-        <div className="flex-1 flex flex-col min-w-0">
-          
-          {/* Section Header Page Title / Search */}
-          <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-black/20 flex items-center justify-between">
-            {pathname === '/agent-hub' ? (
-              <div className="relative max-w-xs w-full">
-                <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search distributor proposals..." 
-                  className={`w-full pl-9 pr-4 py-2 text-xs rounded-xl border focus:outline-none transition-all ${
-                    theme === 'dark'
-                      ? 'bg-[#0f1113] border-[#3f474f] text-white focus:border-[#b45309]'
-                      : 'bg-white border-slate-300 text-slate-900 focus:border-[#b45309] font-bold'
-                  }`}
-                />
-              </div>
-            ) : (
-              <h1 className={`font-display text-sm sm:text-base font-extrabold tracking-tight ${
-                theme === 'dark' ? 'text-white' : 'text-slate-900'
-              }`}>
-                {getPageTitle()}
-              </h1>
-            )}
-          </div>
-
-          {/* Main Viewport */}
-          <main className="flex-1 overflow-y-auto">
-            {children}
-          </main>
-
+        {/* Page Main Content Workspace */}
+        <div className="flex-grow max-w-full overflow-x-hidden">
+          {children}
         </div>
       </div>
-
     </div>
   );
 }

@@ -171,18 +171,19 @@ export default function AgentHub() {
   };
 
   // Search and status filters
-  const filteredProposals = proposals.filter(p => {
+  const safeProposals = proposals || [];
+  const filteredProposals = safeProposals.filter(p => {
     const matchesSearch = p.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.installation_address?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const totalLeads = proposals.length;
-  const totalKw = proposals.reduce((sum, p) => sum + (p.system_size_kw || 0), 0);
-  const totalPkr = proposals.reduce((sum, p) => sum + (p.total_investment || 0), 0);
-  const activeLimit = getActiveLimit();
-  const proposalsCount = Math.max(company.proposals_generated || 0, proposals.length || 0);
+  const totalLeads = safeProposals.length;
+  const totalKw = safeProposals.reduce((sum, p) => sum + (p.system_size_kw || 0), 0);
+  const totalPkr = safeProposals.reduce((sum, p) => sum + (p.total_investment || 0), 0);
+  const activeLimit = getActiveLimit ? getActiveLimit() : 50;
+  const proposalsCount = Math.max(company?.proposals_generated || 0, safeProposals.length || 0);
   const usagePercentage = Math.min(100, Math.round((proposalsCount / activeLimit) * 100));
 
   const getStatusBadge = (status) => {

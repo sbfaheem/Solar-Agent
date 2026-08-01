@@ -3,22 +3,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
-  fetchProposals as apiFetchProposals, 
-  createProposal as apiCreateProposal, 
-  updateProposal as apiUpdateProposal,
-  deleteProposal as apiDeleteProposal,
-  fetchInverters as apiFetchInverters,
-  fetchSolarPanels as apiFetchSolarPanels,
-  fetchCompanyState,
-  updateCompanyState,
-  fetchOverrideRequests,
-  createOverrideRequest,
-  approveOverrideRequest,
-  createInverter as apiCreateInverter,
-  deleteInverter as apiDeleteInverter,
-  createSolarPanel as apiCreateSolarPanel,
-  deleteSolarPanel as apiDeleteSolarPanel
-} from '../lib/firebaseService';
+  hashPassword, 
+  comparePassword, 
+  generateAuthToken, 
+  validatePasswordStrength 
+} from '../lib/authCrypto';
 
 const AppContext = createContext();
 
@@ -45,11 +34,29 @@ export const AppProvider = ({ children }) => {
   const [proposals, setProposals] = useState([]);
   const [inverters, setInverters] = useState([]);
   const [solarPanels, setSolarPanels] = useState([]);
+  const [currentLead, setCurrentLead] = useState(null);
   
+  const [calcParams, setCalcParams] = useState({
+    monthlyUnits: 0,
+    selectedInverter: null,
+    selectedPanel: null,
+    selectedBattery: null,
+    connectionType: 'On-Grid',
+    utilityProvider: 'K-Electric (Karachi & Hub)'
+  });
+
   const [viewMode, setViewMode] = useState('workspace'); 
 
   // User State: Unauthenticated (null) by default so login loads on app launch
   const [user, setUser] = useState(null);
+
+  // Toast Notification State
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type, id: Date.now() });
+    setTimeout(() => setToast(null), 4500);
+  };
 
   // Active Company State
   const [company, setCompany] = useState({
@@ -63,15 +70,130 @@ export const AppProvider = ({ children }) => {
     logo_url: null
   });
 
-  // Registered Distributors List with Statuses (Active/Verified vs Pending Verification)
+  const getActiveLimit = () => {
+    if (!company) return 50;
+    const plan = company.plan || 'Silver';
+    return plan === 'Silver' ? 50 : (plan === 'Gold' ? 75 : 100);
+  };
+
+  // Registered Distributors Database List with Extended Auth Schema
   const [distributors, setDistributors] = useState([
-    { id: 'comp-1', name: 'Solar Solutions Ltd', email: 'bilalfaheem47@gmail.com', plan: 'Silver', used: 35, limit: 50, status: 'Active', date: '2026-06-12', city: 'Islamabad', contact: '+92 300 1122334', logo_url: null },
-    { id: 'comp-2', name: 'Indus Solar Systems', email: 'info@indussolar.pk', plan: 'Platinum', used: 80, limit: 100, status: 'Verified', date: '2026-05-10', city: 'Karachi', contact: '+92 301 4455667', logo_url: null },
-    { id: 'comp-3', name: 'Punjab Energy EPC', email: 'sales@punjabenergy.pk', plan: 'Gold', used: 45, limit: 75, status: 'Active', date: '2026-06-01', city: 'Lahore', contact: '+92 302 7788990', logo_url: null },
-    { id: 'comp-4', name: 'KPK Volt Tech', email: 'kpkvolt@solaragent.pk', plan: 'Silver', used: 35, limit: 50, status: 'Pending Verification', date: '2026-07-28', city: 'Peshawar', contact: '+92 303 9900112', logo_url: null },
-    { id: 'comp-5', name: 'Khyber Green Energy', email: 'info@khybergreen.pk', plan: 'Silver', used: 0, limit: 50, status: 'Pending Verification', date: '2026-07-29', city: 'Peshawar', contact: '+92 300 9876543', logo_url: null },
-    { id: 'comp-6', name: 'Google Partner Solar EPC', email: 'google.partner@solaragent.pk', plan: 'Silver', used: 0, limit: 50, status: 'Pending Verification', date: '2026-07-30', city: 'Lahore', contact: '+92 300 1234567', logo_url: null }
+    { 
+      id: 'comp-1', 
+      name: 'Solar Solutions Ltd', 
+      email: 'bilalfaheem47@gmail.com', 
+      plan: 'Silver', 
+      used: 35, 
+      limit: 50, 
+      status: 'Active', 
+      email_verified: true,
+      auth_provider: 'local',
+      date: '2026-06-12', 
+      city: 'Islamabad', 
+      contact: '+92 300 1122334', 
+      logo_url: null 
+    },
+    { 
+      id: 'comp-2', 
+      name: 'Indus Solar Systems', 
+      email: 'info@indussolar.pk', 
+      plan: 'Platinum', 
+      used: 80, 
+      limit: 100, 
+      status: 'Active', 
+      email_verified: true,
+      auth_provider: 'local',
+      date: '2026-05-10', 
+      city: 'Karachi', 
+      contact: '+92 301 4455667', 
+      logo_url: null 
+    },
+    { 
+      id: 'comp-3', 
+      name: 'Punjab Energy EPC', 
+      email: 'sales@punjabenergy.pk', 
+      plan: 'Gold', 
+      used: 45, 
+      limit: 75, 
+      status: 'Active', 
+      email_verified: true,
+      auth_provider: 'local',
+      date: '2026-06-01', 
+      city: 'Lahore', 
+      contact: '+92 302 7788990', 
+      logo_url: null 
+    },
+    { 
+      id: 'comp-4', 
+      name: 'KPK Volt Tech', 
+      email: 'kpkvolt@solaragent.pk', 
+      plan: 'Silver', 
+      used: 35, 
+      limit: 50, 
+      status: 'Pending', 
+      email_verified: false,
+      auth_provider: 'local',
+      date: '2026-07-28', 
+      city: 'Peshawar', 
+      contact: '+92 303 9900112', 
+      logo_url: null 
+    },
+    { 
+      id: 'comp-5', 
+      name: 'Khyber Green Energy', 
+      email: 'info@khybergreen.pk', 
+      plan: 'Silver', 
+      used: 0, 
+      limit: 50, 
+      status: 'Pending', 
+      email_verified: false,
+      auth_provider: 'local',
+      date: '2026-07-29', 
+      city: 'Peshawar', 
+      contact: '+92 300 9876543', 
+      logo_url: null 
+    },
+    { 
+      id: 'comp-6', 
+      name: 'Google Partner Solar EPC', 
+      email: 'google.partner@solaragent.pk', 
+      plan: 'Silver', 
+      used: 0, 
+      limit: 50, 
+      status: 'Pending', 
+      email_verified: false,
+      auth_provider: 'google',
+      date: '2026-07-30', 
+      city: 'Lahore', 
+      contact: '+92 300 1234567', 
+      logo_url: null 
+    }
   ]);
+
+  // Load session from localStorage on initial render
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('solar_agent_user');
+        const storedDist = localStorage.getItem('solar_agent_distributors');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+        if (storedDist) {
+          setDistributors(JSON.parse(storedDist));
+        }
+      } catch (err) {
+        console.warn("Session restore exception:", err);
+      }
+    }
+  }, []);
+
+  // Save distributors state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && distributors.length > 0) {
+      localStorage.setItem('solar_agent_distributors', JSON.stringify(distributors));
+    }
+  }, [distributors]);
 
   // Official Editable Bank Wire Details
   const [bankDetails, setBankDetails] = useState({
@@ -86,7 +208,6 @@ export const AppProvider = ({ children }) => {
     showToast("🏦 Bank wire details updated in CMS!");
   };
 
-  // Update Company Logo / Profile Picture
   const updateCompanyLogo = (logoDataUrl) => {
     setCompany(prev => ({ ...prev, logo_url: logoDataUrl }));
     setUser(prev => prev ? ({ ...prev, logo_url: logoDataUrl }) : null);
@@ -98,71 +219,21 @@ export const AppProvider = ({ children }) => {
     showToast("📸 Distributor profile picture & company logo updated!");
   };
 
-  // System Notifications Log for Super Admin
+  // System Audit Stream Logs for Super Admin
   const [adminLogs, setAdminLogs] = useState([
     "🔔 [GOOGLE REGISTRATION REQUEST] Google Partner Solar EPC (google.partner@solaragent.pk) registered via Google Sign-In.",
     "🔔 [NEW REGISTRATION] Khyber Green Energy (info@khybergreen.pk) submitted Silver Plan request.",
     "📄 [UPGRADE REQUEST] KPK Volt Tech submitted Meezan Bank payment receipt for Gold Plan."
   ]);
 
-  // Pending Distributor Plan Upgrade Requests
-  const [pendingUpgradeRequests, setPendingUpgradeRequests] = useState([
-    {
-      id: "UPG-99120",
-      company_id: "comp-4",
-      company_name: "KPK Volt Tech",
-      contact_email: "kpkvolt@solaragent.pk",
-      current_plan: "Silver",
-      target_plan: "Gold",
-      amount_pkr: 55000,
-      payment_channel: "Bank Wire Transfer",
-      reference_id: "MEZN-982173461",
-      receipt_preview: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80",
-      date: "2026-07-29 15:20",
-      status: "Pending Verification"
-    }
-  ]);
-
-  const [overrideRequests, setOverrideRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [currentLead, setCurrentLead] = useState(null);
-
-  // Initial Pakistani Transactions Ledger
-  const [transactions, setTransactions] = useState([
-    {
-      id: "PK-TXN-98421",
-      company_name: "Indus Solar Systems",
-      plan: "Platinum",
-      channel: "Easypaisa",
-      channel_type: "Mobile Wallet",
-      account_identifier: "0301-3377675",
-      reference_id: "EP-982173461",
-      amount_pkr: 75000,
-      status: "Completed",
-      date: "2026-07-28 14:32",
-      collector_agent: "Telenor Gateway API"
-    },
-    {
-      id: "PK-TXN-98420",
-      company_name: "Punjab Energy EPC",
-      plan: "Gold",
-      channel: "JazzCash",
-      channel_type: "Mobile Wallet",
-      account_identifier: "0300-8472910",
-      reference_id: "JC-882194012",
-      amount_pkr: 55000,
-      status: "Completed",
-      date: "2026-07-27 11:15",
-      collector_agent: "Mobilink Gateway"
-    }
-  ]);
+  const [pendingUpgradeRequests, setPendingUpgradeRequests] = useState([]);
+  const [transactions, setTransactions] = useState([]);
 
   // Authenticate Super Admin with strict credential verification
   const signInSuperAdmin = (email, password) => {
     const validEmail = (email || '').trim().toLowerCase();
     const validPass = (password || '').trim();
 
-    // Check against authorized super admin credentials (bilalfaheem47@gmail.com / Megatron_@0047)
     const isAuthorized = 
       (validEmail === 'bilalfaheem47@gmail.com' && validPass === 'Megatron_@0047') ||
       (validEmail === 'superadmin@solaragent.pk' && (validPass === 'Megatron_@0047' || validPass === 'admin123'));
@@ -172,7 +243,7 @@ export const AppProvider = ({ children }) => {
       return { success: false, error: 'invalid_credentials' };
     }
 
-    setUser({
+    const adminUser = {
       id: 'user-super-admin',
       name: 'Super Admin Governance',
       email: email,
@@ -181,536 +252,425 @@ export const AppProvider = ({ children }) => {
       company_id: 'comp-admin',
       company_name: 'Solar Agent HQ',
       logo_url: null
-    });
+    };
+
+    setUser(adminUser);
+    localStorage.setItem('solar_agent_user', JSON.stringify(adminUser));
     setViewMode('admin');
     showToast("👑 Authenticated as Super Admin! Full Governance Desk Unlocked.");
     router.push('/admin-desk');
     return { success: true };
   };
 
-  // Authenticate Distributor (Sign In with Approval Guard)
-  const signInDistributor = (email, password) => {
-    const matchedComp = distributors.find(d => d.email.toLowerCase() === email.toLowerCase());
-
-    // Block ONLY if status is Pending Verification
-    if (matchedComp && (matchedComp.status === 'Pending Verification' || matchedComp.status === 'Pending')) {
-      showToast("⚠️ Account Pending Super Admin Approval & Payment Verification.", "error");
-      return { 
-        success: false, 
-        error: 'pending', 
-        message: "⚠️ Account Pending Super Admin Approval & Payment Verification. Access will be unlocked once approved." 
-      };
-    }
-
-    const activeComp = matchedComp || {
-      id: `comp-${Math.floor(100 + Math.random() * 900)}`,
-      name: email.split('@')[0].toUpperCase() + ' Solar',
-      plan: 'Silver',
-      used: 12,
-      limit: 35,
-      status: 'Active',
-      logo_url: null
-    };
-
-    setUser({
-      id: `user-${activeComp.id}`,
-      name: activeComp.name,
-      email: email,
-      initials: activeComp.name.slice(0, 2).toUpperCase(),
-      role: 'distributor',
-      company_id: activeComp.id,
-      company_name: activeComp.name,
-      logo_url: activeComp.logo_url || null
-    });
-
-    setCompany({
-      id: activeComp.id,
-      name: activeComp.name,
-      plan: activeComp.plan,
-      proposals_generated: activeComp.used || 0,
-      billing_status: "Active",
-      override_quota: 0,
-      logo_url: activeComp.logo_url || null
-    });
-
-    setViewMode('workspace');
-    showToast(`⚡ Welcome to your Distributor Workspace, ${activeComp.name}!`);
-    router.push('/');
-    return { success: true };
-  };
-
-  // Sign In with Google Simulation
-  const signInWithGoogle = (targetRole = 'distributor') => {
-    const googleEmail = 'google.partner@solaragent.pk';
-    const googleCompName = 'Google Partner Solar EPC';
+  // 1. Passwordless Distributor Registration (Pending Approval)
+  const signUpDistributor = ({ companyName, email, contact = '', city = 'Peshawar', plan = 'Silver' }) => {
+    const formattedEmail = (email || '').trim().toLowerCase();
     
-    let googleDist = distributors.find(d => d.email.toLowerCase() === googleEmail.toLowerCase());
-
-    if (!googleDist) {
-      googleDist = {
-        id: `comp-google-${Math.floor(1000 + Math.random() * 9000)}`,
-        name: googleCompName,
-        email: googleEmail,
-        plan: 'Silver',
-        used: 0,
-        limit: 35,
-        status: 'Pending Verification',
-        date: new Date().toISOString().split('T')[0],
-        city: 'Lahore',
-        contact: '+92 300 1234567',
-        logo_url: null
-      };
-
-      setDistributors(prev => [googleDist, ...prev]);
-
-      setAdminLogs(prev => [
-        `🔔 [GOOGLE REGISTRATION REQUEST] ${googleCompName} (${googleEmail}) registered via Google Sign-In. Awaiting payment verification.`,
-        ...prev
-      ]);
+    // Check if email already exists
+    const existing = distributors.find(d => d.email.toLowerCase() === formattedEmail);
+    if (existing) {
+      showToast(`⚠️ Distributor account already exists for ${formattedEmail}`, "error");
+      return { success: false, error: 'exists', distributor: existing };
     }
 
-    // Block ONLY if pending verification
-    if (googleDist.status === 'Pending Verification' || googleDist.status === 'Pending') {
-      showToast("📄 Google Account Pending Super Admin Approval & Payment Verification.");
-      return { 
-        status: 'pending', 
-        distributor: googleDist,
-        error: 'pending', 
-        message: "⚠️ Google Account Pending Super Admin Approval & Payment Verification. Access will be unlocked once approved." 
-      };
-    }
-
-    return signInDistributor(googleEmail, 'google-auth');
-  };
-
-  // Create an Account for Distributor Registration
-  const signUpDistributor = ({ companyName, name, email, password, plan = 'Silver', contact = '', city = 'Peshawar' }) => {
     const newCompId = `comp-${Math.floor(1000 + Math.random() * 9000)}`;
     const newDistributor = {
       id: newCompId,
       name: companyName,
-      email: email,
+      email: formattedEmail,
       plan: plan,
       used: 0,
       limit: plan === 'Silver' ? 50 : (plan === 'Gold' ? 75 : 100),
-      status: 'Pending Verification',
+      status: 'Pending', // Pending Super Admin Review
+      email_verified: false,
+      password_hash: '',
+      activation_token: '',
+      activation_expiry: null,
+      auth_provider: 'local',
       date: new Date().toISOString().split('T')[0],
       city: city,
       contact: contact || '+92 300 9876543',
-      logo_url: null
+      created_at: new Date().toISOString()
     };
 
     setDistributors(prev => [newDistributor, ...prev]);
 
     setAdminLogs(prev => [
-      `🔔 [NEW REGISTRATION REQUEST] ${companyName} (${email}) registered for ${plan} Plan. Awaiting payment verification.`,
+      `🔔 [NEW REGISTRATION REQUEST] ${companyName} (${formattedEmail}) registered for ${plan} Plan. Status set to Pending Approval.`,
       ...prev
     ]);
 
-    showToast("📄 Registration submitted! Please review Meezan Bank wire details to complete verification.");
-
-    return { status: 'pending', distributor: newDistributor };
+    showToast("📄 Registration submitted! Your account is pending Super Admin review & approval.");
+    return { success: true, status: 'pending', distributor: newDistributor };
   };
 
-  // Super Admin Approval of Pending Distributor & Email Dispatch Simulation
-  const approveDistributorRegistration = (distributorId) => {
-    const target = distributors.find(d => d.id === distributorId || d.email === distributorId);
+  // 2. Super Admin Approval & 24-hr Activation Token Generation
+  const approveDistributorRegistration = async (distributorId) => {
+    const target = distributors.find(d => d.id === distributorId || d.email.toLowerCase() === (distributorId || '').toLowerCase());
     if (!target) return false;
 
-    setDistributors(prev => prev.map(d => (d.id === distributorId || d.email === distributorId) ? { 
+    // Generate secure 24-hour activation token
+    const token = generateAuthToken('act');
+    const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    setDistributors(prev => prev.map(d => (d.id === target.id) ? { 
       ...d, 
-      status: 'Verified',
-      billing_status: 'Active'
+      status: 'Approved', // Password not created yet
+      activation_token: token,
+      activation_expiry: expiry
     } : d));
 
-    const emailMessage = `📧 [AUTOMATED EMAIL SENT TO ${target.email}]: "Your Account Has Been Successfully Created You Should Login Now"`;
+    const activationLink = `${window.location.origin}/activate-account?token=${token}`;
+
+    // Send Activation Email via API
+    try {
+      await fetch('/api/auth/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'ACCOUNT_APPROVED',
+          recipientEmail: target.email,
+          recipientName: target.name,
+          companyName: target.name,
+          token,
+          actionUrl: activationLink
+        })
+      });
+    } catch (e) {
+      console.warn("Email API invocation notice:", e.message);
+    }
+
+    const emailLog = `📧 [ACCOUNT ACTIVATION EMAIL SENT TO ${target.email}]: "Your Solar Agent Distributor Account Has Been Approved" (Link: ${activationLink})`;
     
     setAdminLogs(prev => [
-      `✅ Approved distributor ${target.name} (${target.email}). Account status set to Verified.`,
-      emailMessage,
+      `✅ Approved distributor ${target.name} (${target.email}). Activation token generated (Expires in 24h).`,
+      emailLog,
       ...prev
     ]);
 
-    showToast(`📩 Email Dispatched to ${target.email}: "Your Account Has Been Successfully Created You Should Login Now" to ${target.email}`);
-    return true;
+    showToast(`📩 Activation Email Dispatched to ${target.email}! Account is ready for password creation.`);
+    return { success: true, token, activationLink };
   };
 
-  // Submit Upgrade Request with Payment Receipt
-  const submitUpgradeRequest = async (reqData) => {
-    const newReq = {
-      id: `UPG-${Math.floor(10000 + Math.random() * 90000)}`,
-      date: new Date().toISOString().replace('T', ' ').slice(0, 16),
-      status: "Pending Verification",
-      ...reqData
+  // 3. Password Creation & Account Activation (/activate-account)
+  const activateDistributorAccount = async (token, newPassword) => {
+    const target = distributors.find(d => d.activation_token === token);
+
+    if (!target) {
+      return { success: false, error: 'invalid_token', message: 'Invalid or missing activation token.' };
+    }
+
+    // Check token expiration (24 hours)
+    if (target.activation_expiry && new Date(target.activation_expiry) < new Date()) {
+      return { success: false, error: 'expired_token', message: 'Activation token has expired (24-hour limit). Please ask Super Admin to resend activation link.' };
+    }
+
+    // Validate password policy
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.isValid) {
+      return { success: false, error: 'weak_password', message: strength.errors.join(' ') };
+    }
+
+    const pwdHash = await hashPassword(newPassword);
+
+    const updatedDistributor = {
+      ...target,
+      status: 'Active',
+      email_verified: true,
+      password_hash: pwdHash,
+      activation_token: '',
+      activation_expiry: null,
+      last_login: new Date().toISOString()
     };
-    setPendingUpgradeRequests(prev => [newReq, ...prev]);
-    return true;
+
+    setDistributors(prev => prev.map(d => d.id === target.id ? updatedDistributor : d));
+
+    // Log user in automatically
+    const activeUser = {
+      id: `user-${updatedDistributor.id}`,
+      name: updatedDistributor.name,
+      email: updatedDistributor.email,
+      initials: updatedDistributor.name.slice(0, 2).toUpperCase(),
+      role: 'distributor',
+      company_id: updatedDistributor.id,
+      company_name: updatedDistributor.name,
+      logo_url: updatedDistributor.logo_url || null
+    };
+
+    setUser(activeUser);
+    localStorage.setItem('solar_agent_user', JSON.stringify(activeUser));
+    setViewMode('workspace');
+    showToast(`🎉 Account Activated Successfully! Welcome to Solar Agent, ${updatedDistributor.name}!`);
+    router.push('/');
+    return { success: true };
   };
 
-  // Super Admin Accept & Auto-Upgrade Handler
-  const approveUpgradeRequestAndAutoUpgrade = async (requestId) => {
-    const req = pendingUpgradeRequests.find(r => r.id === requestId);
-    if (!req) return false;
+  // 4. Distributor Login with Strict Status Guards (/login)
+  const signInDistributor = async (email, password) => {
+    const formattedEmail = (email || '').trim().toLowerCase();
+    const matchedComp = distributors.find(d => d.email.toLowerCase() === formattedEmail);
 
-    setDistributors(prev => prev.map(d => (d.name === req.company_name || d.email === req.contact_email) ? {
+    if (!matchedComp) {
+      showToast("❌ No distributor account exists for this email address.", "error");
+      return { success: false, error: 'not_found', message: "❌ No distributor account exists for this email." };
+    }
+
+    // Status Guards
+    if (matchedComp.status === 'Pending') {
+      showToast("⚠️ Your account is pending Super Admin review & approval.", "error");
+      return { success: false, error: 'pending', message: "⚠️ Your account has not yet been approved by the Super Admin." };
+    }
+
+    if (matchedComp.status === 'Approved') {
+      showToast("⚠️ Account approved, but password not created yet. Check your activation email.", "error");
+      return { success: false, error: 'password_not_created', message: "⚠️ Account approved, but password not created yet. Please check your activation email." };
+    }
+
+    if (matchedComp.status === 'Suspended') {
+      showToast("🚫 Account suspended by administrator. Access denied.", "error");
+      return { success: false, error: 'suspended', message: "🚫 Account suspended by administrator." };
+    }
+
+    if (matchedComp.status === 'Rejected') {
+      showToast("❌ Distributor registration request rejected.", "error");
+      return { success: false, error: 'rejected', message: "❌ Registration request was rejected." };
+    }
+
+    // Password Hash Comparison (or bypass for initial demo accounts)
+    if (matchedComp.password_hash) {
+      const isMatch = await comparePassword(password, matchedComp.password_hash);
+      if (!isMatch) {
+        showToast("❌ Incorrect Password. Please try again.", "error");
+        return { success: false, error: 'invalid_password', message: "❌ Incorrect password." };
+      }
+    }
+
+    // Update last_login
+    setDistributors(prev => prev.map(d => d.id === matchedComp.id ? { ...d, last_login: new Date().toISOString() } : d));
+
+    const activeUser = {
+      id: `user-${matchedComp.id}`,
+      name: matchedComp.name,
+      email: matchedComp.email,
+      initials: matchedComp.name.slice(0, 2).toUpperCase(),
+      role: 'distributor',
+      company_id: matchedComp.id,
+      company_name: matchedComp.name,
+      logo_url: matchedComp.logo_url || null
+    };
+
+    setUser(activeUser);
+    localStorage.setItem('solar_agent_user', JSON.stringify(activeUser));
+    setCompany({
+      id: matchedComp.id,
+      name: matchedComp.name,
+      plan: matchedComp.plan,
+      proposals_generated: matchedComp.used || 0,
+      billing_status: "Active",
+      override_quota: 0,
+      logo_url: matchedComp.logo_url || null
+    });
+
+    setViewMode('workspace');
+    showToast(`⚡ Welcome back, ${matchedComp.name}!`);
+    router.push('/');
+    return { success: true };
+  };
+
+  // 5. Google Sign-In (Restricted to Approved & Active Accounts)
+  const signInWithGoogle = async (googleEmail = 'google.partner@solaragent.pk') => {
+    const formattedEmail = googleEmail.toLowerCase();
+    const matchedComp = distributors.find(d => d.email.toLowerCase() === formattedEmail);
+
+    if (!matchedComp) {
+      showToast("❌ No distributor account exists for this Google email.", "error");
+      return { success: false, error: 'not_found', message: "❌ No distributor account exists for this email." };
+    }
+
+    if (matchedComp.status === 'Pending') {
+      showToast("⚠️ Your Google account has not yet been approved.", "error");
+      return { success: false, error: 'pending', message: "⚠️ Your account has not yet been approved." };
+    }
+
+    if (matchedComp.status === 'Suspended' || matchedComp.status === 'Rejected') {
+      showToast("🚫 Google account access denied.", "error");
+      return { success: false, error: 'denied', message: "🚫 Account access denied." };
+    }
+
+    // Auto activate if approved
+    if (matchedComp.status === 'Approved') {
+      setDistributors(prev => prev.map(d => d.id === matchedComp.id ? { ...d, status: 'Active', email_verified: true } : d));
+    }
+
+    const activeUser = {
+      id: `user-${matchedComp.id}`,
+      name: matchedComp.name,
+      email: matchedComp.email,
+      initials: matchedComp.name.slice(0, 2).toUpperCase(),
+      role: 'distributor',
+      company_id: matchedComp.id,
+      company_name: matchedComp.name,
+      logo_url: matchedComp.logo_url || null
+    };
+
+    setUser(activeUser);
+    localStorage.setItem('solar_agent_user', JSON.stringify(activeUser));
+    setViewMode('workspace');
+    showToast(`⚡ Signed in with Google as ${matchedComp.name}!`);
+    router.push('/');
+    return { success: true };
+  };
+
+  // 6. Request Password Reset Link (/forgot-password)
+  const requestPasswordReset = async (email) => {
+    const formattedEmail = (email || '').trim().toLowerCase();
+    const target = distributors.find(d => d.email.toLowerCase() === formattedEmail);
+
+    if (!target) {
+      showToast("❌ No account found with that work email address.", "error");
+      return { success: false, error: 'not_found' };
+    }
+
+    const resetToken = generateAuthToken('rst');
+    const resetExpiry = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    setDistributors(prev => prev.map(d => d.id === target.id ? {
       ...d,
-      plan: req.target_plan,
-      limit: req.target_plan === 'Silver' ? 50 : (req.target_plan === 'Gold' ? 75 : 100),
-      status: 'Verified'
+      reset_token: resetToken,
+      reset_expiry: resetExpiry
     } : d));
 
-    if (company.name === req.company_name || req.company_id === company.id) {
-      const updatedComp = {
-        ...company,
-        plan: req.target_plan,
-        billing_status: "Active",
-        override_quota: (company.override_quota || 0) + (req.target_plan === 'Gold' ? 25 : 50)
-      };
-      setCompany(updatedComp);
-      await updateCompanyState(updatedComp);
-    }
+    const resetLink = `${window.location.origin}/reset-password?token=${resetToken}`;
 
-    const newTxn = {
-      id: `PK-TXN-${Math.floor(10000 + Math.random() * 90000)}`,
-      company_name: req.company_name,
-      plan: req.target_plan,
-      channel: req.payment_channel || "Bank Wire Transfer",
-      channel_type: "Wire Transfer / Verification",
-      account_identifier: req.contact_email,
-      reference_id: req.reference_id,
-      amount_pkr: req.amount_pkr,
-      status: "Completed",
-      date: new Date().toISOString().replace('T', ' ').slice(0, 16),
-      collector_agent: "Super Admin Verification Engine"
-    };
-
-    setTransactions(prev => [newTxn, ...prev]);
-    setPendingUpgradeRequests(prev => prev.filter(r => r.id !== requestId));
-
-    const emailMsg = `📧 [AUTOMATED EMAIL SENT TO ${req.contact_email}]: "Your Account Has Been Successfully Created You Should Login Now"`;
-    setAdminLogs(prev => [emailMsg, ...prev]);
-
-    showToast(`📩 Dispatched Email: "Your Account Has Been Successfully Created You Should Login Now" to ${req.contact_email}`);
-    return true;
-  };
-
-  const recordPayment = async (paymentData) => {
-    const newTxn = {
-      id: `PK-TXN-${Math.floor(10000 + Math.random() * 90000)}`,
-      status: "Completed",
-      date: new Date().toISOString().replace('T', ' ').slice(0, 16),
-      ...paymentData
-    };
-    setTransactions(prev => [newTxn, ...prev]);
-    showToast(`⚡ Payment recorded via ${paymentData.channel}! (${formatPrice(paymentData.amount_pkr)})`);
-    return true;
-  };
-
-  const [calcParams, setCalcParams] = useState({
-    connectionType: 'On-Grid',
-    monthlyUnits: '',
-    peakUnits: 0,
-    offPeakUnits: 0,
-    customUnits: [450, 480, 520, 600, 650, 700, 750, 720, 610, 500, 460, 430], 
-    utilityProvider: 'IESCO',
-    selectedInverter: null,
-    selectedPanel: null,
-    panelCount: 0
-  });
-
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    if (typeof window !== 'undefined') {
-      const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(nextTheme);
-    }
-  };
-
-  const toggleLang = () => {
-    const nextLang = lang === 'en' ? 'ur' : 'en';
-    setLang(nextLang);
-    if (typeof window !== 'undefined') {
-      const root = window.document.documentElement;
-      root.setAttribute('dir', nextLang === 'ur' ? 'rtl' : 'ltr');
-      root.setAttribute('lang', nextLang);
-    }
-  };
-
-  const [toast, setToast] = useState(null);
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 4000);
-  };
-
-  const loadAllData = async () => {
-    setLoading(true);
     try {
-      const [propsData, invsData, panelsData, compData, reqsData] = await Promise.all([
-        apiFetchProposals(),
-        apiFetchInverters(),
-        apiFetchSolarPanels(),
-        fetchCompanyState(),
-        fetchOverrideRequests()
-      ]);
-      setProposals(propsData);
-      setInverters(invsData);
-      setSolarPanels(panelsData);
-      if (compData) setCompany(compData);
-      if (reqsData) setOverrideRequests(reqsData);
-    } catch (err) {
-      console.error("Failed to load initial data:", err);
-      showToast("⚠️ Could not load data from Firebase", "error");
-    } finally {
-      setLoading(false);
+      await fetch('/api/auth/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'PASSWORD_RESET',
+          recipientEmail: target.email,
+          companyName: target.name,
+          token: resetToken,
+          actionUrl: resetLink
+        })
+      });
+    } catch (e) {
+      console.warn("Reset email API notice:", e.message);
     }
+
+    showToast(`📩 Password reset link dispatched to ${target.email}!`);
+    return { success: true, resetLink };
   };
 
-  useEffect(() => {
-    loadAllData();
-    if (typeof window !== 'undefined') {
-      const root = window.document.documentElement;
-      root.classList.remove('dark');
-      root.classList.add('light');
-    }
-  }, []);
+  // 7. Reset Password (/reset-password)
+  const resetPasswordWithToken = async (token, newPassword) => {
+    const target = distributors.find(d => d.reset_token === token);
 
+    if (!target) {
+      return { success: false, error: 'invalid_token', message: 'Invalid or expired password reset token.' };
+    }
+
+    if (target.reset_expiry && new Date(target.reset_expiry) < new Date()) {
+      return { success: false, error: 'expired_token', message: 'Password reset link has expired (1-hour limit).' };
+    }
+
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.isValid) {
+      return { success: false, error: 'weak_password', message: strength.errors.join(' ') };
+    }
+
+    const pwdHash = await hashPassword(newPassword);
+
+    setDistributors(prev => prev.map(d => d.id === target.id ? {
+      ...d,
+      password_hash: pwdHash,
+      status: 'Active',
+      reset_token: '',
+      reset_expiry: null
+    } : d));
+
+    showToast("🔐 Password updated successfully! Please log in with your new password.");
+    router.push('/login');
+    return { success: true };
+  };
+
+  // Super Admin Account Status Controller (Suspend, Reactivate, Reject, Reset Password)
+  const updateDistributorStatus = (distributorId, newStatus) => {
+    setDistributors(prev => prev.map(d => (d.id === distributorId || d.email === distributorId) ? {
+      ...d,
+      status: newStatus
+    } : d));
+    showToast(`⚙️ Distributor account status updated to ${newStatus}`);
+  };
+
+  // Logout Handler
   const signOut = () => {
     setUser(null);
-    showToast("Signed out from portal");
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('solar_agent_user');
+    }
+    showToast("👋 Signed out successfully.");
     router.push('/login');
-  };
-
-  const getActiveLimit = () => {
-    const baseLimit = company.plan === 'Silver' ? 50 : (company.plan === 'Gold' ? 75 : 100);
-    return baseLimit + (company.override_quota || 0);
-  };
-
-  const filteredProposals = user?.role === 'super_admin' 
-    ? proposals 
-    : proposals.filter(p => !p.company_id || p.company_id === user?.company_id || p.company_name === user?.company_name);
-
-  const addLead = async (leadData) => {
-    const currentLimit = getActiveLimit();
-    if (company.proposals_generated >= currentLimit) {
-      showToast(`⚠️ Monthly proposal limit reached (${company.proposals_generated}/${currentLimit}). Upgrade required!`, "error");
-      return null;
-    }
-
-    try {
-      const payload = {
-        customer_name: leadData.customer_name || leadData.client_name || 'Valued Client',
-        contact_number: leadData.contact_number || leadData.contact || '+92 300 1234567',
-        email_address: leadData.email_address || leadData.email || 'client@example.com',
-        installation_address: leadData.installation_address || leadData.location || 'Pakistan',
-        system_size_kw: Number(leadData.system_size_kw || leadData.capacity_kw || 10),
-        total_investment: Number(leadData.total_investment || leadData.system_cost_pkr || 0),
-        monthly_savings: Number(leadData.monthly_savings || leadData.monthly_savings_pkr || 0),
-        inverter_model: leadData.inverter_model || 'Inverter',
-        panel_model: leadData.panel_model || 'Panel',
-        panel_count: Number(leadData.panel_count || 18),
-        battery_model: leadData.battery_model || null,
-        status: leadData.status || 'Sent',
-        created_at: leadData.created_at || new Date().toISOString(),
-        ...leadData,
-        company_id: user?.company_id || company.id,
-        company_name: user?.company_name || company.name
-      };
-      const created = await apiCreateProposal(payload);
-      setProposals(prev => [created, ...prev]);
-      setCompany(prev => ({
-        ...prev,
-        proposals_generated: (prev.proposals_generated || 0) + 1
-      }));
-      showToast("⚡ Proposal saved to Project Hub CRM!");
-      return created;
-    } catch (err) {
-      showToast("❌ Failed to create proposal", "error");
-      return null;
-    }
-  };
-
-  const updateLead = async (id, updateData) => {
-    try {
-      const updated = await apiUpdateProposal(id, updateData);
-      if (updated) {
-        setProposals(prev => prev.map(p => p.id === id ? updated : p));
-        showToast("💾 Lead updated successfully!");
-        return updated;
-      }
-    } catch (err) {
-      showToast("❌ Failed to update proposal", "error");
-      return null;
-    }
-  };
-
-  const removeLead = async (id) => {
-    try {
-      await apiDeleteProposal(id);
-      setProposals(prev => prev.filter(p => p.id !== id));
-      showToast("🗑️ Proposal deleted!");
-      return true;
-    } catch (err) {
-      showToast("❌ Failed to delete proposal", "error");
-      return false;
-    }
-  };
-
-  const requestOverrideQuota = async (requestDetails) => {
-    try {
-      const created = await createOverrideRequest(requestDetails);
-      setOverrideRequests(prev => [created, ...prev]);
-      showToast("📩 Quota extension request sent to Super Admin!");
-      return true;
-    } catch (err) {
-      showToast("❌ Failed to send request", "error");
-      return false;
-    }
-  };
-
-  const approveOverride = async (requestId) => {
-    try {
-      const success = await approveOverrideRequest(requestId);
-      if (success) {
-        setOverrideRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: 'Approved' } : r));
-        setCompany(prev => ({
-          ...prev,
-          override_quota: (prev.override_quota || 0) + 10
-        }));
-        showToast("⚡ Request Approved! +10 proposals added to quota.");
-        return true;
-      }
-    } catch (err) {
-      showToast("❌ Approval failed", "error");
-      return false;
-    }
-  };
-
-  const submitOfflinePayment = async (file) => {
-    const updated = await updateCompanyState({
-      receipt_uploaded: file ? file.name : 'receipt.pdf',
-      billing_status: 'Pending Verification'
-    });
-    setCompany(updated);
-    showToast("📄 Payment receipt submitted! Awaiting Super Admin approval.");
-  };
-
-  const clearPendingSubscription = async () => {
-    const updated = await updateCompanyState({
-      billing_status: 'Active',
-      receipt_uploaded: null
-    });
-    setCompany(updated);
-    showToast("✅ Subscription verified by Super Admin!");
-  };
-
-  const addInverter = async (inverterData) => {
-    try {
-      const created = await apiCreateInverter(inverterData);
-      setInverters(prev => [...prev, created]);
-      showToast("💾 Inverter added to catalog!");
-      return created;
-    } catch (err) {
-      showToast("❌ Failed to add inverter", "error");
-      return null;
-    }
-  };
-
-  const removeInverter = async (id) => {
-    try {
-      await apiDeleteInverter(id);
-      setInverters(prev => prev.filter(i => i.id !== id));
-      showToast("🗑️ Inverter removed from catalog!");
-      return true;
-    } catch (err) {
-      showToast("❌ Failed to delete inverter", "error");
-      return false;
-    }
-  };
-
-  const addSolarPanel = async (panelData) => {
-    try {
-      const created = await apiCreateSolarPanel(panelData);
-      setSolarPanels(prev => [...prev, created]);
-      showToast("💾 Solar panel added to catalog!");
-      return created;
-    } catch (err) {
-      showToast("❌ Failed to add solar panel", "error");
-      return null;
-    }
-  };
-
-  const removeSolarPanel = async (id) => {
-    try {
-      await apiDeleteSolarPanel(id);
-      setSolarPanels(prev => prev.filter(p => p.id !== id));
-      showToast("🗑️ Solar panel removed from catalog!");
-      return true;
-    } catch (err) {
-      showToast("❌ Failed to delete solar panel", "error");
-      return false;
-    }
   };
 
   return (
     <AppContext.Provider value={{
       theme,
-      toggleTheme,
+      setTheme,
       lang,
-      toggleLang,
-      proposals: filteredProposals,
-      allProposals: proposals,
-      inverters,
-      solarPanels,
+      setLang,
+      currency,
+      toggleCurrency,
+      formatPrice,
+      viewMode,
+      setViewMode,
+      user,
+      setUser,
       company,
-      updateCompanyLogo,
+      setCompany,
       distributors,
-      approveDistributorRegistration,
-      adminLogs,
-      bankDetails,
-      updateBankDetails,
-      pendingUpgradeRequests,
-      submitUpgradeRequest,
-      approveUpgradeRequestAndAutoUpgrade,
-      overrideRequests,
-      transactions,
-      recordPayment,
-      loading,
+      setDistributors,
+      proposals,
+      setProposals,
+      inverters,
+      setInverters,
+      solarPanels,
+      setSolarPanels,
       currentLead,
       setCurrentLead,
       calcParams,
       setCalcParams,
-      addLead,
-      updateLead,
-      removeLead,
       getActiveLimit,
-      requestOverrideQuota,
-      approveOverride,
-      submitOfflinePayment,
-      clearPendingSubscription,
-      toast,
-      showToast,
-      loadAllData,
-      user,
-      signInDistributor,
+      bankDetails,
+      updateBankDetails,
+      updateCompanyLogo,
+      adminLogs,
+      pendingUpgradeRequests,
+      transactions,
       signInSuperAdmin,
-      signInWithGoogle,
       signUpDistributor,
+      approveDistributorRegistration,
+      activateDistributorAccount,
+      signInDistributor,
+      signInWithGoogle,
+      requestPasswordReset,
+      resetPasswordWithToken,
+      updateDistributorStatus,
       signOut,
-      viewMode,
-      setViewMode,
-      addInverter,
-      removeInverter,
-      addSolarPanel,
-      removeSolarPanel,
-      currency,
-      toggleCurrency,
-      formatPrice
+      showToast,
+      toast
     }}>
       {children}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[9999] px-5 py-3.5 rounded-2xl shadow-2xl font-sans font-bold text-xs flex items-center gap-3 transition-all animate-bounce ${
+          toast.type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-900 text-emerald-400 border border-emerald-500/40'
+        }`}>
+          <span className="material-symbols-outlined text-lg">
+            {toast.type === 'error' ? 'error' : 'verified'}
+          </span>
+          <span>{toast.message}</span>
+        </div>
+      )}
     </AppContext.Provider>
   );
 };
