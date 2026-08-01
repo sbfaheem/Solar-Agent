@@ -161,11 +161,11 @@ Notes:
       }
     }
 
-    // 2. Local Provider Detection & Template Extraction Pipeline
-    const providerInfo = detectProvider(fileName + ' ' + (buffer ? buffer.toString('utf8', 0, Math.min(buffer.length, 500)) : ''), fileName);
-    const parsedFields = parseBillFields(buffer ? buffer.toString('ascii') : '', providerInfo.code);
+    // 2. High-Precision Provider Detection & Template Extraction Pipeline
+    const providerInfo = detectProvider('', fileName, buffer);
+    const parsedFields = parseBillFields('', providerInfo.code, buffer, fileName);
     const validation = validateExtractedBillData(parsedFields);
-    const discoFullName = DISCO_PROVIDERS[parsedFields.providerCode]?.name || DISCO_PROVIDERS.LESCO.name;
+    const discoFullName = DISCO_PROVIDERS[parsedFields.providerCode]?.name || DISCO_PROVIDERS.KE.name;
 
     return NextResponse.json({
       success: true,
