@@ -64,24 +64,24 @@ function ActivateAccountContent() {
   };
 
   return (
-    <div className="w-full max-w-md bg-[#121827] border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10 animate-fadeIn text-center">
+    <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-xl relative z-10 animate-fadeIn text-center text-slate-900">
       {/* Header Branding */}
-      <div className="size-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-inner">
+      <div className="size-16 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-700 flex items-center justify-center mx-auto mb-4 shadow-xs">
         <span className="material-symbols-outlined text-3xl">key</span>
       </div>
 
-      <h1 className="text-2xl font-display font-extrabold tracking-tight text-white mb-2">
+      <h1 className="text-2xl font-display font-extrabold tracking-tight text-slate-900 mb-2">
         Create Your Password
       </h1>
 
-      <p className="text-xs text-slate-400 mb-6">
+      <p className="text-xs text-slate-500 mb-6 font-medium">
         {targetDistributor 
           ? `Welcome ${targetDistributor.name}! Please set your account password to complete activation.`
           : 'Set a strong password for your approved distributor account.'}
       </p>
 
       {errorMsg && (
-        <div className="p-4 mb-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium text-left">
+        <div className="p-4 mb-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium text-left">
           {errorMsg}
         </div>
       )}
@@ -90,7 +90,7 @@ function ActivateAccountContent() {
         <div className="space-y-4">
           <button
             onClick={() => router.push('/login')}
-            className="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-all cursor-pointer"
+            className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-md"
           >
             Return to Distributor Login
           </button>
@@ -98,7 +98,7 @@ function ActivateAccountContent() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
               New Password
             </label>
             <input
@@ -107,12 +107,12 @@ function ActivateAccountContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full px-4 py-3.5 rounded-xl bg-slate-900/80 border border-slate-800 focus:border-emerald-500 text-white text-xs font-mono transition-all outline-none"
+              className="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-emerald-600 text-slate-900 text-xs font-mono transition-all outline-none"
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
               Confirm Password
             </label>
             <input
@@ -121,23 +121,23 @@ function ActivateAccountContent() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full px-4 py-3.5 rounded-xl bg-slate-900/80 border border-slate-800 focus:border-emerald-500 text-white text-xs font-mono transition-all outline-none"
+              className="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-emerald-600 text-slate-900 text-xs font-mono transition-all outline-none"
             />
           </div>
 
           {/* Password Policy Indicator */}
-          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
-            <span className="font-bold text-slate-300 block mb-1">Password Requirements:</span>
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-1">
+            <span className="font-bold text-slate-800 block mb-1">Password Requirements:</span>
             <div className="flex items-center gap-1.5">
-              <span className={`material-symbols-outlined text-xs ${password.length >= 8 ? 'text-emerald-400' : 'text-slate-600'}`}>check_circle</span>
+              <span className={`material-symbols-outlined text-xs ${password.length >= 8 ? 'text-emerald-600' : 'text-slate-400'}`}>check_circle</span>
               <span>Minimum 8 characters</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className={`material-symbols-outlined text-xs ${/[A-Z]/.test(password) && /[a-z]/.test(password) ? 'text-emerald-400' : 'text-slate-600'}`}>check_circle</span>
+              <span className={`material-symbols-outlined text-xs ${/[A-Z]/.test(password) && /[a-z]/.test(password) ? 'text-emerald-600' : 'text-slate-400'}`}>check_circle</span>
               <span>Uppercase & lowercase letters</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className={`material-symbols-outlined text-xs ${/[0-9]/.test(password) && /[!@#$%^&*]/.test(password) ? 'text-emerald-400' : 'text-slate-600'}`}>check_circle</span>
+              <span className={`material-symbols-outlined text-xs ${/[0-9]/.test(password) && /[!@#$%^&*]/.test(password) ? 'text-emerald-600' : 'text-slate-400'}`}>check_circle</span>
               <span>Number & special character (!@#$%^&*)</span>
             </div>
           </div>
@@ -145,7 +145,7 @@ function ActivateAccountContent() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-slate-950 font-display font-black text-sm tracking-wide shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-display font-extrabold text-sm tracking-wide shadow-lg shadow-emerald-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-base">verified_user</span>
             <span>{loading ? 'Activating Account...' : 'Activate Account & Login'}</span>
@@ -158,9 +158,9 @@ function ActivateAccountContent() {
 
 export default function ActivateAccountPage() {
   return (
-    <div className="min-h-screen bg-[#090d16] text-white flex items-center justify-center p-4 font-sans relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
-      <Suspense fallback={<div className="text-white text-xs font-mono">Loading Activation Request...</div>}>
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex items-center justify-center p-4 font-sans relative overflow-hidden">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-100/50 rounded-full blur-[140px] pointer-events-none" />
+      <Suspense fallback={<div className="text-slate-700 text-xs font-mono">Loading Activation Request...</div>}>
         <ActivateAccountContent />
       </Suspense>
     </div>
