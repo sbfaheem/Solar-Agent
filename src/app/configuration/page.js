@@ -7,6 +7,7 @@ import AIProposalModal from '../../components/AIProposalModal';
 import ProposalProgressModal from '../../components/ProposalProgressModal';
 import { useApp } from '../../context/AppContext';
 import { saveLivePresentation } from '../../lib/firebaseService';
+import { MONTH_KEYS, MONTH_LABELS, interpolateAnnualProfile } from '../../lib/ocr/seasonalCurve';
 
 export default function Configuration() {
   const { 
@@ -188,6 +189,7 @@ export default function Configuration() {
         const discoName = data.disco || 'LESCO';
         const consumerName = data.consumerName || 'VALUED CONSUMER';
         const billAmount = Number(data.billAmount) || 0;
+        const monthKey = data.monthKey || 'feb';
 
         setOcrResult({
           ...data,
@@ -202,34 +204,69 @@ export default function Configuration() {
           metadata: data.metadata || {}
         });
 
-        // 2. Set new units & utility provider to immediately recalculate system size from scratch
+        // Update annual profile with extracted month data & recalculate seasonal curve
+        const currentProfile = calcParams.annualProfile || { jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0, jul: 0, aug: 0, sep: 0, oct: 0, nov: 0, dec: 0 };
+        const updatedProfile = { ...currentProfile, [monthKey]: units };
+        const updatedVerified = Array.from(new Set([...(calcParams.verifiedMonths || []), monthKey]));
+        const annualData = interpolateAnnualProfile(updatedProfile, updatedVerified);
+
         setCalcParams(prev => ({ 
           ...prev, 
-          monthlyUnits: units,
+          monthlyUnits: annualData.averageMonthlyUnits,
+          annualProfile: annualData.profile,
+          verifiedMonths: annualData.verifiedKeys,
+          estimatedMonths: annualData.estimatedKeys,
+          annualUnits: annualData.annualUnits,
+          averageMonthlyUnits: annualData.averageMonthlyUnits,
+          peakSummerUnits: annualData.peakSummerUnits,
           utilityProvider: data.discoFullName || discoName
         }));
 
         showToast(
           lang === 'ur' 
-            ? `⚡ ${discoName} بل (${consumerName}) سے ${units} یونٹس اور Rs. ${billAmount} حاصل کر لیے گئے!` 
-            : `⚡ Parsed ${units} kWh units & Rs. ${billAmount} for ${consumerName} (${discoName})!`
+            ? `⚡ ${discoName} (${MONTH_LABELS[monthKey]}) بل سے ${units} یونٹس حاصل کر لیے گئے!` 
+            : `⚡ Parsed ${MONTH_LABELS[monthKey]} Bill (${discoName})! Extracted ${units} kWh for ${consumerName}.`
         );
       } else {
-        setOcrResult(null);
         showToast(data.error || "⚠️ Unable to accurately read this bill. Please upload a clearer, well-lit image.", "error");
       }
     } catch (err) {
-      setOcrResult(null);
       showToast("⚠️ Unable to process utility bill image. Please upload a clearer photo.", "error");
     } finally {
       setOcrLoading(false);
     }
   };
 
+  const handleStep1MonthChange = (key, val) => {
+    const units = Math.max(0, parseInt(val, 10) || 0);
+    const currentProfile = calcParams.annualProfile || { jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0, jul: 0, aug: 0, sep: 0, oct: 0, nov: 0, dec: 0 };
+    const updatedProfile = { ...currentProfile, [key]: units };
+    
+    let updatedVerified = calcParams.verifiedMonths || [];
+    if (units > 0) {
+      updatedVerified = Array.from(new Set([...updatedVerified, key]));
+    } else {
+      updatedVerified = updatedVerified.filter(k => k !== key);
+    }
+
+    const annualData = interpolateAnnualProfile(updatedProfile, updatedVerified);
+
+    setCalcParams(prev => ({
+      ...prev,
+      monthlyUnits: annualData.averageMonthlyUnits,
+      annualProfile: annualData.profile,
+      verifiedMonths: annualData.verifiedKeys,
+      estimatedMonths: annualData.estimatedKeys,
+      annualUnits: annualData.annualUnits,
+      averageMonthlyUnits: annualData.averageMonthlyUnits,
+      peakSummerUnits: annualData.peakSummerUnits
+    }));
+  };
+
   const handleFileUpload = (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      processBillFile(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => processBillFile(file));
       e.target.value = '';
     }
   };
@@ -712,28 +749,98 @@ export default function Configuration() {
                 )}
               </div>
 
-              {/* Manual Input Controls */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs font-mono">
-                <div className="space-y-2">
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">{t.monthlyUnitsLabel}</label>
-                  <input 
-                    type="number" 
-                    value={calcParams.monthlyUnits ?? ''} 
-                    onChange={e => {
-                      const val = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
-                      setCalcParams({ ...calcParams, monthlyUnits: val });
-                    }}
-                    placeholder="e.g. 600 (Upload bill or enter units)"
-                    className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white text-sm focus:border-[#b45309] focus:outline-none"
-                  />
+              {/* 12-Month Annual Consumption Builder Grid */}
+              <div className="space-y-4 pt-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-800 pt-4">
+                  <div>
+                    <h4 className="font-display font-extrabold text-sm text-[#0f172a] dark:text-white uppercase tracking-wide flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base text-[#b45309]">calendar_month</span>
+                      <span>12-Month Annual Energy Profile Grid</span>
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Upload bills across different months or type values manually to build a complete annual load profile
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-[#854d0e] dark:text-amber-300 font-mono font-bold text-xs">
+                    {(calcParams.verifiedMonths || []).length}/12 Months Loaded
+                  </span>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans">{t.connectionTypeLabel}</label>
+                {/* 12 Month Boxes */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                  {MONTH_KEYS.map(key => {
+                    const isVerified = (calcParams.verifiedMonths || []).includes(key);
+                    const isEstimated = (calcParams.estimatedMonths || []).includes(key);
+                    const val = (calcParams.annualProfile || {})[key] || 0;
+
+                    return (
+                      <div 
+                        key={key}
+                        className={`p-3 rounded-xl border transition-all flex flex-col justify-between space-y-2 relative ${
+                          isVerified 
+                            ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800' 
+                            : isEstimated 
+                              ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300/80 dark:border-amber-800/60'
+                              : 'bg-white dark:bg-black/30 border-slate-200 dark:border-slate-800'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center text-xs font-bold">
+                          <span className="text-slate-600 dark:text-slate-300">{MONTH_LABELS[key]}</span>
+                          {isVerified ? (
+                            <span className="size-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px]" title="Verified via OCR">
+                              ✓
+                            </span>
+                          ) : isEstimated ? (
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300" title="Estimated via Seasonal Load Curve">
+                              Est.
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="flex items-center gap-1 font-mono">
+                          <input 
+                            type="number"
+                            min="0"
+                            value={val || ''}
+                            placeholder="0"
+                            onChange={e => handleStep1MonthChange(key, e.target.value)}
+                            className="w-full text-base font-extrabold text-[#0f172a] dark:text-white bg-transparent outline-none border-b border-transparent focus:border-[#b45309]"
+                          />
+                          <span className="text-[10px] text-slate-400 font-bold">kWh</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Annual Load Breakdown Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono pt-2">
+                  <div className="bg-[#f8fafc] dark:bg-black/30 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Annual Energy</span>
+                    <div className="font-display font-extrabold text-xl text-[#0f172a] dark:text-white">
+                      {(calcParams.annualUnits || 0).toLocaleString()} <span className="text-xs text-slate-500">kWh/year</span>
+                    </div>
+                  </div>
+                  <div className="bg-[#f8fafc] dark:bg-black/30 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Average Monthly Load</span>
+                    <div className="font-display font-extrabold text-xl text-[#b45309]">
+                      {(calcParams.averageMonthlyUnits || 0).toLocaleString()} <span className="text-xs text-slate-500">kWh/mo</span>
+                    </div>
+                  </div>
+                  <div className="bg-[#f8fafc] dark:bg-black/30 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Peak Summer Load</span>
+                    <div className="font-display font-extrabold text-xl text-emerald-700 dark:text-emerald-400">
+                      {(calcParams.peakSummerUnits || 0).toLocaleString()} <span className="text-xs text-slate-500">kWh/mo</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Connection Type Control */}
+                <div className="pt-2">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block font-sans text-xs mb-1.5">{t.connectionTypeLabel}</label>
                   <select 
                     value={calcParams.connectionType}
                     onChange={e => setCalcParams({ ...calcParams, connectionType: e.target.value })}
-                    className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white text-sm cursor-pointer font-sans"
+                    className="w-full p-3 bg-slate-50 dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white text-xs cursor-pointer font-sans"
                   >
                     <option value="On-Grid">On-Grid Net Metering</option>
                     <option value="Hybrid">Hybrid (Solar + Battery)</option>

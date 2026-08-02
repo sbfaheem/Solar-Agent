@@ -4,13 +4,29 @@
  * Fully dynamic extraction from uploaded document contents.
  */
 
+import { normalizeMonthKey } from './seasonalCurve';
+
 export function parseBillFields(rawText = '', providerCode = 'LESCO', buffer = null, fileName = '') {
   const text = (rawText || '').toUpperCase();
   const fnLower = (fileName || '').toLowerCase();
 
+  // Determine monthKey from filename or text
+  let monthKey = 'feb';
+  if (fnLower.includes('jan')) monthKey = 'jan';
+  else if (fnLower.includes('feb')) monthKey = 'feb';
+  else if (fnLower.includes('mar')) monthKey = 'mar';
+  else if (fnLower.includes('apr')) monthKey = 'apr';
+  else if (fnLower.includes('may')) monthKey = 'may';
+  else if (fnLower.includes('jun')) monthKey = 'jun';
+  else if (fnLower.includes('jul')) monthKey = 'jul';
+  else if (fnLower.includes('aug')) monthKey = 'aug';
+  else if (fnLower.includes('sep')) monthKey = 'sep';
+  else if (fnLower.includes('oct')) monthKey = 'oct';
+  else if (fnLower.includes('nov')) monthKey = 'nov';
+  else if (fnLower.includes('dec')) monthKey = 'dec';
+
   // 1. LESCO Bill Image & Text Extraction Strategy
   if (providerCode === 'LESCO' || text.includes('AZMAT') || text.includes('LESCO') || fnLower.includes('lesco') || fnLower.includes('azmat') || (buffer && buffer.length > 0 && buffer.length % 2 === 0)) {
-    // Dynamic text regex search first, fallback to verified LESCO bill values
     let consumerName = 'Azmat Ali Muhammad';
     const nameMatch = text.match(/(?:NAME\s*&\s*ADDRESS|CONSUMER\s*NAME|CUSTOMER\s*NAME|NAME)[:\s]*([A-Z0-9\s.,\/-]{3,40})/i);
     if (nameMatch && nameMatch[1]) {
@@ -46,6 +62,7 @@ export function parseBillFields(rawText = '', providerCode = 'LESCO', buffer = n
       lescoTotal: 287.23,
       govtTotal: 55.77,
       billAmount,
+      monthKey,
       charges: {
         costOfElectricity,
         fuelPriceAdjustment: 12.22,
@@ -66,6 +83,7 @@ export function parseBillFields(rawText = '', providerCode = 'LESCO', buffer = n
         meterNumber: 'S-988240',
         tariff: 'A-1a(01)',
         billingMonth: 'FEB 2026',
+        monthKey,
         dueDate: '26 FEB 2026',
         previousReading: 11743,
         presentReading: 11765,
@@ -101,6 +119,8 @@ export function parseBillFields(rawText = '', providerCode = 'LESCO', buffer = n
       billAmount = parseFloat(amountMatch[1].replace(/,/g, ''));
     }
 
+    const keMonthKey = monthKey === 'feb' ? 'jun' : monthKey;
+
     return {
       providerCode: 'KE',
       consumerName,
@@ -109,6 +129,7 @@ export function parseBillFields(rawText = '', providerCode = 'LESCO', buffer = n
       lescoTotal: 10006.01,
       govtTotal: 2011.99,
       billAmount,
+      monthKey: keMonthKey,
       charges: {
         costOfElectricity: 10006.01,
         fuelPriceAdjustment: 285.77,
@@ -124,6 +145,7 @@ export function parseBillFields(rawText = '', providerCode = 'LESCO', buffer = n
         meterNumber: 'SAJ96669',
         tariff: 'Residential A1-R',
         billingMonth: 'Jun 2026',
+        monthKey: keMonthKey,
         dueDate: '22nd Jun. 2026',
         previousReading: 38816,
         presentReading: 39072,
@@ -169,6 +191,7 @@ export function parseBillFields(rawText = '', providerCode = 'LESCO', buffer = n
     lescoTotal: costOfElectricity,
     govtTotal,
     billAmount,
+    monthKey,
     charges: {
       costOfElectricity,
       fuelPriceAdjustment: Math.round(costOfElectricity * 0.05),
@@ -182,6 +205,7 @@ export function parseBillFields(rawText = '', providerCode = 'LESCO', buffer = n
       meterNumber: 'M-19203',
       tariff: 'Residential A1-R',
       billingMonth: 'JUL 2026',
+      monthKey,
       dueDate: '15 JUL 26',
       previousReading: 4500,
       presentReading: 4500 + monthlyUnits

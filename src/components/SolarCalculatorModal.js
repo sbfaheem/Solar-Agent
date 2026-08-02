@@ -3,6 +3,11 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
+import { 
+  MONTH_KEYS, 
+  MONTH_LABELS, 
+  interpolateAnnualProfile 
+} from '../lib/ocr/seasonalCurve';
 
 // Pakistani DISCOs Database
 const DISCO_DATA = [
@@ -40,7 +45,7 @@ const PAKISTAN_CITIES = [
   { city: 'Skardu', psh: 5.8, province: 'Gilgit-Baltistan' }
 ];
 
-// Default Empty Appliances (User inputs data as per their custom requirements)
+// Default Empty Appliances
 const INITIAL_APPLIANCES = [
   { id: 'app-1', name: 'LED Bulbs & Lights', category: 'Lights', watts: 12, qty: 0, hours: 0, icon: 'lightbulb' },
   { id: 'app-2', name: 'Ceiling Fans (Inverter/AC)', category: 'Fans', watts: 75, qty: 0, hours: 0, icon: 'mode_fan' },
@@ -54,56 +59,62 @@ const INITIAL_APPLIANCES = [
 
 export default function SolarCalculatorModal({ isOpen, onClose }) {
   const router = useRouter();
-  const { lang, setCalcParams, showToast, formatPrice } = useApp();
+  const { lang, calcParams, setCalcParams, showToast, formatPrice } = useApp();
 
   const [mode, setMode] = useState('ocr'); // 'ocr' or 'appliance'
   const [loading, setLoading] = useState(false);
-  const [ocrData, setOcrData] = useState(null);
   const [dragOver, setDragOver] = useState(false);
 
-  // Appliance Load Calculator State (Starts with 0/empty boxes for custom user input)
+  // 12-Month Annual Profile State
+  const [monthlyProfile, setMonthlyProfile] = useState({
+    jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0, jul: 0, aug: 0, sep: 0, oct: 0, nov: 0, dec: 0
+  });
+  const [verifiedKeys, setVerifiedKeys] = useState([]);
+  const [consumerName, setConsumerName] = useState('');
+  const [selectedCity, setSelectedCity] = useState('Lahore');
+  const [selectedDisco, setSelectedDisco] = useState('LESCO');
+
+  // Appliance Load Calculator State
   const [appliances, setAppliances] = useState(INITIAL_APPLIANCES);
-  const [selectedCity, setSelectedCity] = useState('Karachi');
-  const [selectedDisco, setSelectedDisco] = useState('KE');
 
   if (!isOpen) return null;
 
-  // OCR Processing (Stateless & Uncached)
+  // Calculate seasonal interpolation curve for missing months
+  const annualData = interpolateAnnualProfile(monthlyProfile, verifiedKeys);
+
+  // Multi-Bill OCR Processing (Auto-maps extracted month into Annual Grid)
   const processFile = async (file) => {
     if (!file) return;
-    
-    // 1. Immediately reset previous OCR state & calculations
-    setOcrData(null);
     setLoading(true);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Fetch with cache-busting timestamp to guarantee fresh scan
       const res = await fetch(`/api/ocr-bill?t=${Date.now()}`, {
         method: 'POST',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        },
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
         body: formData
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setOcrData(data);
-        setSelectedDisco(data.disco || 'LESCO');
-        setCalcParams(prev => ({
+        const monthKey = data.monthKey || 'feb';
+        const units = Number(data.monthlyUnits) || 0;
+
+        if (data.consumerName) setConsumerName(data.consumerName);
+        if (data.disco) setSelectedDisco(data.disco);
+
+        // Update monthly profile & verified keys
+        setMonthlyProfile(prev => ({
           ...prev,
-          monthlyUnits: Number(data.monthlyUnits) || 0,
-          utilityProvider: data.discoFullName || data.disco || 'LESCO',
-          billAmount: Number(data.billAmount) || 0,
-          tariffRate: data.tariffRate || 45.0
+          [monthKey]: units
         }));
+
+        setVerifiedKeys(prev => Array.from(new Set([...prev, monthKey])));
+
         showToast(
-          lang === 'ur'
-            ? `⚡ ${data.discoFullName} بل اسکین ہو گیا! (${data.monthlyUnits} یونٹس)`
-            : `⚡ Parsed ${data.discoFullName}! Extracted ${data.monthlyUnits} kWh (${formatPrice(data.billAmount)})`
+          `⚡ Parsed ${MONTH_LABELS[monthKey]} Bill (${data.discoFullName || data.disco})! Extracted ${units} kWh for ${data.consumerName || 'Consumer'}.`
         );
       } else {
         showToast(data.error || "OCR Parsing failed", "error");
@@ -117,20 +128,32 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
   };
 
   const handleFileSelect = (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) processFile(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => processFile(file));
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      Array.from(e.dataTransfer.files).forEach(file => processFile(file));
     }
   };
 
-  // Appliance Quantity and Hours Handlers
+  const handleMonthInputChange = (key, val) => {
+    const units = Math.max(0, parseInt(val, 10) || 0);
+    setMonthlyProfile(prev => ({ ...prev, [key]: units }));
+    if (units > 0) {
+      setVerifiedKeys(prev => Array.from(new Set([...prev, key])));
+    } else {
+      setVerifiedKeys(prev => prev.filter(k => k !== key));
+    }
+  };
+
+  // Appliance Handlers
   const updateApplianceQty = (id, delta) => {
     setAppliances(prev => prev.map(a => a.id === id ? { ...a, qty: Math.max(0, a.qty + delta) } : a));
   };
@@ -154,28 +177,34 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
   const totalDailyKwh = appliances.reduce((sum, a) => sum + ((a.qty * a.watts * a.hours) / 1000), 0);
   const applianceMonthlyKwh = Math.round(totalDailyKwh * 30);
 
-  // Active Units based on mode (0 if no bill uploaded yet in OCR mode)
-  const activeUnits = mode === 'ocr' ? (ocrData ? (ocrData.monthlyUnits || 0) : 0) : applianceMonthlyKwh;
+  // Active units & calculation parameters
+  const activeUnits = mode === 'ocr' ? annualData.averageMonthlyUnits : applianceMonthlyKwh;
 
-  const currentCityObj = PAKISTAN_CITIES.find(c => c.city === selectedCity) || PAKISTAN_CITIES[1];
-  const currentDiscoObj = DISCO_DATA.find(d => d.code === selectedDisco) || DISCO_DATA[0];
+  const currentCityObj = PAKISTAN_CITIES.find(c => c.city === selectedCity) || PAKISTAN_CITIES[2];
+  const currentDiscoObj = DISCO_DATA.find(d => d.code === selectedDisco) || DISCO_DATA[1];
 
-  // Solar Engineering System Sizing Calculations
+  // Solar Sizing Calculations from Annual Profile
   const psh = currentCityObj.psh;
   const systemSizeKw = activeUnits > 0 ? parseFloat((activeUnits / (psh * 30 * 0.85)).toFixed(2)) : 0.0;
   const panelCount = systemSizeKw > 0 ? Math.ceil((systemSizeKw * 1000) / 580) : 0;
   const estimatedCost = systemSizeKw > 0 ? Math.round((240000 + (systemSizeKw * 1000 * 40.0) + (systemSizeKw * 15000) + 40000)) : 0;
-  const annualSavings = activeUnits > 0 ? Math.round(activeUnits * 12 * (currentDiscoObj.tariff || 45.0)) : 0;
+  const annualSavings = activeUnits > 0 ? Math.round((mode === 'ocr' ? annualData.annualUnits : activeUnits * 12) * (currentDiscoObj.tariff || 45.0)) : 0;
   const paybackYears = estimatedCost > 0 && annualSavings > 0 ? parseFloat((estimatedCost / annualSavings).toFixed(1)) : 0;
 
   const handleProceed = () => {
     if (activeUnits <= 0) {
-      showToast("⚠️ Please upload a bill or enter your appliance load first!", "error");
+      showToast("⚠️ Please upload at least one electricity bill or enter your appliance load!", "error");
       return;
     }
     setCalcParams(prev => ({
       ...prev,
       monthlyUnits: activeUnits,
+      annualProfile: annualData.profile,
+      verifiedMonths: annualData.verifiedKeys,
+      estimatedMonths: annualData.estimatedKeys,
+      annualUnits: mode === 'ocr' ? annualData.annualUnits : activeUnits * 12,
+      averageMonthlyUnits: activeUnits,
+      peakSummerUnits: annualData.peakSummerUnits,
       utilityProvider: selectedDisco,
       systemSizeKw
     }));
@@ -185,17 +214,17 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-[#0f172a] dark:text-white">
+      <div className="bg-white dark:bg-[#181a1d] border border-[#e2e8f0] dark:border-[#2d3137] rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] text-[#0f172a] dark:text-white">
         
-        {/* Modal Top Header */}
+        {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-black/30">
           <div className="flex items-center gap-3">
             <span className="size-9 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-bold shadow-sm">
               <span className="material-symbols-outlined text-lg">solar_power</span>
             </span>
             <div>
-              <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">Solar Engineering Calculator</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Pakistani Utility Bills OCR & Appliance Load Sizing Engine</p>
+              <h3 className="font-display font-extrabold text-[#0f172a] dark:text-white text-base">Annual Energy Profiler & Solar Calculator</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Multi-Month Electricity Bills OCR & Seasonal Load Extrapolation Engine</p>
             </div>
           </div>
           <button 
@@ -206,8 +235,8 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Calculation Mode Switcher Tabs */}
-        <div className="bg-slate-100 dark:bg-black/40 px-6 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        {/* Mode & Region Selector */}
+        <div className="bg-slate-100 dark:bg-black/40 px-6 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center flex-wrap gap-2">
           <div className="flex gap-2">
             <button 
               onClick={() => setMode('ocr')}
@@ -233,8 +262,16 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
             </button>
           </div>
 
-          {/* Regional DISCO & City Selectors */}
-          <div className="hidden sm:flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs">
+            <select 
+              value={selectedDisco} 
+              onChange={e => setSelectedDisco(e.target.value)}
+              className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
+            >
+              {DISCO_DATA.map(d => (
+                <option key={d.code} value={d.code}>{d.name}</option>
+              ))}
+            </select>
             <select 
               value={selectedCity} 
               onChange={e => setSelectedCity(e.target.value)}
@@ -250,15 +287,16 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
         {/* Modal Scrollable Content Body */}
         <div className="p-6 space-y-6 overflow-y-auto">
 
-          {/* MODE 1: OCR BILL SCANNER */}
+          {/* MODE 1: MULTI-MONTH OCR & ANNUAL CONSUMPTION BUILDER */}
           {mode === 'ocr' && (
             <div className="space-y-6">
-              {/* Drag and Drop Zone */}
+              
+              {/* Dropzone & OCR Upload */}
               <div 
                 onDrop={handleDrop}
                 onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={e => { e.preventDefault(); setDragOver(false); }}
-                className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all relative cursor-pointer ${
+                className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all relative cursor-pointer ${
                   dragOver 
                     ? 'border-[#b45309] bg-[#fefce8] dark:bg-amber-950/20' 
                     : 'border-[#cbd5e1] dark:border-slate-700 bg-[#f8fafc] dark:bg-black/20 hover:border-[#b45309] hover:bg-[#fefce8]/40'
@@ -267,74 +305,126 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                 <input 
                   type="file" 
                   accept="image/*,application/pdf"
+                  multiple
                   onChange={handleFileSelect}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
                 
                 {loading ? (
-                  <div className="space-y-3 py-6">
+                  <div className="space-y-2 py-4">
                     <span className="material-symbols-outlined text-4xl text-[#b45309] animate-spin">sync</span>
-                    <p className="text-sm font-extrabold text-[#0f172a] dark:text-white">Analyzing utility bill via Gemini 3.6 Vision OCR...</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Extracting DISCO, billed kWh, consumer name, reference number, and tariff rates</p>
+                    <p className="text-sm font-extrabold text-[#0f172a] dark:text-white">Processing utility bill images via Gemini Vision OCR...</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Detecting month, consumer name, billed units, and populating 12-Month Grid</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 py-4">
-                    <div className="size-12 rounded-2xl bg-[#fef3c7] text-[#b45309] flex items-center justify-center mx-auto shadow-sm">
+                  <div className="space-y-2 py-2">
+                    <div className="size-11 rounded-2xl bg-[#fef3c7] text-[#b45309] flex items-center justify-center mx-auto shadow-sm">
                       <span className="material-symbols-outlined text-2xl">cloud_upload</span>
                     </div>
-                    <p className="text-sm font-extrabold text-[#0f172a] dark:text-white">Drag & Drop utility bill image here or click to browse</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Supports K-Electric, LESCO, IESCO, FESCO, GEPCO, MEPCO, PESCO, HESCO, SEPCO, QESCO, etc.</p>
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#fefce8] dark:bg-amber-950/40 border border-[#fef08a] dark:border-amber-800 text-xs font-mono font-bold text-[#854d0e] dark:text-amber-300">
-                      <span>✨ Powered by Gemini Vision OCR</span>
-                    </div>
+                    <p className="text-sm font-extrabold text-[#0f172a] dark:text-white">Drag & Drop single or multiple electricity bills here</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Supports K-Electric, LESCO, IESCO, FESCO, GEPCO, MEPCO, PESCO, etc. across any month</p>
                   </div>
                 )}
               </div>
 
-              {/* OCR Results Summary */}
-              {ocrData && (
-                <div className="bg-[#f0fdf4] dark:bg-emerald-950/20 border border-[#bbf7d0] dark:border-emerald-800 rounded-2xl p-5 space-y-4 animate-fadeIn">
-                  <div className="flex justify-between items-center border-b border-emerald-200 dark:border-emerald-800 pb-3">
-                    <span className="text-xs font-extrabold font-mono text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-base text-emerald-700">check_circle</span>
-                      Bill Extraction Completed
-                    </span>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-300">
-                      Engine: {ocrData.ocrEngine}
-                    </span>
-                  </div>
+              {/* Progress & Consumer Name Bar */}
+              <div className="flex justify-between items-center bg-slate-100 dark:bg-black/30 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-[#0f172a] dark:text-white">
+                    {consumerName ? `Consumer: ${consumerName}` : '12-Month Annual Energy Profile Builder'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-[#854d0e] dark:text-amber-300 font-mono font-bold text-[11px]">
+                    {annualData.verifiedKeys.length}/12 Months Verified
+                  </span>
+                </div>
+              </div>
 
-                  {ocrData.consumerName && (
-                    <div className="bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 flex justify-between items-center text-xs">
-                      <span className="text-slate-500 text-[10px] uppercase font-bold">Consumer Name</span>
-                      <span className="font-extrabold text-[#0f172a] dark:text-white text-sm">{ocrData.consumerName}</span>
-                    </div>
-                  )}
+              {/* 12-Month Annual Consumption Grid */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-display font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                    Monthly Consumption Grid (kWh Units)
+                  </h4>
+                  <span className="text-[11px] text-slate-400">Click any box to edit manually</span>
+                </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono">
-                    <div className="bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 space-y-1">
-                      <span className="text-slate-500 text-[10px] uppercase font-bold block">DISCO</span>
-                      <div className="font-extrabold text-[#b45309] text-sm truncate">{ocrData.discoFullName || ocrData.disco}</div>
-                    </div>
-                    <div className="bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 space-y-1">
-                      <span className="text-slate-500 text-[10px] uppercase font-bold block">Billed Consumption</span>
-                      <div className="font-extrabold text-[#0f172a] dark:text-white text-sm">{ocrData.monthlyUnits} kWh</div>
-                    </div>
-                    <div className="bg-white dark:bg-black/30 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900 space-y-1">
-                      <span className="text-slate-500 text-[10px] uppercase font-bold block">Payable Amount</span>
-                      <div className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">{formatPrice(ocrData.billAmount)}</div>
-                    </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                  {MONTH_KEYS.map(key => {
+                    const isVerified = annualData.verifiedKeys.includes(key);
+                    const isEstimated = annualData.estimatedKeys.includes(key);
+                    const val = annualData.profile[key] || 0;
+
+                    return (
+                      <div 
+                        key={key}
+                        className={`p-3 rounded-xl border transition-all flex flex-col justify-between space-y-2 relative ${
+                          isVerified 
+                            ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800' 
+                            : isEstimated 
+                              ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300/80 dark:border-amber-800/60'
+                              : 'bg-white dark:bg-black/30 border-slate-200 dark:border-slate-800'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center text-xs font-bold">
+                          <span className="text-slate-600 dark:text-slate-300">{MONTH_LABELS[key]}</span>
+                          {isVerified ? (
+                            <span className="size-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px]" title="Verified via OCR">
+                              ✓
+                            </span>
+                          ) : isEstimated ? (
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300" title="Estimated via Seasonal Load Curve">
+                              Est.
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="flex items-center gap-1 font-mono">
+                          <input 
+                            type="number"
+                            min="0"
+                            value={val || ''}
+                            placeholder="0"
+                            onChange={e => handleMonthInputChange(key, e.target.value)}
+                            className="w-full text-base font-extrabold text-[#0f172a] dark:text-white bg-transparent outline-none border-b border-transparent focus:border-amber-500"
+                          />
+                          <span className="text-[10px] text-slate-400 font-bold">kWh</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Annual Load Metrics Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+                <div className="bg-[#f8fafc] dark:bg-black/30 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Annual Energy</span>
+                  <div className="font-display font-extrabold text-xl text-[#0f172a] dark:text-white">
+                    {annualData.annualUnits.toLocaleString()} <span className="text-xs text-slate-500">kWh/year</span>
                   </div>
                 </div>
-              )}
+                <div className="bg-[#f8fafc] dark:bg-black/30 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Average Monthly Units</span>
+                  <div className="font-display font-extrabold text-xl text-[#b45309]">
+                    {annualData.averageMonthlyUnits.toLocaleString()} <span className="text-xs text-slate-500">kWh/mo</span>
+                  </div>
+                </div>
+                <div className="bg-[#f8fafc] dark:bg-black/30 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Peak Summer Load</span>
+                  <div className="font-display font-extrabold text-xl text-emerald-700 dark:text-emerald-400">
+                    {annualData.peakSummerUnits.toLocaleString()} <span className="text-xs text-slate-500">kWh/mo</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
-          {/* MODE 2: INTERACTIVE APPLIANCE LOAD CALCULATOR (Default Empty Boxes) */}
+          {/* MODE 2: APPLIANCE LOAD CALCULATOR */}
           {mode === 'appliance' && (
             <div className="space-y-6">
-              
-              {/* Appliance Summary Header Bar */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-[#f8fafc] dark:bg-black/30 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-1">
                   <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Peak Running Load</span>
@@ -356,7 +446,6 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Interactive Appliances Manager List */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-display font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wide">
@@ -388,7 +477,6 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                       </div>
 
                       <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                        {/* Quantity Direct Input & Stepper */}
                         <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-black/40">
                           <button 
                             onClick={() => updateApplianceQty(app.id, -1)}
@@ -412,7 +500,6 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                           </button>
                         </div>
 
-                        {/* Hours Per Day Input */}
                         <div className="flex items-center gap-1.5 text-xs font-mono">
                           <input 
                             type="number" 
@@ -427,7 +514,6 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                           <span className="text-slate-400 text-[10px]">hrs/day</span>
                         </div>
 
-                        {/* Total Appliance Load */}
                         <div className="text-right min-w-[70px] font-mono text-xs font-bold text-[#b45309]">
                           {((app.qty * app.watts * app.hours) / 1000).toFixed(1)} kWh
                         </div>
@@ -436,7 +522,6 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                   ))}
                 </div>
               </div>
-
             </div>
           )}
 
@@ -446,7 +531,7 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
               <div className="flex justify-between items-center">
                 <h4 className="font-display font-extrabold text-[#854d0e] dark:text-amber-300 text-xs flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm">wb_sunny</span>
-                  <span>Synchronized Solar Sizing ({selectedCity} - {psh} Peak Sun Hours)</span>
+                  <span>Synchronized Solar System Sizing ({selectedCity} - {psh} Peak Sun Hours)</span>
                 </h4>
                 <span className="text-[10px] font-mono font-bold text-[#854d0e] dark:text-amber-400 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">
                   DISCO: {currentDiscoObj.code} ({currentDiscoObj.tariff} PKR/kWh)
@@ -474,14 +559,14 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
           ) : (
             <div className="bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
               <p className="text-xs text-slate-500 font-medium">
-                ℹ️ Enter your appliance quantities and daily usage hours above to auto-calculate peak load, monthly consumption, and recommended solar system capacity.
+                ℹ️ Upload one or more electricity bills or configure your appliances above to auto-calculate annual energy consumption and recommended PV system capacity.
               </p>
             </div>
           )}
 
         </div>
 
-        {/* Modal Bottom Action Footer */}
+        {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-black/30 flex justify-between items-center">
           <button 
             onClick={onClose}
@@ -498,7 +583,7 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                 : 'bg-[#b45309] hover:bg-[#92400e] text-white shadow-md cursor-pointer'
             }`}
           >
-            <span>{activeUnits > 0 ? `Proceed with ${systemSizeKw} kW Sizing` : 'Input Appliances to View Recommendation'}</span>
+            <span>{activeUnits > 0 ? `Proceed with ${systemSizeKw} kW Sizing` : 'Upload Bill to View Recommendation'}</span>
             <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
         </div>
