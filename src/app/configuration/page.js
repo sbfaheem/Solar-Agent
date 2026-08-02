@@ -168,6 +168,7 @@ export default function Configuration() {
       ...prev, 
       monthlyUnits: 0 
     }));
+    setOcrResult(null);
     setOcrLoading(true);
 
     try {
@@ -648,7 +649,7 @@ export default function Configuration() {
                 {ocrResult && (
                   <div className="p-5 bg-white dark:bg-[#1f2226] border-2 border-emerald-400 dark:border-emerald-700 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200 space-y-4 shadow-lg text-left animate-fadeIn">
                     
-                    {/* Header Banner */}
+                    {/* Dynamic Provider Header Banner */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 gap-2">
                       <div className="flex items-center gap-2.5">
                         <div className="size-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
@@ -656,10 +657,11 @@ export default function Configuration() {
                         </div>
                         <div>
                           <strong className="font-sans font-extrabold text-sm text-slate-900 dark:text-white block">
-                            Fresh Bill OCR Extracted ({ocrResult.disco || 'DISCO'})
+                            Fresh Bill OCR Extracted ({ocrResult.discoFullName || ocrResult.disco || 'DISCO'})
                           </strong>
                           <span className="text-[11px] text-slate-500 font-medium">
-                            Account #: {ocrResult.metadata?.referenceNumber || ocrResult.referenceNumber || 'N/A'} | Consumer ID: {ocrResult.metadata?.customerId || 'N/A'}
+                            {ocrResult.metadata?.referenceNumber ? `Account #: ${ocrResult.metadata.referenceNumber}` : ''} 
+                            {ocrResult.metadata?.customerId ? ` | Customer ID: ${ocrResult.metadata.customerId}` : ''}
                           </span>
                         </div>
                       </div>
@@ -673,7 +675,7 @@ export default function Configuration() {
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-black/30 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-500 font-sans font-bold block">CONSUMER NAME</span>
-                        <strong className="text-slate-900 dark:text-white font-extrabold text-sm">{ocrResult.consumerName || 'VALUED CONSUMER'}</strong>
+                        <strong className="text-slate-900 dark:text-white font-extrabold text-sm">{ocrResult.consumerName || 'CONSUMER'}</strong>
                       </div>
 
                       <div>
@@ -683,7 +685,7 @@ export default function Configuration() {
 
                       <div>
                         <span className="text-[10px] text-slate-500 font-sans font-bold block">COST OF ELECTRICITY</span>
-                        <strong className="text-slate-900 dark:text-white font-bold text-sm">Rs. {Number(ocrResult.costOfElectricity || 0).toFixed(2)}</strong>
+                        <strong className="text-slate-900 dark:text-white font-bold text-sm">Rs. {Number(ocrResult.costOfElectricity || 0).toLocaleString()}</strong>
                       </div>
 
                       <div>
@@ -692,58 +694,45 @@ export default function Configuration() {
                       </div>
                     </div>
 
-                    {/* Detailed Itemized Charges Breakdown */}
-                    <div className="space-y-2 border-t border-slate-200 dark:border-slate-800 pt-3">
-                      <h5 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase flex items-center justify-between">
-                        <span>Itemized DISCO & Govt Charges Breakdown</span>
-                        <span className="text-[11px] text-slate-500 font-normal">Subtotals: LESCO Charges (Rs. {ocrResult.lescoTotal || '287.23'}) + Govt Charges (Rs. {ocrResult.govtTotal || '55.77'})</span>
-                      </h5>
+                    {/* Dynamic Itemized Charges Breakdown */}
+                    {ocrResult.charges && Object.keys(ocrResult.charges).length > 0 && (
+                      <div className="space-y-2 border-t border-slate-200 dark:border-slate-800 pt-3">
+                        <h5 className="font-sans font-bold text-slate-900 dark:text-white text-xs uppercase flex items-center justify-between">
+                          <span>Itemized {ocrResult.disco || 'DISCO'} & Govt Charges Breakdown</span>
+                        </h5>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 block text-[10px]">Cost of Electricity</span>
-                          <strong className="text-slate-900 dark:text-white">Rs. {ocrResult.charges?.costOfElectricity || '232.29'}</strong>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 block text-[10px]">Fuel Price Adjust (FPA)</span>
-                          <strong className="text-slate-900 dark:text-white">Rs. {ocrResult.charges?.fuelPriceAdjustment || '12.22'}</strong>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 block text-[10px]">FC Surcharge</span>
-                          <strong className="text-slate-900 dark:text-white">Rs. {ocrResult.charges?.fcSurcharge || '9.46'}</strong>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 block text-[10px]">Quarterly Tariff Adjust</span>
-                          <strong className="text-slate-900 dark:text-white">Rs. {ocrResult.charges?.quarterlyTariffAdjustment || '7.26'}</strong>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 block text-[10px]">Fixed Charges</span>
-                          <strong className="text-slate-900 dark:text-white">Rs. {ocrResult.charges?.fixedCharges || '26.00'}</strong>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 block text-[10px]">Electricity Duty</span>
-                          <strong className="text-slate-900 dark:text-white">Rs. {ocrResult.charges?.electricityDuty || '3.59'}</strong>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 block text-[10px]">GST</span>
-                          <strong className="text-slate-900 dark:text-white">Rs. {ocrResult.charges?.gst || '50.00'}</strong>
-                        </div>
-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 block text-[10px]">GST on FPA / ED on FPA</span>
-                          <strong className="text-slate-900 dark:text-white">Rs. {ocrResult.charges?.gstOnFpa || '2.00'} + {ocrResult.charges?.edOnFpa || '0.18'}</strong>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                          {Object.entries(ocrResult.charges).map(([key, val]) => (
+                            Number(val) !== 0 && (
+                              <div key={key} className="p-2 rounded-lg bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-800">
+                                <span className="text-slate-500 block text-[10px]">
+                                  {key === 'fuelPriceAdjustment' ? 'Fuel Price Adjust (FPA)' : 
+                                   key === 'fcSurcharge' ? 'FC Surcharge' : 
+                                   key === 'quarterlyTariffAdjustment' ? 'Quarterly Tariff Adjust' : 
+                                   key === 'fixedCharges' ? 'Fixed Charges' : 
+                                   key === 'electricityDuty' ? 'Electricity Duty' : 
+                                   key === 'costOfElectricity' ? 'Cost of Electricity' : 
+                                   key.toUpperCase()}
+                                </span>
+                                <strong className="text-slate-900 dark:text-white">Rs. {Number(val).toLocaleString()}</strong>
+                              </div>
+                            )
+                          ))}
                         </div>
                       </div>
-                    </div>
+                    )}
 
-                    {/* Metadata Badges */}
-                    <div className="text-[10px] text-slate-500 border-t border-slate-200 dark:border-slate-800 pt-2.5 flex flex-wrap items-center justify-between gap-2">
-                      <span>Meter #: <strong>{ocrResult.metadata?.meterNumber || 'S-988240'}</strong></span>
-                      <span>Tariff: <strong>{ocrResult.metadata?.tariff || 'A-1a(01)'}</strong></span>
-                      <span>Load: <strong>{ocrResult.metadata?.load || '1 kW'}</strong></span>
-                      <span>Division: <strong>{ocrResult.metadata?.division || 'SHARKOT'}</strong> ({ocrResult.metadata?.subDivision || 'GULISTAN'})</span>
-                      <span>Readings: <strong>{ocrResult.metadata?.previousReading || 11743}</strong> ➔ <strong>{ocrResult.metadata?.presentReading || 11765}</strong></span>
-                      <span>Due Date: <strong className="text-red-600 font-bold">{ocrResult.metadata?.dueDate || '26 FEB 26'}</strong></span>
-                    </div>
+                    {/* Dynamic Metadata Badges */}
+                    {ocrResult.metadata && Object.keys(ocrResult.metadata).length > 0 && (
+                      <div className="text-[10px] text-slate-500 border-t border-slate-200 dark:border-slate-800 pt-2.5 flex flex-wrap items-center justify-between gap-2">
+                        {ocrResult.metadata.meterNumber && <span>Meter #: <strong>{ocrResult.metadata.meterNumber}</strong></span>}
+                        {ocrResult.metadata.tariff && <span>Tariff: <strong>{ocrResult.metadata.tariff}</strong></span>}
+                        {ocrResult.metadata.load && <span>Load: <strong>{ocrResult.metadata.load}</strong></span>}
+                        {ocrResult.metadata.division && <span>Division: <strong>{ocrResult.metadata.division}</strong></span>}
+                        {ocrResult.metadata.previousReading && <span>Readings: <strong>{ocrResult.metadata.previousReading}</strong> ➔ <strong>{ocrResult.metadata.presentReading}</strong></span>}
+                        {ocrResult.metadata.dueDate && <span>Due Date: <strong className="text-red-600 font-bold">{ocrResult.metadata.dueDate}</strong></span>}
+                      </div>
+                    )}
 
                   </div>
                 )}
