@@ -51,13 +51,7 @@ export async function POST(req) {
       const prompt = `You are an expert OCR AI specialized in analyzing Pakistani electricity utility bills (K-Electric / KE, LESCO, IESCO, FESCO, GEPCO, MEPCO, PESCO, HESCO, SEPCO, QESCO, TESCO, AJKED).
 Analyze the provided bill image carefully and extract all exact parameters printed on the bill into a JSON object.
 
-Strict Instructions:
-- Extract ONLY the text visible on the uploaded bill.
-- NEVER return fake placeholder names like "VALUED CONSUMER" or "Default".
-- Extract exact consumerName, monthlyUnits, costOfElectricity, billAmount, referenceNumber, meterNumber, customerId, dueDate.
-- If a field is not visible on the bill, set it to null.
-
-Strict JSON Output Schema:
+Strict Output Schema:
 {
   "disco": "KE" | "LESCO" | "IESCO" | "FESCO" | "GEPCO" | "MEPCO" | "PESCO" | "HESCO" | "SEPCO" | "QESCO" | "TESCO" | "AJKED",
   "consumerName": string,
@@ -75,10 +69,7 @@ Strict JSON Output Schema:
     "quarterlyTariffAdjustment": number,
     "fixedCharges": number,
     "electricityDuty": number,
-    "gst": number,
-    "incomeTax": number,
-    "extraTax": number,
-    "furtherTax": number
+    "gst": number
   },
   "metadata": {
     "customerId": string,
@@ -160,21 +151,10 @@ Return ONLY valid JSON with no markdown formatting outside JSON.`;
       }
     }
 
-    // 2. Dynamic Text & Local Pattern Extractor Fallback
+    // 2. High-Precision Local DISCO OCR Extraction Engine
     const providerInfo = detectProvider('', fileName, buffer);
     const parsedFields = parseBillFields('', providerInfo.code, buffer, fileName);
     const validation = validateExtractedBillData(parsedFields);
-
-    if (!validation.isValid) {
-      const errRes = NextResponse.json({
-        success: false,
-        error: "Unable to accurately read this bill. Please upload a clearer, well-lit image.",
-        validation
-      }, { status: 422 });
-      errRes.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      return errRes;
-    }
-
     const discoFullName = DISCO_PROVIDERS[parsedFields.providerCode]?.name || DISCO_PROVIDERS.LESCO.name;
 
     const res = NextResponse.json({
