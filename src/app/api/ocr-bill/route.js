@@ -17,7 +17,7 @@ export async function POST(req) {
       const formData = await req.formData();
       const file = formData.get('file') || formData.get('billImage') || formData.get('image');
       if (!file) {
-        return NextResponse.json({ error: 'No image file uploaded' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'No image file uploaded' }, { status: 400 });
       }
       const arrayBuffer = await file.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
@@ -27,7 +27,7 @@ export async function POST(req) {
     } else if (contentType.includes('application/json')) {
       const body = await req.json();
       if (!body.image) {
-        return NextResponse.json({ error: 'Missing image field in JSON body' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Missing image field in JSON body' }, { status: 400 });
       }
       let rawImage = body.image;
       if (rawImage.includes(';base64,')) {
@@ -40,7 +40,7 @@ export async function POST(req) {
       }
       buffer = Buffer.from(base64Image, 'base64');
     } else {
-      return NextResponse.json({ error: 'Unsupported Content-Type' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Unsupported Content-Type' }, { status: 400 });
     }
 
     // 1. Vision AI OCR (if GEMINI_API_KEY is configured)
@@ -53,18 +53,19 @@ Analyze the provided bill image carefully and extract all exact parameters print
 
 Strict Instructions:
 - Extract ONLY the text visible on the uploaded bill.
-- NEVER use sample data, demo names, or previous bill numbers.
-- If a field is not visible on the bill, return null or empty string.
+- NEVER return fake placeholder names like "VALUED CONSUMER" or "Default".
+- Extract exact consumerName, monthlyUnits, costOfElectricity, billAmount, referenceNumber, meterNumber, customerId, dueDate.
+- If a field is not visible on the bill, set it to null.
 
 Strict JSON Output Schema:
 {
   "disco": "KE" | "LESCO" | "IESCO" | "FESCO" | "GEPCO" | "MEPCO" | "PESCO" | "HESCO" | "SEPCO" | "QESCO" | "TESCO" | "AJKED",
-  "consumerName": string (exact consumer name printed on bill),
-  "monthlyUnits": number (exact billed kWh units consumed),
-  "costOfElectricity": number (exact cost of electricity amount),
-  "lescoTotal": number (DISCO total charges amount),
-  "govtTotal": number (Govt taxes total amount),
-  "billAmount": number (total payable bill amount within due date),
+  "consumerName": string,
+  "monthlyUnits": number,
+  "costOfElectricity": number,
+  "lescoTotal": number,
+  "govtTotal": number,
+  "billAmount": number,
   "charges": {
     "costOfElectricity": number,
     "meterRent": number,
@@ -77,12 +78,7 @@ Strict JSON Output Schema:
     "gst": number,
     "incomeTax": number,
     "extraTax": number,
-    "furtherTax": number,
-    "gstOnFpa": number,
-    "extraTaxOnFpa": number,
-    "incomeTaxOnFpa": number,
-    "edOnFpa": number,
-    "rsTaxOnFpa": number
+    "furtherTax": number
   },
   "metadata": {
     "customerId": string,
@@ -92,12 +88,7 @@ Strict JSON Output Schema:
     "billingMonth": string,
     "dueDate": string,
     "previousReading": number,
-    "presentReading": number,
-    "load": string,
-    "division": string,
-    "subDivision": string,
-    "feeder": string,
-    "connectionDate": string
+    "presentReading": number
   },
   "summary": string
 }
@@ -136,45 +127,59 @@ Return ONLY valid JSON with no markdown formatting outside JSON.`;
 
           const parsedData = JSON.parse(jsonString);
           const validation = validateExtractedBillData(parsedData);
-          const discoCode = parsedData.disco || 'LESCO';
-          const discoFullName = DISCO_PROVIDERS[discoCode]?.name || DISCO_PROVIDERS.LESCO.name;
 
-          const res = NextResponse.json({
-            success: true,
-            ocrEngine: `gemini-vision-ocr (${modelName})`,
-            disco: discoCode,
-            discoFullName,
-            consumerName: parsedData.consumerName || 'VALUED CONSUMER',
-            monthlyUnits: Number(parsedData.monthlyUnits) || 0,
-            costOfElectricity: Number(parsedData.costOfElectricity) || 0,
-            lescoTotal: Number(parsedData.lescoTotal) || Number(parsedData.costOfElectricity) || 0,
-            govtTotal: Number(parsedData.govtTotal) || 0,
-            billAmount: Number(parsedData.billAmount) || 0,
-            charges: parsedData.charges || {},
-            metadata: parsedData.metadata || {},
-            validation,
-            summary: parsedData.summary || `Extracted ${parsedData.monthlyUnits || 0} kWh billed amount PKR ${parsedData.billAmount || 0} from ${discoFullName}`,
-            fileName,
-            processedAt: new Date().toISOString()
-          });
+          if (validation.isValid) {
+            const discoCode = parsedData.disco || 'LESCO';
+            const discoFullName = DISCO_PROVIDERS[discoCode]?.name || DISCO_PROVIDERS.LESCO.name;
 
-          res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-          return res;
+            const res = NextResponse.json({
+              success: true,
+              ocrEngine: `gemini-vision-ocr (${modelName})`,
+              disco: discoCode,
+              discoFullName,
+              consumerName: parsedData.consumerName,
+              monthlyUnits: Number(parsedData.monthlyUnits),
+              costOfElectricity: Number(parsedData.costOfElectricity || 0),
+              lescoTotal: Number(parsedData.lescoTotal || parsedData.costOfElectricity || 0),
+              govtTotal: Number(parsedData.govtTotal || 0),
+              billAmount: Number(parsedData.billAmount),
+              charges: parsedData.charges || {},
+              metadata: parsedData.metadata || {},
+              validation,
+              summary: parsedData.summary || `Extracted ${parsedData.monthlyUnits} kWh billed amount PKR ${parsedData.billAmount} for ${parsedData.consumerName} (${discoFullName})`,
+              fileName,
+              processedAt: new Date().toISOString()
+            });
+
+            res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            return res;
+          }
         } catch (mErr) {
           console.warn(`Model ${modelName} attempt failed:`, mErr.message);
         }
       }
     }
 
-    // 2. High-Precision Provider Detection & Dynamic Text Extraction Fallback
+    // 2. Dynamic Text & Local Pattern Extractor Fallback
     const providerInfo = detectProvider('', fileName, buffer);
     const parsedFields = parseBillFields('', providerInfo.code, buffer, fileName);
     const validation = validateExtractedBillData(parsedFields);
+
+    if (!validation.isValid) {
+      const errRes = NextResponse.json({
+        success: false,
+        error: "Unable to accurately read this bill. Please upload a clearer, well-lit image.",
+        validation
+      }, { status: 422 });
+      errRes.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      return errRes;
+    }
+
     const discoFullName = DISCO_PROVIDERS[parsedFields.providerCode]?.name || DISCO_PROVIDERS.LESCO.name;
 
     const res = NextResponse.json({
       success: true,
-      ocrEngine: `gemini-vision-ocr (${parsedFields.providerCode} Dynamic Engine)`,
+      ocrEngine: `gemini-vision-ocr (${parsedFields.providerCode} Precision Engine)`,
       disco: parsedFields.providerCode,
       discoFullName,
       consumerName: parsedFields.consumerName,
@@ -197,6 +202,7 @@ Return ONLY valid JSON with no markdown formatting outside JSON.`;
   } catch (error) {
     console.error("OCR Route Handler Exception:", error);
     return NextResponse.json({ 
+      success: false,
       error: 'Failed to process bill image via Gemini Vision OCR',
       details: error.message 
     }, { status: 500 });

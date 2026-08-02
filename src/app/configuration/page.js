@@ -215,10 +215,12 @@ export default function Configuration() {
             : `⚡ Parsed ${units} kWh units & Rs. ${billAmount} for ${consumerName} (${discoName})!`
         );
       } else {
-        showToast("⚠️ Could not parse bill details. Using default units.", "error");
+        setOcrResult(null);
+        showToast(data.error || "⚠️ Unable to accurately read this bill. Please upload a clearer, well-lit image.", "error");
       }
     } catch (err) {
-      showToast("⚠️ OCR processing error", "error");
+      setOcrResult(null);
+      showToast("⚠️ Unable to process utility bill image. Please upload a clearer photo.", "error");
     } finally {
       setOcrLoading(false);
     }

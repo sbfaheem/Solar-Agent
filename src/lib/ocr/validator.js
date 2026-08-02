@@ -1,12 +1,13 @@
 /**
  * Validation & Confidence Engine for Pakistani Electricity Bill OCR Data
- * Validates math consistency:
- * 1. DISCO Charges + Govt Charges ≈ Total Bill
- * 2. Units Consumed > 0
- * 3. Consumer Name & Reference Number present
+ * Strict production rules:
+ * 1. Units Consumed must be > 0.
+ * 2. Consumer Name must be present and cannot be placeholder ("VALUED CONSUMER").
+ * 3. Total Bill Amount must be > 0.
+ * 4. DISCO Charges + Govt Charges ≈ Total Bill.
  */
 
-export function validateExtractedBillData(parsedData) {
+export function validateExtractedBillData(parsedData = {}) {
   const warnings = [];
   let confidenceScore = 0.98;
 
@@ -16,36 +17,49 @@ export function validateExtractedBillData(parsedData) {
     costOfElectricity,
     lescoTotal,
     govtTotal,
-    billAmount,
-    metadata
+    billAmount
   } = parsedData;
 
   // 1. Units Consumed Validation
-  if (!monthlyUnits || monthlyUnits <= 0) {
-    warnings.push("Units Consumed is 0 or unreadable.");
-    confidenceScore -= 0.25;
+  const units = Number(monthlyUnits) || 0;
+  if (units <= 0) {
+    warnings.push("Billed consumption (Units) could not be extracted or is zero.");
+    confidenceScore -= 0.50;
   }
 
   // 2. Consumer Name Validation
-  if (!consumerName || consumerName.length < 3) {
+  const name = (consumerName || '').trim();
+  if (!name || name.toUpperCase() === 'VALUED CONSUMER' || name.length < 3) {
     warnings.push("Consumer Name could not be read clearly.");
-    confidenceScore -= 0.15;
+    confidenceScore -= 0.30;
   }
 
-  // 3. Mathematical Total Bill Consistency Check
-  const computedTotal = (lescoTotal || costOfElectricity || 0) + (govtTotal || 0);
-  if (billAmount > 0 && computedTotal > 0) {
-    const diff = Math.abs(computedTotal - billAmount);
-    if (diff > 50) {
-      warnings.push(`Total Bill (Rs. ${billAmount}) differs from Charges sum (Rs. ${computedTotal}).`);
-      confidenceScore -= 0.10;
+  // 3. Bill Amount Validation
+  const amount = Number(billAmount) || 0;
+  if (amount <= 0) {
+    warnings.push("Total Payable Bill Amount could not be extracted or is zero.");
+    confidenceScore -= 0.30;
+  }
+
+  // 4. Mathematical Consistency Check
+  const cost = Number(lescoTotal || costOfElectricity || 0);
+  const taxes = Number(govtTotal || 0);
+  const computedTotal = cost + taxes;
+
+  if (amount > 0 && computedTotal > 0) {
+    const diff = Math.abs(computedTotal - amount);
+    if (diff > 150) {
+      warnings.push(`Total Bill (Rs. ${amount}) differs significantly from computed charges sum (Rs. ${computedTotal}).`);
+      confidenceScore -= 0.15;
     }
   }
 
+  const isValid = units > 0 && amount > 0 && name.length >= 3 && name.toUpperCase() !== 'VALUED CONSUMER';
+
   return {
-    isValid: warnings.length === 0,
-    confidenceScore: parseFloat(confidenceScore.toFixed(2)),
+    isValid,
+    confidenceScore: Math.max(0.1, parseFloat(confidenceScore.toFixed(2))),
     warnings,
-    uncertainFields: warnings.length > 0 ? ['monthlyUnits'] : []
+    errorMessage: !isValid ? "Unable to accurately read this bill. Please upload a clearer, well-lit image." : null
   };
 }
