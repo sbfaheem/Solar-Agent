@@ -186,8 +186,8 @@ export default function Configuration() {
       if (res.ok && data.success) {
         const units = Number(data.monthlyUnits || data.monthly_units || 0);
         const discoName = data.disco || 'LESCO';
-        const consumerName = data.consumerName || 'Azmat Ali Muhammad';
-        const billAmount = data.billAmount || 343;
+        const consumerName = data.consumerName || 'VALUED CONSUMER';
+        const billAmount = Number(data.billAmount) || 0;
 
         setOcrResult({
           ...data,
@@ -195,9 +195,9 @@ export default function Configuration() {
           monthly_units: units,
           consumerName: consumerName,
           billAmount: billAmount,
-          costOfElectricity: data.costOfElectricity || 232.29,
-          lescoTotal: data.lescoTotal || 287.23,
-          govtTotal: data.govtTotal || 55.77,
+          costOfElectricity: Number(data.costOfElectricity) || 0,
+          lescoTotal: Number(data.lescoTotal) || 0,
+          govtTotal: Number(data.govtTotal) || 0,
           charges: data.charges || {},
           metadata: data.metadata || {}
         });
@@ -617,16 +617,16 @@ export default function Configuration() {
                         </div>
                         <div>
                           <strong className="font-sans font-extrabold text-sm text-slate-900 dark:text-white block">
-                            Fresh Bill OCR Extracted ({ocrResult.disco || 'LESCO'})
+                            Fresh Bill OCR Extracted ({ocrResult.disco || 'DISCO'})
                           </strong>
                           <span className="text-[11px] text-slate-500 font-medium">
-                            Account #: {ocrResult.metadata?.referenceNumber || ocrResult.referenceNumber || '06 11822 1066501 R'} | Consumer ID: {ocrResult.metadata?.customerId || '6198431'}
+                            Account #: {ocrResult.metadata?.referenceNumber || ocrResult.referenceNumber || 'N/A'} | Consumer ID: {ocrResult.metadata?.customerId || 'N/A'}
                           </span>
                         </div>
                       </div>
 
                       <span className="px-3 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs">
-                        {ocrResult.metadata?.billingMonth || 'FEB 2026'}
+                        {ocrResult.metadata?.billingMonth || 'CURRENT'}
                       </span>
                     </div>
 
@@ -634,22 +634,22 @@ export default function Configuration() {
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-black/30 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-500 font-sans font-bold block">CONSUMER NAME</span>
-                        <strong className="text-slate-900 dark:text-white font-extrabold text-sm">{ocrResult.consumerName || 'Azmat Ali Muhammad'}</strong>
+                        <strong className="text-slate-900 dark:text-white font-extrabold text-sm">{ocrResult.consumerName || 'VALUED CONSUMER'}</strong>
                       </div>
 
                       <div>
                         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-bold block">UNITS CONSUMED</span>
-                        <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base">{ocrResult.monthlyUnits || ocrResult.monthly_units} kWh</strong>
+                        <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base">{ocrResult.monthlyUnits || ocrResult.monthly_units || 0} kWh</strong>
                       </div>
 
                       <div>
                         <span className="text-[10px] text-slate-500 font-sans font-bold block">COST OF ELECTRICITY</span>
-                        <strong className="text-slate-900 dark:text-white font-bold text-sm">Rs. {Number(ocrResult.costOfElectricity || 232.29).toFixed(2)}</strong>
+                        <strong className="text-slate-900 dark:text-white font-bold text-sm">Rs. {Number(ocrResult.costOfElectricity || 0).toFixed(2)}</strong>
                       </div>
 
                       <div>
                         <span className="text-[10px] text-amber-600 dark:text-amber-400 font-sans font-bold block">TOTAL PAYABLE BILL</span>
-                        <strong className="text-amber-600 dark:text-amber-400 font-black text-base">Rs. {Number(ocrResult.billAmount || 343).toLocaleString()} PKR</strong>
+                        <strong className="text-amber-600 dark:text-amber-400 font-black text-base">Rs. {Number(ocrResult.billAmount || 0).toLocaleString()} PKR</strong>
                       </div>
                     </div>
 

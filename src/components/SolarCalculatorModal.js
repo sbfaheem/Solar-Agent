@@ -68,29 +68,37 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  // OCR Processing
+  // OCR Processing (Stateless & Uncached)
   const processFile = async (file) => {
     if (!file) return;
+    
+    // 1. Immediately reset previous OCR state & calculations
+    setOcrData(null);
     setLoading(true);
+
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch('/api/ocr-bill', {
+      // Fetch with cache-busting timestamp to guarantee fresh scan
+      const res = await fetch(`/api/ocr-bill?t=${Date.now()}`, {
         method: 'POST',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        },
         body: formData
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
         setOcrData(data);
-        setSelectedDisco(data.disco || 'KE');
+        setSelectedDisco(data.disco || 'LESCO');
         setCalcParams(prev => ({
           ...prev,
-          monthlyUnits: data.monthlyUnits,
-          utilityProvider: data.disco || prev.utilityProvider,
-          billAmount: data.billAmount,
-          tariffRate: data.tariffRate
+          monthlyUnits: Number(data.monthlyUnits) || 0,
+          utilityProvider: data.discoFullName || data.disco || 'LESCO',
+          billAmount: Number(data.billAmount) || 0,
+          tariffRate: data.tariffRate || 45.0
         }));
         showToast(
           lang === 'ur'

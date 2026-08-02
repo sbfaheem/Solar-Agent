@@ -49,17 +49,22 @@ export async function POST(req) {
     if (apiKey) {
       const visionModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
       const prompt = `You are an expert OCR AI specialized in analyzing Pakistani electricity utility bills (K-Electric / KE, LESCO, IESCO, FESCO, GEPCO, MEPCO, PESCO, HESCO, SEPCO, QESCO, TESCO, AJKED).
-Analyze the provided bill image carefully and extract all exact parameters into a JSON object.
+Analyze the provided bill image carefully and extract all exact parameters printed on the bill into a JSON object.
+
+Strict Instructions:
+- Extract ONLY the text visible on the uploaded bill.
+- NEVER use sample data, demo names, or previous bill numbers.
+- If a field is not visible on the bill, return null or empty string.
 
 Strict JSON Output Schema:
 {
   "disco": "KE" | "LESCO" | "IESCO" | "FESCO" | "GEPCO" | "MEPCO" | "PESCO" | "HESCO" | "SEPCO" | "QESCO" | "TESCO" | "AJKED",
-  "consumerName": string (e.g. "MRS SALMA HABIB" or "Azmat Ali Muhammad"),
-  "monthlyUnits": number (exact billed kWh units e.g. 256 or 22),
-  "costOfElectricity": number (e.g. 10006.01 or 232.29),
-  "lescoTotal": number (DISCO charges total e.g. 10006.01 or 287.23),
-  "govtTotal": number (Govt taxes total e.g. 2011.99 or 55.77),
-  "billAmount": number (total payable bill e.g. 12018 or 343),
+  "consumerName": string (exact consumer name printed on bill),
+  "monthlyUnits": number (exact billed kWh units consumed),
+  "costOfElectricity": number (exact cost of electricity amount),
+  "lescoTotal": number (DISCO total charges amount),
+  "govtTotal": number (Govt taxes total amount),
+  "billAmount": number (total payable bill amount within due date),
   "charges": {
     "costOfElectricity": number,
     "meterRent": number,
@@ -97,10 +102,7 @@ Strict JSON Output Schema:
   "summary": string
 }
 
-Notes:
-- For KE bill image (MRS SALMA HABIB): Units = 256, Payable = 12018.
-- For LESCO bill image (Azmat Ali Muhammad): Units = 22, Cost = 232.29, LESCO Total = 287.23, Govt Total = 55.77, Payable = 343.
-- Return ONLY valid JSON with no markdown formatting outside JSON.`;
+Return ONLY valid JSON with no markdown formatting outside JSON.`;
 
       const ai = new GoogleGenAI({ apiKey });
 
@@ -134,42 +136,45 @@ Notes:
 
           const parsedData = JSON.parse(jsonString);
           const validation = validateExtractedBillData(parsedData);
-          const discoCode = parsedData.disco || 'KE';
-          const discoFullName = DISCO_PROVIDERS[discoCode]?.name || DISCO_PROVIDERS.KE.name;
+          const discoCode = parsedData.disco || 'LESCO';
+          const discoFullName = DISCO_PROVIDERS[discoCode]?.name || DISCO_PROVIDERS.LESCO.name;
 
-          return NextResponse.json({
+          const res = NextResponse.json({
             success: true,
             ocrEngine: `gemini-vision-ocr (${modelName})`,
             disco: discoCode,
             discoFullName,
-            consumerName: parsedData.consumerName || 'MRS SALMA HABIB',
-            monthlyUnits: Number(parsedData.monthlyUnits) || 256,
-            costOfElectricity: Number(parsedData.costOfElectricity) || 10006.01,
-            lescoTotal: Number(parsedData.lescoTotal) || 10006.01,
-            govtTotal: Number(parsedData.govtTotal) || 2011.99,
-            billAmount: Number(parsedData.billAmount) || 12018,
+            consumerName: parsedData.consumerName || 'VALUED CONSUMER',
+            monthlyUnits: Number(parsedData.monthlyUnits) || 0,
+            costOfElectricity: Number(parsedData.costOfElectricity) || 0,
+            lescoTotal: Number(parsedData.lescoTotal) || Number(parsedData.costOfElectricity) || 0,
+            govtTotal: Number(parsedData.govtTotal) || 0,
+            billAmount: Number(parsedData.billAmount) || 0,
             charges: parsedData.charges || {},
             metadata: parsedData.metadata || {},
             validation,
-            summary: parsedData.summary || `Extracted ${parsedData.monthlyUnits} kWh billed amount PKR ${parsedData.billAmount} from ${discoFullName}`,
+            summary: parsedData.summary || `Extracted ${parsedData.monthlyUnits || 0} kWh billed amount PKR ${parsedData.billAmount || 0} from ${discoFullName}`,
             fileName,
             processedAt: new Date().toISOString()
           });
+
+          res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          return res;
         } catch (mErr) {
           console.warn(`Model ${modelName} attempt failed:`, mErr.message);
         }
       }
     }
 
-    // 2. High-Precision Provider Detection & Template Extraction Pipeline
+    // 2. High-Precision Provider Detection & Dynamic Text Extraction Fallback
     const providerInfo = detectProvider('', fileName, buffer);
     const parsedFields = parseBillFields('', providerInfo.code, buffer, fileName);
     const validation = validateExtractedBillData(parsedFields);
-    const discoFullName = DISCO_PROVIDERS[parsedFields.providerCode]?.name || DISCO_PROVIDERS.KE.name;
+    const discoFullName = DISCO_PROVIDERS[parsedFields.providerCode]?.name || DISCO_PROVIDERS.LESCO.name;
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
-      ocrEngine: `gemini-vision-ocr (${parsedFields.providerCode} Precision Engine)`,
+      ocrEngine: `gemini-vision-ocr (${parsedFields.providerCode} Dynamic Engine)`,
       disco: parsedFields.providerCode,
       discoFullName,
       consumerName: parsedFields.consumerName,
@@ -185,6 +190,9 @@ Notes:
       fileName,
       processedAt: new Date().toISOString()
     });
+
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    return res;
 
   } catch (error) {
     console.error("OCR Route Handler Exception:", error);

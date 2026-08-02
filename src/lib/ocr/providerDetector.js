@@ -1,75 +1,76 @@
 /**
  * DISCO Provider Detection Engine for Pakistani Utility Bills
- * Supports: KE, LESCO, IESCO, FESCO, GEPCO, MEPCO, PESCO, HESCO, SEPCO, QESCO, TESCO, AJKED
+ * Dynamic detection for all 12 Pakistani DISCOs.
+ * Completely stateless and un-cached.
  */
 
 export const DISCO_PROVIDERS = {
   KE: {
     id: "KE",
     name: "K-Electric (Karachi & Hub)",
-    keywords: ["K-ELECTRIC", "KE", "KARACHI ELECTRIC", "SAJ96669", "0400008147270", "SALMA HABIB", "SALMA", "KMC", "KESC", "AL657701", "256 UNITS"]
+    keywords: ["K-ELECTRIC", "K ELECTRIC", "KARACHI ELECTRIC", "KESC", "KELECTRIC", "KE "]
   },
   LESCO: {
     id: "LESCO",
     name: "Lahore Electric Supply Company (LESCO)",
-    keywords: ["LESCO", "LAHORE ELECTRIC", "AZMAT ALI", "AZMAT", "NAKOODAR", "SHARKOT", "GULISTAN", "11822", "6198431", "S-988240"]
+    keywords: ["LESCO", "LAHORE ELECTRIC", "LAHORE ELECTRIC SUPPLY"]
   },
   IESCO: {
     id: "IESCO",
     name: "Islamabad Electric Supply Company (IESCO)",
-    keywords: ["IESCO", "ISLAMABAD ELECTRIC", "BLUE AREA", "RAWALPINDI", "ISB", "SYED AHMED"]
+    keywords: ["IESCO", "ISLAMABAD ELECTRIC"]
   },
   FESCO: {
     id: "FESCO",
     name: "Faisalabad Electric Supply Company (FESCO)",
-    keywords: ["FESCO", "FAISALABAD ELECTRIC", "LYALLPUR", "TARIQ"]
+    keywords: ["FESCO", "FAISALABAD ELECTRIC"]
   },
   GEPCO: {
     id: "GEPCO",
     name: "Gujranwala Electric Power Company (GEPCO)",
-    keywords: ["GEPCO", "GUJRANWALA ELECTRIC", "SIALKOT", "GUJRAT"]
+    keywords: ["GEPCO", "GUJRANWALA ELECTRIC"]
   },
   MEPCO: {
     id: "MEPCO",
     name: "Multan Electric Power Company (MEPCO)",
-    keywords: ["MEPCO", "MULTAN ELECTRIC", "SAHIWAL", "BAHAWALPUR"]
+    keywords: ["MEPCO", "MULTAN ELECTRIC"]
   },
   PESCO: {
     id: "PESCO",
     name: "Peshawar Electric Supply Company (PESCO)",
-    keywords: ["PESCO", "PESHAWAR ELECTRIC", "KHYBER", "MARDAN"]
+    keywords: ["PESCO", "PESHAWAR ELECTRIC"]
   },
   HESCO: {
     id: "HESCO",
     name: "Hyderabad Electric Supply Company (HESCO)",
-    keywords: ["HESCO", "HYDERABAD ELECTRIC", "MIRPURKHAS"]
+    keywords: ["HESCO", "HYDERABAD ELECTRIC"]
   },
   SEPCO: {
     id: "SEPCO",
     name: "Sukkur Electric Power Company (SEPCO)",
-    keywords: ["SEPCO", "SUKKUR ELECTRIC", "LARKANA"]
+    keywords: ["SEPCO", "SUKKUR ELECTRIC"]
   },
   QESCO: {
     id: "QESCO",
     name: "Quetta Electric Supply Company (QESCO)",
-    keywords: ["QESCO", "QUETTA ELECTRIC", "BALOCHISTAN"]
+    keywords: ["QESCO", "QUETTA ELECTRIC"]
   },
   TESCO: {
     id: "TESCO",
     name: "Tribal Areas Electric Supply Company (TESCO)",
-    keywords: ["TESCO", "TRIBAL ELECTRIC", "FATA"]
+    keywords: ["TESCO", "TRIBAL ELECTRIC"]
   },
   AJKED: {
     id: "AJKED",
     name: "Azad Jammu & Kashmir Electricity Department (AJKED)",
-    keywords: ["AJKED", "KASHMIR ELECTRIC", "MUZAFFARABAD"]
+    keywords: ["AJKED", "KASHMIR ELECTRIC", "AZAD KASHMIR"]
   }
 };
 
 export function detectProvider(text = '', fileName = '', buffer = null) {
   const normalizedText = (text + ' ' + fileName).toUpperCase();
 
-  // 1. Text Keyword Matching
+  // 1. Text & Filename Keyword Matching
   for (const [code, provider] of Object.entries(DISCO_PROVIDERS)) {
     for (const keyword of provider.keywords) {
       if (normalizedText.includes(keyword.toUpperCase())) {
@@ -82,24 +83,36 @@ export function detectProvider(text = '', fileName = '', buffer = null) {
     }
   }
 
-  // 2. Image Feature Fingerprinting (Image Byte Signature / Aspect Ratio Detection)
   const fnLower = (fileName || '').toLowerCase();
   
-  if (fnLower.includes('ke') || fnLower.includes('salma') || fnLower.includes('k-electric')) {
-    return { code: 'KE', name: DISCO_PROVIDERS.KE.name, confidence: 0.95 };
+  if (fnLower.includes('ke') || fnLower.includes('k-electric')) {
+    return { code: 'KE', name: DISCO_PROVIDERS.KE.name, confidence: 0.90 };
   }
 
-  if (fnLower.includes('lesco') || fnLower.includes('azmat')) {
-    return { code: 'LESCO', name: DISCO_PROVIDERS.LESCO.name, confidence: 0.95 };
+  if (fnLower.includes('lesco')) {
+    return { code: 'LESCO', name: DISCO_PROVIDERS.LESCO.name, confidence: 0.90 };
   }
 
-  // Check image buffer fingerprint: KE bill image upload vs LESCO bill image upload
-  if (buffer && buffer.length > 0) {
-    const isKeSignature = (buffer.length > 60000 && buffer.length % 3 === 0) || (buffer.length > 100000 && buffer[10] % 2 === 0);
-    if (isKeSignature) {
-      return { code: 'KE', name: DISCO_PROVIDERS.KE.name, confidence: 0.90 };
-    }
+  if (fnLower.includes('iesco')) {
+    return { code: 'IESCO', name: DISCO_PROVIDERS.IESCO.name, confidence: 0.90 };
   }
 
-  return { code: 'LESCO', name: DISCO_PROVIDERS.LESCO.name, confidence: 0.85 };
+  if (fnLower.includes('fesco')) {
+    return { code: 'FESCO', name: DISCO_PROVIDERS.FESCO.name, confidence: 0.90 };
+  }
+
+  if (fnLower.includes('gepco')) {
+    return { code: 'GEPCO', name: DISCO_PROVIDERS.GEPCO.name, confidence: 0.90 };
+  }
+
+  if (fnLower.includes('mepco')) {
+    return { code: 'MEPCO', name: DISCO_PROVIDERS.MEPCO.name, confidence: 0.90 };
+  }
+
+  if (fnLower.includes('pesco')) {
+    return { code: 'PESCO', name: DISCO_PROVIDERS.PESCO.name, confidence: 0.90 };
+  }
+
+  // Fallback to LESCO default with low confidence if unknown
+  return { code: 'LESCO', name: DISCO_PROVIDERS.LESCO.name, confidence: 0.60 };
 }
