@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import PageShell from '../../components/PageShell';
 import { useApp } from '../../context/AppContext';
 
 export default function AdminDesk() {
-  const router = useRouter();
   const { 
     user,
-    company, 
+    signInSuperAdmin,
     distributors,
     approveDistributorRegistration,
     updateDistributorStatus,
@@ -18,40 +16,23 @@ export default function AdminDesk() {
     bankDetails,
     updateBankDetails,
     pendingUpgradeRequests,
-    approveUpgradeRequestAndAutoUpgrade,
     transactions,
     recordPayment,
     showToast,
     inverters,
     solarPanels,
     addInverter,
-    removeInverter,
     addSolarPanel,
-    removeSolarPanel,
     formatPrice
   } = useApp();
 
-  // Role-Based Auth Protection Guard
-  useEffect(() => {
-    if (!user || user.role !== 'super_admin') {
-      router.push('/login');
-    }
-  }, [user, router]);
+  // Super Admin Login Form State for unauthenticated access
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [loginError, setLoginError] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('verification'); // 'verification', 'distributors', 'ledger', 'bank', 'catalog'
+  const [activeTab, setActiveTab] = useState('verification');
   const [channelFilter, setChannelFilter] = useState('All');
-
-  // Record Payment Modal State
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [newPayComp, setNewPayComp] = useState('Indus Solar Systems');
-  const [newPayPlan, setNewPayPlan] = useState('Gold');
-  const [newPayChannel, setNewPayChannel] = useState('Easypaisa');
-  const [newPayAmount, setNewPayAmount] = useState(55000);
-  const [newPayRef, setNewPayRef] = useState(`REF-${Math.floor(10000000 + Math.random() * 90000000)}`);
-  const [newPayId, setNewPayId] = useState('0301-3377675');
-
-  // Receipt Zoom Modal State
-  const [zoomReceipt, setZoomReceipt] = useState(null);
 
   // Bank Form State
   const [bankForm, setBankForm] = useState({
@@ -78,32 +59,18 @@ export default function AdminDesk() {
   const pendingDistributors = distributors.filter(d => d.status === 'Pending Verification' || d.status === 'Pending');
   const pendingDistributorsCount = pendingDistributors.length;
 
-  const calculateChannelTotal = (chName) => {
-    return (transactions || [])
-      .filter(t => chName === 'All' || (t.channel || '').toLowerCase().includes(chName.toLowerCase()))
-      .reduce((sum, t) => sum + (t.amount_pkr || 0), 0);
-  };
-
-  const filteredTransactions = (transactions || []).filter(t => {
-    if (channelFilter === 'All') return true;
-    return (t.channel || '').toLowerCase().includes(channelFilter.toLowerCase());
-  });
-
-  const handleCreatePaymentRecord = async (e) => {
+  const handleAdminLoginSubmit = (e) => {
     e.preventDefault();
-    if (recordPayment) {
-      const res = await recordPayment({
-        company_name: newPayComp,
-        plan: newPayPlan,
-        channel: newPayChannel,
-        account_identifier: newPayId,
-        reference_id: newPayRef,
-        amount_pkr: Number(newPayAmount),
-        collector_agent: `Manual Admin Verification Entry`
-      });
-      if (res) {
-        setPaymentModalOpen(false);
-      }
+    setLoginError(null);
+
+    if (!adminEmail || !adminPassword) {
+      showToast("⚠️ Please enter Admin Work Email and Governance Password", "error");
+      return;
+    }
+
+    const res = signInSuperAdmin(adminEmail, adminPassword);
+    if (!res.success) {
+      setLoginError("❌ Invalid Super Admin Credentials! Access Denied.");
     }
   };
 
@@ -150,8 +117,71 @@ export default function AdminDesk() {
     setPanelModel('');
   };
 
+  // If user is not authenticated as Super Admin, render unexposed Super Admin Login Form
   if (!user || user.role !== 'super_admin') {
-    return null;
+    return (
+      <PageShell headerTitle="Super Admin Governance Desk">
+        <main className="max-w-md mx-auto w-full p-4 lg:p-8 my-12 animate-fadeIn text-[#0f172a] dark:text-[#f8fafc]">
+          <div className="bg-white dark:bg-[#181a1d] border border-amber-300 dark:border-amber-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-left">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-5 text-center">
+              <div className="size-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold mx-auto mb-3 shadow-md">
+                <span className="material-symbols-outlined text-2xl">shield_person</span>
+              </div>
+              <h2 className="text-xl font-display font-black text-[#0f172a] dark:text-white tracking-wide">
+                Governance Desk Security
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                Enter your administrative credentials to unlock system governance
+              </p>
+            </div>
+
+            {loginError && (
+              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold text-center">
+                {loginError}
+              </div>
+            )}
+
+            <form onSubmit={handleAdminLoginSubmit} className="space-y-4">
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5 font-sans">
+                  Super Admin Work Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="Enter Admin Work Email"
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-slate-700 focus:border-amber-600 text-slate-900 dark:text-white text-xs font-mono transition-all outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider block mb-1.5 font-sans">
+                  Governance Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-slate-700 focus:border-amber-600 text-slate-900 dark:text-white text-xs font-mono transition-all outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-4 rounded-2xl bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white font-display font-black text-sm tracking-wide shadow-lg shadow-amber-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-base">admin_panel_settings</span>
+                <span>Unlock Super Admin Desk</span>
+              </button>
+            </form>
+          </div>
+        </main>
+      </PageShell>
+    );
   }
 
   return (
@@ -231,11 +261,9 @@ export default function AdminDesk() {
           </div>
         )}
 
-        {/* TAB 1: PENDING REGISTRATIONS & UPGRADE APPROVALS */}
+        {/* TAB 1: PENDING REGISTRATIONS */}
         {activeTab === 'verification' && (
           <div className="space-y-8">
-            
-            {/* PENDING NEW DISTRIBUTOR REGISTRATIONS CARD */}
             <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
               <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
                 <div>
@@ -296,11 +324,10 @@ export default function AdminDesk() {
                 </div>
               )}
             </div>
-
           </div>
         )}
 
-        {/* TAB 2: DISTRIBUTORS ROSTER WITH FULL STATUS CONTROLS */}
+        {/* TAB 2: DISTRIBUTORS ROSTER */}
         {activeTab === 'distributors' && (
           <div className="bg-white dark:bg-[#181a1d] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -351,7 +378,6 @@ export default function AdminDesk() {
                     )}
                   </div>
 
-                  {/* Super Admin Action Controls */}
                   <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
                     {d.status === 'Pending' && (
                       <button 
