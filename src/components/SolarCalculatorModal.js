@@ -40,16 +40,16 @@ const PAKISTAN_CITIES = [
   { city: 'Skardu', psh: 5.8, province: 'Gilgit-Baltistan' }
 ];
 
-// Default Appliances
+// Default Empty Appliances (User inputs data as per their custom requirements)
 const INITIAL_APPLIANCES = [
-  { id: 'app-1', name: 'LED Bulbs & Lights', category: 'Lights', watts: 12, qty: 10, hours: 8, icon: 'lightbulb' },
-  { id: 'app-2', name: 'Ceiling Fans (Inverter/AC)', category: 'Fans', watts: 75, qty: 6, hours: 14, icon: 'mode_fan' },
-  { id: 'app-3', name: 'Inverter AC (1.5 Ton)', category: 'Air Conditioning', watts: 1800, qty: 2, hours: 8, icon: 'ac_unit' },
-  { id: 'app-4', name: 'Inverter AC (1 Ton)', category: 'Air Conditioning', watts: 1200, qty: 1, hours: 6, icon: 'ac_unit' },
-  { id: 'app-5', name: 'Refrigerator / Freezer', category: 'Refrigeration', watts: 350, qty: 1, hours: 24, icon: 'kitchen' },
-  { id: 'app-6', name: 'Water Pump / Motor (1.5 HP)', category: 'Pumps', watts: 1100, qty: 1, hours: 1.5, icon: 'water_drop' },
-  { id: 'app-7', name: 'LED TV & Electronics', category: 'Electronics', watts: 120, qty: 2, hours: 6, icon: 'tv' },
-  { id: 'app-8', name: 'Microwave & Kitchen Load', category: 'Kitchen', watts: 1500, qty: 1, hours: 0.5, icon: 'microwave' }
+  { id: 'app-1', name: 'LED Bulbs & Lights', category: 'Lights', watts: 12, qty: 0, hours: 0, icon: 'lightbulb' },
+  { id: 'app-2', name: 'Ceiling Fans (Inverter/AC)', category: 'Fans', watts: 75, qty: 0, hours: 0, icon: 'mode_fan' },
+  { id: 'app-3', name: 'Inverter AC (1.5 Ton)', category: 'Air Conditioning', watts: 1800, qty: 0, hours: 0, icon: 'ac_unit' },
+  { id: 'app-4', name: 'Inverter AC (1 Ton)', category: 'Air Conditioning', watts: 1200, qty: 0, hours: 0, icon: 'ac_unit' },
+  { id: 'app-5', name: 'Refrigerator / Freezer', category: 'Refrigeration', watts: 350, qty: 0, hours: 0, icon: 'kitchen' },
+  { id: 'app-6', name: 'Water Pump / Motor (1.5 HP)', category: 'Pumps', watts: 1100, qty: 0, hours: 0, icon: 'water_drop' },
+  { id: 'app-7', name: 'LED TV & Electronics', category: 'Electronics', watts: 120, qty: 0, hours: 0, icon: 'tv' },
+  { id: 'app-8', name: 'Microwave & Kitchen Load', category: 'Kitchen', watts: 1500, qty: 0, hours: 0, icon: 'microwave' }
 ];
 
 export default function SolarCalculatorModal({ isOpen, onClose }) {
@@ -61,7 +61,7 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
   const [ocrData, setOcrData] = useState(null);
   const [dragOver, setDragOver] = useState(false);
 
-  // Appliance Load Calculator State
+  // Appliance Load Calculator State (Starts with 0/empty boxes for custom user input)
   const [appliances, setAppliances] = useState(INITIAL_APPLIANCES);
   const [selectedCity, setSelectedCity] = useState('Karachi');
   const [selectedDisco, setSelectedDisco] = useState('KE');
@@ -135,8 +135,18 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
     setAppliances(prev => prev.map(a => a.id === id ? { ...a, qty: Math.max(0, a.qty + delta) } : a));
   };
 
+  const setApplianceQtyDirect = (id, val) => {
+    const qty = Math.max(0, parseInt(val, 10) || 0);
+    setAppliances(prev => prev.map(a => a.id === id ? { ...a, qty } : a));
+  };
+
   const updateApplianceHours = (id, hours) => {
     setAppliances(prev => prev.map(a => a.id === id ? { ...a, hours: Math.max(0, Math.min(24, parseFloat(hours) || 0)) } : a));
+  };
+
+  const resetAllAppliances = () => {
+    setAppliances(INITIAL_APPLIANCES);
+    showToast("🧹 All appliance quantities reset to zero.");
   };
 
   // Appliance Load Computations
@@ -160,7 +170,7 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
 
   const handleProceed = () => {
     if (activeUnits <= 0) {
-      showToast("⚠️ Please upload a bill or configure appliances first!", "error");
+      showToast("⚠️ Please upload a bill or enter your appliance load first!", "error");
       return;
     }
     setCalcParams(prev => ({
@@ -320,7 +330,7 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* MODE 2: INTERACTIVE APPLIANCE LOAD CALCULATOR */}
+          {/* MODE 2: INTERACTIVE APPLIANCE LOAD CALCULATOR (Default Empty Boxes) */}
           {mode === 'appliance' && (
             <div className="space-y-6">
               
@@ -348,9 +358,19 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
 
               {/* Interactive Appliances Manager List */}
               <div className="space-y-3">
-                <h4 className="font-display font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                  Configure Home & Office Appliances
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-display font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                    Configure Home & Office Appliances
+                  </h4>
+                  <button
+                    onClick={resetAllAppliances}
+                    className="text-[11px] text-slate-500 hover:text-rose-600 font-bold transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-xs">restart_alt</span>
+                    <span>Reset All to Zero</span>
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-1 gap-2.5 max-h-[320px] overflow-y-auto pr-1">
                   {appliances.map(app => (
                     <div 
@@ -368,18 +388,25 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                       </div>
 
                       <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                        {/* Quantity Stepper */}
+                        {/* Quantity Direct Input & Stepper */}
                         <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-black/40">
                           <button 
                             onClick={() => updateApplianceQty(app.id, -1)}
-                            className="px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-l-lg font-bold text-xs"
+                            className="px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-l-lg font-bold text-xs cursor-pointer"
                           >
                             -
                           </button>
-                          <span className="px-3 text-xs font-mono font-bold text-[#0f172a] dark:text-white">{app.qty}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={app.qty || ''}
+                            placeholder="0"
+                            onChange={e => setApplianceQtyDirect(app.id, e.target.value)}
+                            className="w-12 text-center text-xs font-mono font-bold text-[#0f172a] dark:text-white outline-none bg-transparent"
+                          />
                           <button 
                             onClick={() => updateApplianceQty(app.id, 1)}
-                            className="px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-r-lg font-bold text-xs"
+                            className="px-2 py-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-r-lg font-bold text-xs cursor-pointer"
                           >
                             +
                           </button>
@@ -392,9 +419,10 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                             min="0" 
                             max="24" 
                             step="0.5"
-                            value={app.hours}
+                            value={app.hours || ''}
+                            placeholder="0"
                             onChange={e => updateApplianceHours(app.id, e.target.value)}
-                            className="w-14 px-2 py-1 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg text-center font-bold text-xs"
+                            className="w-14 px-2 py-1 bg-white dark:bg-black/40 border border-slate-300 dark:border-slate-700 rounded-lg text-center font-bold text-xs outline-none"
                           />
                           <span className="text-slate-400 text-[10px]">hrs/day</span>
                         </div>
@@ -446,7 +474,7 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
           ) : (
             <div className="bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
               <p className="text-xs text-slate-500 font-medium">
-                ℹ️ Upload a utility bill or configure appliances above to view recommended system size, panel count, and ROI calculation.
+                ℹ️ Enter your appliance quantities and daily usage hours above to auto-calculate peak load, monthly consumption, and recommended solar system capacity.
               </p>
             </div>
           )}
@@ -470,7 +498,7 @@ export default function SolarCalculatorModal({ isOpen, onClose }) {
                 : 'bg-[#b45309] hover:bg-[#92400e] text-white shadow-md cursor-pointer'
             }`}
           >
-            <span>{activeUnits > 0 ? `Proceed with ${systemSizeKw} kW Sizing` : 'Upload Bill to View Recommendation'}</span>
+            <span>{activeUnits > 0 ? `Proceed with ${systemSizeKw} kW Sizing` : 'Input Appliances to View Recommendation'}</span>
             <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
         </div>
