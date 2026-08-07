@@ -1,7 +1,11 @@
 /**
- * Pakistani DISCO Seasonal Consumption Interpolation Engine
- * Model based on real Pakistani residential & commercial load curves:
- * Peak summer AC load (May - Sep) vs Winter base load (Nov - Feb).
+ * Pakistani DISCO Seasonal Consumption & 12-Month Profile Engine
+ * Phase 2.3.1 - Solar Agent SaaS Platform
+ * 
+ * Rules:
+ * 1. Uploading a bill for a month updates ONLY that month's card.
+ * 2. Missing/unentered months remain null/blank and render as "--" in the UI.
+ * 3. Never overwrite unentered months with artificial/random numbers.
  */
 
 export const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
@@ -41,7 +45,7 @@ export const SEASONAL_WEIGHTS = {
  * Normalizes any date or month string (e.g., "FEB 2026", "26 FEB 26", "June", "06/2026") into a standard month key.
  */
 export function normalizeMonthKey(monthStr = '') {
-  if (!monthStr) return 'feb'; // Default fallback
+  if (!monthStr) return 'feb';
   const str = String(monthStr).toLowerCase();
 
   if (str.includes('jan') || str.includes('01/')) return 'jan';
@@ -61,64 +65,37 @@ export function normalizeMonthKey(monthStr = '') {
 }
 
 /**
- * Given a map of monthly consumption and verified/entered month keys,
- * extrapolates missing months using the seasonal load curve.
+ * Builds 12-Month Profile preserving exact entered data.
+ * Unentered months remain null (rendered as "--" in UI).
  */
 export function interpolateAnnualProfile(monthlyMap = {}, verifiedKeys = []) {
-  const result = { ...monthlyMap };
+  const profile = {};
   const verifiedSet = new Set(verifiedKeys);
 
-  // Filter keys that have valid non-zero values
-  const activeKeys = MONTH_KEYS.filter(k => verifiedSet.has(k) || Number(result[k]) > 0);
-
-  if (activeKeys.length === 0) {
-    // Return zeros if no months are verified or entered
-    MONTH_KEYS.forEach(k => {
-      result[k] = Number(result[k]) || 0;
-    });
-    return {
-      profile: result,
-      verifiedKeys: [],
-      estimatedKeys: [],
-      annualUnits: 0,
-      averageMonthlyUnits: 0,
-      peakSummerUnits: 0
-    };
-  }
-
-  // Calculate base annual average from verified/entered months
-  let weightSum = 0;
-  let unitSum = 0;
-
-  activeKeys.forEach(k => {
-    const val = Number(result[k]) || 0;
-    const w = SEASONAL_WEIGHTS[k] || 1.0;
-    weightSum += w;
-    unitSum += val;
-  });
-
-  const baseAnnualAvg = unitSum / weightSum;
-
-  const estimatedKeys = [];
-
+  // Preserve verified/entered months strictly
   MONTH_KEYS.forEach(k => {
-    if (!activeKeys.includes(k)) {
-      const estimatedVal = Math.round(baseAnnualAvg * (SEASONAL_WEIGHTS[k] || 1.0));
-      result[k] = estimatedVal;
-      estimatedKeys.push(k);
+    const val = Number(monthlyMap[k]);
+    if ((verifiedSet.has(k) || val > 0) && !isNaN(val)) {
+      profile[k] = val;
+    } else {
+      profile[k] = null; // Unentered month
     }
   });
 
-  const annualUnits = MONTH_KEYS.reduce((sum, k) => sum + (Number(result[k]) || 0), 0);
-  const averageMonthlyUnits = Math.round(annualUnits / 12);
-  const peakSummerUnits = Math.max(...['may', 'jun', 'jul', 'aug', 'sep'].map(k => Number(result[k]) || 0));
+  const activeKeys = MONTH_KEYS.filter(k => profile[k] !== null && profile[k] > 0);
+
+  // Compute metrics from actual entered data
+  const annualUnits = activeKeys.reduce((sum, k) => sum + (profile[k] || 0), 0);
+  const averageMonthlyUnits = activeKeys.length > 0 ? Math.round(annualUnits / activeKeys.length) : 0;
+  const peakSummerUnits = activeKeys.length > 0 ? Math.max(...activeKeys.map(k => profile[k] || 0)) : 0;
 
   return {
-    profile: result,
+    profile,
     verifiedKeys: activeKeys,
-    estimatedKeys,
+    estimatedKeys: [],
     annualUnits,
     averageMonthlyUnits,
-    peakSummerUnits
+    peakSummerUnits,
+    loadedCount: activeKeys.length
   };
 }

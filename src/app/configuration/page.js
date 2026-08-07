@@ -158,6 +158,47 @@ export default function Configuration() {
     }
   };
 
+  // Duplicate Month Confirmation Modal State
+  const [duplicateModal, setDuplicateModal] = useState(null);
+
+  const applyOcrBillData = (data, monthKey, units, discoName, consumerName, billAmount) => {
+    setOcrResult({
+      ...data,
+      monthlyUnits: units,
+      monthly_units: units,
+      consumerName: consumerName,
+      billAmount: billAmount,
+      costOfElectricity: Number(data.costOfElectricity) || 0,
+      lescoTotal: Number(data.lescoTotal) || 0,
+      govtTotal: Number(data.govtTotal) || 0,
+      charges: data.charges || {},
+      metadata: data.metadata || {}
+    });
+
+    const currentProfile = calcParams.annualProfile || {};
+    const updatedProfile = { ...currentProfile, [monthKey]: units };
+    const updatedVerified = Array.from(new Set([...(calcParams.verifiedMonths || []), monthKey]));
+    const annualData = interpolateAnnualProfile(updatedProfile, updatedVerified);
+
+    setCalcParams(prev => ({ 
+      ...prev, 
+      monthlyUnits: annualData.averageMonthlyUnits || units,
+      annualProfile: annualData.profile,
+      verifiedMonths: annualData.verifiedKeys,
+      estimatedMonths: annualData.estimatedKeys,
+      annualUnits: annualData.annualUnits,
+      averageMonthlyUnits: annualData.averageMonthlyUnits,
+      peakSummerUnits: annualData.peakSummerUnits,
+      utilityProvider: data.discoFullName || discoName
+    }));
+
+    showToast(
+      lang === 'ur' 
+        ? `⚡ ${discoName} (${MONTH_LABELS[monthKey]}) بل سے ${units} یونٹس حاصل کر لیے گئے!` 
+        : `⚡ Parsed ${MONTH_LABELS[monthKey]} Bill (${discoName})! Extracted ${units} kWh for ${consumerName}.`
+    );
+  };
+
   // Real Gemini Vision OCR upload handler with complete state clearing
   const processBillFile = async (file) => {
     if (!file) return;
@@ -168,7 +209,6 @@ export default function Configuration() {
       ...prev, 
       monthlyUnits: 0 
     }));
-    setOcrResult(null);
     setOcrLoading(true);
 
     try {
@@ -192,42 +232,21 @@ export default function Configuration() {
         const billAmount = Number(data.billAmount) || 0;
         const monthKey = data.monthKey || 'feb';
 
-        setOcrResult({
-          ...data,
-          monthlyUnits: units,
-          monthly_units: units,
-          consumerName: consumerName,
-          billAmount: billAmount,
-          costOfElectricity: Number(data.costOfElectricity) || 0,
-          lescoTotal: Number(data.lescoTotal) || 0,
-          govtTotal: Number(data.govtTotal) || 0,
-          charges: data.charges || {},
-          metadata: data.metadata || {}
-        });
-
-        // Update annual profile with extracted month data & recalculate seasonal curve
-        const currentProfile = calcParams.annualProfile || { jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0, jul: 0, aug: 0, sep: 0, oct: 0, nov: 0, dec: 0 };
-        const updatedProfile = { ...currentProfile, [monthKey]: units };
-        const updatedVerified = Array.from(new Set([...(calcParams.verifiedMonths || []), monthKey]));
-        const annualData = interpolateAnnualProfile(updatedProfile, updatedVerified);
-
-        setCalcParams(prev => ({ 
-          ...prev, 
-          monthlyUnits: annualData.averageMonthlyUnits,
-          annualProfile: annualData.profile,
-          verifiedMonths: annualData.verifiedKeys,
-          estimatedMonths: annualData.estimatedKeys,
-          annualUnits: annualData.annualUnits,
-          averageMonthlyUnits: annualData.averageMonthlyUnits,
-          peakSummerUnits: annualData.peakSummerUnits,
-          utilityProvider: data.discoFullName || discoName
-        }));
-
-        showToast(
-          lang === 'ur' 
-            ? `⚡ ${discoName} (${MONTH_LABELS[monthKey]}) بل سے ${units} یونٹس حاصل کر لیے گئے!` 
-            : `⚡ Parsed ${MONTH_LABELS[monthKey]} Bill (${discoName})! Extracted ${units} kWh for ${consumerName}.`
-        );
+        // Check if month already exists in annualProfile
+        const existingMonthUnits = (calcParams.annualProfile || {})[monthKey];
+        if (existingMonthUnits !== null && existingMonthUnits !== undefined && existingMonthUnits > 0) {
+          setDuplicateModal({
+            data,
+            monthKey,
+            units,
+            discoName,
+            consumerName,
+            billAmount,
+            existingUnits: existingMonthUnits
+          });
+        } else {
+          applyOcrBillData(data, monthKey, units, discoName, consumerName, billAmount);
+        }
       } else {
         showToast(data.error || "⚠️ Unable to accurately read this bill. Please upload a clearer, well-lit image.", "error");
       }
@@ -758,9 +777,10 @@ export default function Configuration() {
                 {/* 12 Month Boxes */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                   {MONTH_KEYS.map(key => {
-                    const isVerified = (calcParams.verifiedMonths || []).includes(key);
-                    const isEstimated = (calcParams.estimatedMonths || []).includes(key);
-                    const val = (calcParams.annualProfile || {})[key] || 0;
+                    const rawVal = (calcParams.annualProfile || {})[key];
+                    const hasVal = rawVal !== null && rawVal !== undefined && !isNaN(rawVal) && Number(rawVal) > 0;
+                    const isVerified = (calcParams.verifiedMonths || []).includes(key) || hasVal;
+                    const val = hasVal ? Number(rawVal) : '';
 
                     return (
                       <div 
@@ -768,9 +788,7 @@ export default function Configuration() {
                         className={`p-3 rounded-xl border transition-all flex flex-col justify-between space-y-2 relative ${
                           isVerified 
                             ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800' 
-                            : isEstimated 
-                              ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300/80 dark:border-amber-800/60'
-                              : 'bg-white dark:bg-black/30 border-slate-200 dark:border-slate-800'
+                            : 'bg-slate-50/50 dark:bg-black/30 border-slate-200 dark:border-slate-800'
                         }`}
                       >
                         <div className="flex justify-between items-center text-xs font-bold">
@@ -779,19 +797,17 @@ export default function Configuration() {
                             <span className="size-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px]" title="Verified via OCR">
                               ✓
                             </span>
-                          ) : isEstimated ? (
-                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300" title="Estimated via Seasonal Load Curve">
-                              Est.
-                            </span>
-                          ) : null}
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-mono">--</span>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-1 font-mono">
                           <input 
                             type="number"
                             min="0"
-                            value={val || ''}
-                            placeholder="0"
+                            value={val}
+                            placeholder="--"
                             onChange={e => handleStep1MonthChange(key, e.target.value)}
                             className="w-full text-base font-extrabold text-[#0f172a] dark:text-white bg-transparent outline-none border-b border-transparent focus:border-[#b45309]"
                           />
@@ -1348,6 +1364,62 @@ export default function Configuration() {
           annualSavingsOverride: annualSavings
         }}
       />
+      {/* Duplicate Month Confirmation Alert Modal */}
+      {duplicateModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#181a1d] border border-amber-400 dark:border-amber-700 rounded-3xl p-6 sm:p-8 max-w-md w-full text-left space-y-5 shadow-2xl relative animate-fadeIn text-[#0f172a] dark:text-white">
+            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="size-10 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 flex items-center justify-center font-bold">
+                <span className="material-symbols-outlined text-xl">warning</span>
+              </div>
+              <div>
+                <h3 className="font-display font-extrabold text-base">Duplicate Month Detected</h3>
+                <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">A bill record already exists for this month</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs space-y-2">
+              <p>
+                A bill entry for <strong>{MONTH_LABELS[duplicateModal.monthKey]} 2026</strong> already exists with <strong>{duplicateModal.existingUnits} kWh</strong>.
+              </p>
+              <p className="text-slate-600 dark:text-slate-300">
+                Newly uploaded bill contains <strong>{duplicateModal.units} kWh</strong> for <strong>{duplicateModal.consumerName}</strong> ({duplicateModal.discoName}).
+              </p>
+              <p className="font-bold text-amber-900 dark:text-amber-200">
+                Would you like to replace the existing record with the new bill data?
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDuplicateModal(null)}
+                className="flex-1 py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer text-center"
+              >
+                Cancel Upload
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  applyOcrBillData(
+                    duplicateModal.data,
+                    duplicateModal.monthKey,
+                    duplicateModal.units,
+                    duplicateModal.discoName,
+                    duplicateModal.consumerName,
+                    duplicateModal.billAmount
+                  );
+                  setDuplicateModal(null);
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer text-center"
+              >
+                Replace Existing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }
