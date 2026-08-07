@@ -197,11 +197,73 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   // Save distributors state to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined' && distributors.length > 0) {
-      localStorage.setItem('solar_agent_distributors', JSON.stringify(distributors));
+  // EnergyHistory Normalized Records Database State
+  const [energyHistory, setEnergyHistory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('solar_agent_energy_history');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
     }
-  }, [distributors]);
+    return [
+      {
+        id: 'eh-1',
+        customerId: '6198431',
+        distributorId: 'comp-1',
+        billingYear: 2026,
+        billingMonth: 'FEB 2026',
+        monthKey: 'feb',
+        unitsConsumed: 22,
+        billAmount: 343,
+        referenceNumber: '06 11822 1066501 R',
+        meterNumber: 'S-988240',
+        consumerName: 'Azmat Ali Muhammad',
+        providerCode: 'LESCO',
+        ocrConfidence: 98,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('solar_agent_energy_history', JSON.stringify(energyHistory));
+    }
+  }, [energyHistory]);
+
+  const addEnergyRecord = (record) => {
+    const newRecord = {
+      id: record.id || `eh-${Date.now()}`,
+      customerId: record.customerId || record.metadata?.customerId || 'CUST-001',
+      distributorId: company?.id || 'comp-1',
+      billingYear: record.billingYear || 2026,
+      billingMonth: record.billingMonth || 'FEB 2026',
+      monthKey: record.monthKey || 'feb',
+      unitsConsumed: Number(record.monthlyUnits || record.unitsConsumed || 0),
+      billAmount: Number(record.billAmount || 0),
+      referenceNumber: record.referenceNumber || record.metadata?.referenceNumber || 'N/A',
+      meterNumber: record.meterNumber || record.metadata?.meterNumber || 'N/A',
+      consumerName: record.consumerName || 'Valued Client',
+      providerCode: record.providerCode || record.disco || 'LESCO',
+      ocrConfidence: record.overallConfidence || 95,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setEnergyHistory(prev => {
+      const filtered = prev.filter(item => !(item.referenceNumber === newRecord.referenceNumber && item.billingMonth === newRecord.billingMonth));
+      return [newRecord, ...filtered];
+    });
+
+    showToast(`⚡ Saved bill record (${newRecord.billingMonth}) to EnergyHistory database!`);
+    return newRecord;
+  };
+
+  const deleteEnergyRecord = (recordId) => {
+    setEnergyHistory(prev => prev.filter(item => item.id !== recordId));
+    showToast("🗑️ Bill record removed from EnergyHistory.");
+  };
 
   // Official Editable Bank Wire Details
   const [bankDetails, setBankDetails] = useState({
@@ -648,6 +710,9 @@ export const AppProvider = ({ children }) => {
       setCurrentLead,
       calcParams,
       setCalcParams,
+      energyHistory,
+      addEnergyRecord,
+      deleteEnergyRecord,
       getActiveLimit,
       bankDetails,
       updateBankDetails,

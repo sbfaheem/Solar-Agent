@@ -13,6 +13,9 @@ export default function Configuration() {
   const { 
     calcParams, 
     setCalcParams, 
+    energyHistory,
+    addEnergyRecord,
+    deleteEnergyRecord,
     currentLead, 
     setCurrentLead, 
     addLead, 
@@ -191,6 +194,17 @@ export default function Configuration() {
       peakSummerUnits: annualData.peakSummerUnits,
       utilityProvider: data.discoFullName || discoName
     }));
+
+    if (addEnergyRecord) {
+      addEnergyRecord({
+        ...data,
+        monthlyUnits: units,
+        monthKey,
+        consumerName,
+        billAmount,
+        discoName
+      });
+    }
 
     showToast(
       lang === 'ur' 
